@@ -19,7 +19,7 @@ export function Layout({ children }) {
 
   // Standard layout for games
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#181818]">
+    <div className="min-h-screen h-full w-full overflow-x-hidden bg-[#181818]">
       {/* Muse Connected Icon - Top Right */}
       {isConnected && (
         <div className="fixed top-4 right-4 z-50">
@@ -57,10 +57,10 @@ export function Layout({ children }) {
       )}
 
       {/* Main Container - Centered with max width */}
-      <div className="w-full min-h-screen flex items-start justify-center p-4 py-8">
-        <div className="w-full max-w-6xl">
-          <div className="arcade-cabinet crt-container overflow-auto max-h-[calc(100vh-4rem)]">
-            <div className="text-left p-4 sm:p-6">
+      <div className="w-full min-h-screen flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="arcade-cabinet crt-container">
+            <div className="text-left p-6 space-y-6">
               {children}
             </div>
           </div>

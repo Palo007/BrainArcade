@@ -65,7 +65,7 @@ export function StartScreen() {
             className="text-4xl sm:text-5xl font-bold rgb-text type-effect text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
-            MUSE
+            BRAIN ARCADE
           </h1>
         </div>
 
@@ -106,10 +106,10 @@ export function StartScreen() {
               {/* Subtitle */}
               <div className="mb-12 text-center">
                 <p
-                  className="text-sm sm:text-base text-white rgb-text"
+                  className="text-sm sm:text-base text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
-                  BRAINWAVE GAMES
+                  Use your thoughts as a remote
                 </p>
               </div>
 
