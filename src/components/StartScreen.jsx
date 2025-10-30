@@ -49,7 +49,7 @@ export function StartScreen() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ background: '#2b52ff' }}>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: '#2b52ff' }}>
       {/* VHS Effects */}
       <div className="scanlines-vhs"></div>
       <div className="noise"></div>
@@ -59,7 +59,7 @@ export function StartScreen() {
       {/* Main Content */}
       <div className="relative z-10 w-full h-full flex flex-col">
         {/* Top Left - Title */}
-        <div className="absolute left-8 top-8">
+        <div className="absolute left-20 top-20">
           <h1
             ref={titleRef}
             className="text-4xl sm:text-5xl font-bold rgb-text type-effect text-white"
@@ -70,7 +70,7 @@ export function StartScreen() {
         </div>
 
         {/* Top Right - Time */}
-        <div className="absolute right-8 top-8">
+        <div className="absolute right-20 top-20">
           <div
             className="text-2xl sm:text-3xl rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -80,7 +80,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Left - Status */}
-        <div className="absolute left-8 bottom-8">
+        <div className="absolute left-20 bottom-20">
           <div
             className="text-sm sm:text-base rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -90,7 +90,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Right - Mode */}
-        <div className="absolute right-8 bottom-8">
+        <div className="absolute right-20 bottom-20">
           <div
             className="text-xs sm:text-sm text-white opacity-70"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -106,7 +106,7 @@ export function StartScreen() {
               {/* Subtitle */}
               <div className="mb-12 text-center">
                 <p
-                  className="text-sm sm:text-base text-white rgb-text uppercase"
+                  className="text-2xl text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   Use your thoughts as a remote
@@ -121,7 +121,7 @@ export function StartScreen() {
               {/* Instructions */}
               <div className="mt-8 text-center">
                 <p
-                  className="text-xs text-white opacity-60"
+                  className="text-md text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
                   CONNECT YOUR

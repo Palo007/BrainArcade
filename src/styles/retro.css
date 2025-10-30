@@ -219,6 +219,35 @@
   pointer-events: none;
 }
 
+/* Full-screen arcade frame wrapper (content sits inside) */
+.arcade-frame {
+  position: fixed;
+  inset: 0;
+  padding: 56px; /* bezel thickness (increase/decrease overall black area) */
+  background: #000; /* bezel color fills outside */
+  box-sizing: border-box;
+}
+
+.arcade-window {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(48px, 8vmin, 120px); /* inner rounded opening */
+  overflow: hidden; /* clip content and effects to rounded inner edge */
+}
+
+/* Ensure full-screen effects are constrained within the arcade content area */
+.arcade-window .scanlines-vhs,
+.arcade-window .noise,
+.arcade-window .noise-moving,
+.arcade-window .vhs-vignette {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
 /* Arcade Cabinet Style Container */
 .arcade-cabinet {
   background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);

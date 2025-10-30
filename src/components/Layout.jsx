@@ -14,15 +14,22 @@ export function Layout({ children }) {
 
   // Full-screen layout for start screen
   if (isStartScreen) {
-    return <div className="w-full h-screen overflow-hidden">{children}</div>;
+    return (
+      <div className="arcade-frame">
+        <div className="arcade-window">
+          {children}
+        </div>
+      </div>
+    );
   }
 
   // Standard layout for games
   return (
-    <div className="min-h-screen h-full w-full overflow-x-hidden bg-[#181818]">
-      {/* Muse Connected Icon - Top Right */}
-      {isConnected && (
-        <div className="fixed top-4 right-4 z-50">
+    <div className="arcade-frame">
+      <div className="arcade-window bg-[#181818]">
+        {/* Muse Connected Icon - Top Right (inside frame) */}
+        {isConnected && (
+          <div className="absolute top-4 right-4 z-50">
           <div className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 border-[var(--nes-green)] px-3 py-2">
             <div className="relative">
               {/* Brain Icon */}
@@ -53,15 +60,16 @@ export function Layout({ children }) {
             </div>
             <span className="text-[8px] text-[var(--nes-green)]">MUSE</span>
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Main Container - Centered with max width */}
-      <div className="w-full min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-4xl mx-auto">
-          <div className="arcade-cabinet crt-container">
-            <div className="text-left p-6 space-y-6">
-              {children}
+        {/* Main Container - Centered with max width */}
+        <div className="w-full h-full flex items-center justify-center px-4 py-8">
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="arcade-cabinet crt-container">
+              <div className="text-left p-6 space-y-6">
+                {children}
+              </div>
             </div>
           </div>
         </div>
