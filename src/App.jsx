@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { MuseProvider } from './contexts/MuseContext';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
 import { QualityProvider } from './contexts/QualityContext.jsx';
@@ -8,6 +9,7 @@ import { JoystickProvider } from './contexts/JoystickContext.jsx';
 import { Layout } from './components/Layout';
 import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
+import { GameLaunchModal } from './components/GameLaunchModal.jsx';
 import { Credits } from './components/Credits';
 import { games } from './games/games.config';
 import './styles/retro.css';
@@ -18,9 +20,13 @@ import { LostBrainModal } from './components/LostBrainModal.jsx';
  * GamesPage - Main games listing and selection page
  */
 function GamesPage() {
+  const [selectedGame, setSelectedGame] = useState(null);
   return (
     <div>
-      <NavBar />
+      <NavBar onActiveGameClick={(game) => setSelectedGame(game)} />
+      {selectedGame && (
+        <GameLaunchModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+      )}
     </div>
   );
 }
@@ -28,7 +34,8 @@ function GamesPage() {
 /**
  * GamePage - Individual game page wrapper
  */
-function GamePage({ gameId }) {
+function GamePage() {
+  const { gameId } = useParams();
   const game = games.find((g) => g.id === gameId);
 
   if (!game) {
@@ -49,7 +56,8 @@ function GamePage({ gameId }) {
   return (
     <div>
       <div className="mt-0">
-        <GameComponent />
+        {/* Key by game id to force remount on game change */}
+        <GameComponent key={game.id} />
       </div>
     </div>
   );
@@ -79,14 +87,7 @@ function App() {
             <Route path="/credits" element={<Credits />} />
 
             {/* Individual Game Routes */}
-            <Route
-              path="/game/:gameId"
-              element={
-                <RouteWrapper>
-                  {({ gameId }) => <GamePage gameId={gameId} />}
-                </RouteWrapper>
-              }
-            />
+            <Route path="/game/:gameId" element={<GamePage />} />
 
             {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -104,17 +105,6 @@ function App() {
       </ProcessingProvider>
     </MuseProvider>
   );
-}
-
-/**
- * RouteWrapper - Helper to extract route params
- */
-function RouteWrapper({ children }) {
-  const params = new URLSearchParams(window.location.search);
-  const pathParts = window.location.pathname.split('/');
-  const gameId = pathParts[pathParts.length - 1];
-
-  return children({ gameId, params });
 }
 
 export default App;

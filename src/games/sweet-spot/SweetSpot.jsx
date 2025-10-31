@@ -4,6 +4,9 @@ import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
 import '../../styles/retro.css';
+import chillImg from './assets/chill.png';
+import worriedImg from './assets/worried.png';
+import fallingImg from './assets/falling.png';
 
 export function SweetSpot() {
   const { isConnected } = useEEG();
@@ -16,14 +19,14 @@ export function SweetSpot() {
   const rafRef = useRef(null);
 
   useEffect(() => {
-    // Require baseline at start
+    // Require baseline at start (game decides this)
     ensureBaseline({ seconds: 30 });
   }, [ensureBaseline]);
 
   useEffect(() => {
-    // Smooth animate to joystick value
+    // Extra smooth easing to joystick value
     const step = () => {
-      setHeight((h) => h * 0.9 + value01 * 0.1);
+      setHeight((h) => h * 0.92 + value01 * 0.08);
       rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
@@ -41,20 +44,44 @@ export function SweetSpot() {
   }
 
   // Layout metrics
-  const ballSize = 24;
+  const imgSize = 320; // base size in px (responsive via CSS width below)
+
+  const score = Math.round(height * 100);
+  const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
 
   return (
     <div className="space-y-6">
       {/* Title */}
       <div className="text-center mb-2">
         <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-        <p className="text-xs text-gray-400">Raise the ball by relaxing</p>
+        <p className="text-xs text-gray-400">Keep the character floating by staying relaxed</p>
       </div>
 
       {/* Main stage */}
       <div className="flex gap-4 items-stretch">
         {/* Stage */}
-        <div className="flex-1 border-4 border-[var(--nes-yellow)] bg-black p-4 relative overflow-hidden">
+        <div className="flex-1 bg-black p-0 relative overflow-hidden">
+          {/* Local styles for starfield */}
+          <style>{`
+            .starfield, .starfield2 { position: absolute; inset: 0; pointer-events: none; }
+            .starfield {
+              background-image: radial-gradient(#ffffff 1px, transparent 1px);
+              background-size: 6px 6px; /* pixel-like spacing */
+              animation: starScroll 60s linear infinite, twinkle 1.8s steps(2,end) infinite;
+              image-rendering: pixelated;
+              opacity: 0.6;
+            }
+            .starfield2 {
+              background-image: radial-gradient(#ffffff 1px, transparent 1px);
+              background-size: 3px 3px;
+              animation: starScroll2 120s linear infinite, twinkle 2.4s steps(2,end) infinite;
+              image-rendering: pixelated;
+              opacity: 0.35;
+            }
+            @keyframes starScroll { from { background-position: 0 0; } to { background-position: -1200px 800px; } }
+            @keyframes starScroll2 { from { background-position: 0 0; } to { background-position: -800px 1200px; } }
+            @keyframes twinkle { 0%,100% { opacity: 0.55; } 50% { opacity: 0.95; } }
+          `}</style>
           {!isBaselineReady && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
               <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
@@ -62,24 +89,26 @@ export function SweetSpot() {
               </div>
             </div>
           )}
-          <div className="text-[10px] text-[var(--nes-yellow)] mb-2">RELAXATION</div>
-          <div className="relative h-[360px] border-4 border-[var(--nes-yellow)] bg-[#111]">
-            {/* Center line and tick marks */}
-            <div className="absolute left-1/2 top-2 bottom-2 w-[1px] bg-[var(--nes-gray)] opacity-40" />
-            {[0.25, 0.5, 0.75].map((p) => (
-              <div key={p} className="absolute left-2 right-2 h-[1px] bg-[var(--nes-gray)] opacity-20" style={{ top: `${(1 - p) * 100}%` }} />
-            ))}
+          <div className="relative h-[420px]">
+            {/* Stars */}
+            <div className="starfield" />
+            <div className="starfield2" />
 
-            {/* Ball */}
-            <div
-              className="absolute left-1/2 -ml-3 rounded-full shadow"
+            {/* Sprite */}
+            <img
+              src={sprite}
+              alt="relaxation sprite"
+              draggable={false}
+              className="absolute left-1/2 select-none"
               style={{
-                bottom: `${height * 100}%`,
-                transform: `translate(-50%, ${-ballSize / 2}px)`,
-                width: `${ballSize}px`,
-                height: `${ballSize}px`,
-                background: 'radial-gradient(circle at 30% 30%, #FFF380, #E0A030)',
-                border: '2px solid #C08820',
+                top: `${(1 - height) * 100}%`,
+                transform: `translate(-50%, -50%)`,
+                width: `min(${imgSize}px, 38vmin)`,
+                height: 'auto',
+                imageRendering: 'pixelated',
+                filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
+                pointerEvents: 'none',
+                transition: 'opacity 0.15s ease-out',
               }}
             />
           </div>
@@ -90,7 +119,7 @@ export function SweetSpot() {
           <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
             <div className="text-[10px] text-[var(--nes-yellow)] mb-2">STATUS</div>
             <div className="text-4xl text-center" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-              {Math.round(value01 * 100)}
+              {score}
             </div>
             <div className="text-[8px] text-gray-400 text-center mt-1">relaxation</div>
           </div>

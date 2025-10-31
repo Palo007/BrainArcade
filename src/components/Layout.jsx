@@ -23,6 +23,9 @@ export function Layout({ children }) {
   const [showMusePopup, setShowMusePopup] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [isGameSwitching, setIsGameSwitching] = useState(false);
+  const [gameCountdown, setGameCountdown] = useState(2);
+  const [targetGameId, setTargetGameId] = useState(null);
 
   // Close overlay menu on route change
   useEffect(() => {
@@ -60,6 +63,24 @@ export function Layout({ children }) {
     }, 1000);
     return () => clearInterval(interval);
   }, [isSwitching, navigate]);
+
+  // Handle game switching countdown flow (from pause menu)
+  useEffect(() => {
+    if (!isGameSwitching || !targetGameId) return;
+    setGameCountdown(2);
+    const interval = setInterval(() => {
+      setGameCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(interval);
+          navigate(`/game/${targetGameId}`);
+          setIsGameSwitching(false);
+          setTargetGameId(null);
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isGameSwitching, targetGameId, navigate]);
 
   // Unified layout (applies to all routes); content varies per route
   return (
@@ -144,7 +165,16 @@ export function Layout({ children }) {
               className="w-full max-w-4xl mx-auto bg-[var(--nes-dark)] border-4 border-white p-6 max-h-[80%] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <NavBar onActiveGameClick={() => setShowMenu(false)} />
+              <NavBar
+                onActiveGameClick={(game) => {
+                  const nextPath = `/game/${game.id}`;
+                  const current = location.pathname;
+                  setShowMenu(false);
+                  if (current === nextPath) return;
+                  setTargetGameId(game.id);
+                  setIsGameSwitching(true);
+                }}
+              />
             </div>
           </div>
         )}
@@ -202,6 +232,14 @@ export function Layout({ children }) {
           <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
             <div className="text-sm text-[var(--nes-yellow)] mb-2">switching brain...</div>
             <div className="text-center text-3xl">{countdown}</div>
+          </div>
+        </div>
+      )}
+      {isGameSwitching && (
+        <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <div className="text-sm text-[var(--nes-yellow)] mb-2">switching game...</div>
+            <div className="text-center text-3xl">{gameCountdown}</div>
           </div>
         </div>
       )}
