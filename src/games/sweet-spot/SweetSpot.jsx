@@ -44,7 +44,7 @@ export function SweetSpot() {
   }
 
   // Layout metrics
-  const imgSize = 320; // base size in px (responsive via CSS width below)
+  const imgSize = 160; // base size in px (responsive via CSS width below)
 
   const score = Math.round(height * 100);
   const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
@@ -63,24 +63,28 @@ export function SweetSpot() {
         <div className="flex-1 bg-black p-0 relative overflow-hidden">
           {/* Local styles for starfield */}
           <style>{`
-            .starfield, .starfield2 { position: absolute; inset: 0; pointer-events: none; }
+            .starfield, .starfield2, .starfield3 { position: absolute; inset: 0; pointer-events: none; }
             .starfield {
-              background-image: radial-gradient(#ffffff 1px, transparent 1px);
-              background-size: 6px 6px; /* pixel-like spacing */
-              animation: starScroll 60s linear infinite, twinkle 1.8s steps(2,end) infinite;
+              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+              background-size: 120px 120px;
               image-rendering: pixelated;
-              opacity: 0.6;
+              animation: twinkle1 3.2s steps(2,end) infinite;
             }
             .starfield2 {
-              background-image: radial-gradient(#ffffff 1px, transparent 1px);
-              background-size: 3px 3px;
-              animation: starScroll2 120s linear infinite, twinkle 2.4s steps(2,end) infinite;
+              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+              background-size: 95px 85px;
+              animation: twinkle2 2.7s steps(2,end) infinite;
               image-rendering: pixelated;
-              opacity: 0.35;
             }
-            @keyframes starScroll { from { background-position: 0 0; } to { background-position: -1200px 800px; } }
-            @keyframes starScroll2 { from { background-position: 0 0; } to { background-position: -800px 1200px; } }
-            @keyframes twinkle { 0%,100% { opacity: 0.55; } 50% { opacity: 0.95; } }
+            .starfield3 {
+              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
+              background-size: 150px 110px;
+              animation: twinkle3 4.1s steps(2,end) infinite;
+              image-rendering: pixelated;
+            }
+            @keyframes twinkle1 { 0%,100% { opacity: 0; } 50% { opacity: 0.4; } }
+            @keyframes twinkle2 { 0%,100% { opacity: 0; } 50% { opacity: 0.35; } }
+            @keyframes twinkle3 { 0%,100% { opacity: 0; } 50% { opacity: 0.3; } }
           `}</style>
           {!isBaselineReady && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
@@ -93,6 +97,7 @@ export function SweetSpot() {
             {/* Stars */}
             <div className="starfield" />
             <div className="starfield2" />
+            <div className="starfield3" />
 
             {/* Sprite */}
             <img
@@ -101,9 +106,9 @@ export function SweetSpot() {
               draggable={false}
               className="absolute left-1/2 select-none"
               style={{
-                top: `${(1 - height) * 100}%`,
+                top: `${15 + (1 - height) * 70}%`,
                 transform: `translate(-50%, -50%)`,
-                width: `min(${imgSize}px, 38vmin)`,
+                width: `min(${imgSize}px, 20vmin)`,
                 height: 'auto',
                 imageRendering: 'pixelated',
                 filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
