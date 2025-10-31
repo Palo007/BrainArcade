@@ -2,7 +2,7 @@ import React from 'react';
 import '../styles/retro.css';
 
 // Simple retro-styled modal matching arcade theme
-export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false }) {
+export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 1000 }}>
       {/* Backdrop */}
@@ -20,24 +20,30 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
           {children}
         </div>
 
-        <div className="mt-6 flex gap-3 justify-end flex-wrap">
-          <button
-            onClick={onCancel}
-            disabled={isBusy}
-            className="retro-button border-[var(--nes-gray)] text-white bg-transparent px-4 py-2"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
-          >
-            {cancelLabel}
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isBusy}
-            className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
-          >
-            {isBusy ? 'WORKING…' : confirmLabel}
-          </button>
-        </div>
+        {showFooter && (
+          <div className="mt-6 flex gap-3 justify-end flex-wrap">
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                disabled={isBusy}
+                className="retro-button border-[var(--nes-gray)] text-white bg-transparent px-4 py-2"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                {cancelLabel}
+              </button>
+            )}
+            {onConfirm && (
+              <button
+                onClick={onConfirm}
+                disabled={isBusy}
+                className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                {isBusy ? 'WORKING…' : confirmLabel}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,12 +9,14 @@ export function MuseProvider({ children }) {
   const [muse, setMuse] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [rawEEG, setRawEEG] = useState([0, 0, 0, 0]);
+  const [isMock, setIsMock] = useState(false);
 
   const connectMuseDevice = async (options = {}) => {
     try {
       const museDevice = await connectMuse(options);
       setMuse(museDevice);
       setIsConnected(true);
+      setIsMock(!!options.mock);
       console.log('Muse connected successfully');
     } catch (error) {
       console.error('Error connecting to Muse:', error);
@@ -46,11 +48,13 @@ export function MuseProvider({ children }) {
     setMuse(null);
     setIsConnected(false);
     setRawEEG([0, 0, 0, 0]);
+    setIsMock(false);
   };
 
   const value = {
     muse,
     isConnected,
+    isMock,
     rawEEG,
     connectMuse: connectMuseDevice,
     disconnectEEG,

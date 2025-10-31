@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
 import { NavBar } from './NavBar';
 import '../styles/retro.css';
+import { RetroModal } from './RetroModal';
 
 /**
  * Layout - Main layout wrapper with responsive handling
@@ -10,11 +11,15 @@ import '../styles/retro.css';
  * Special full-screen mode for start screen
  */
 export function Layout({ children }) {
-  const { isConnected } = useEEG();
+  const { isConnected, isMock, disconnectEEG } = useEEG();
   const location = useLocation();
+  const navigate = useNavigate();
   const isStartScreen = location.pathname === '/';
   const isGamePage = location.pathname.startsWith('/game/');
   const [showMenu, setShowMenu] = useState(false);
+  const [showMusePopup, setShowMusePopup] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   // Close overlay menu on route change
   useEffect(() => {
@@ -30,23 +35,29 @@ export function Layout({ children }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [showMenu]);
 
-  // Full-screen layout for start screen
-  if (isStartScreen) {
-    return (
-      <div className="arcade-frame">
-        <div className="arcade-window">
-          {children}
-        </div>
-      </div>
-    );
-  }
+  // Handle switching countdown flow
+  useEffect(() => {
+    if (!isSwitching) return;
+    setCountdown(3);
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(interval);
+          navigate('/');
+          setIsSwitching(false);
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isSwitching, navigate]);
 
-  // Standard layout for games
+  // Unified layout (applies to all routes); content varies per route
   return (
     <div className="arcade-frame">
-      <div className="arcade-window bg-[#181818]">
+      <div className={`arcade-window ${isStartScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
-        {(isGamePage || isConnected) && (
+        {(isGamePage || isConnected) && !isStartScreen && (
           <div className="absolute top-10 right-10 z-50 flex items-center gap-4">
             {/* Pause button (only on game pages) */}
             {isGamePage && (
@@ -62,7 +73,11 @@ export function Layout({ children }) {
 
             {/* Muse Connected Icon */}
             {isConnected && (
-              <div className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 border-[var(--nes-green)] px-3 py-2">
+              <button
+                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 border-[var(--nes-green)] px-3 py-2 hover:border-[var(--nes-yellow)] transition-colors"
+                onClick={() => setShowMusePopup(true)}
+                title="Muse status"
+              >
                 <div className="relative">
                   {/* Brain Icon */}
                   <svg
@@ -90,20 +105,24 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--nes-green)] rounded-full animate-pulse border border-white"></div>
                 </div>
-                <span className="text-[8px] text-[var(--nes-green)]">MUSE</span>
-              </div>
+                <span className="text-[8px] text-[var(--nes-green)]">MUSE{isMock ? ' • MOCK' : ''}</span>
+              </button>
             )}
           </div>
         )}
 
-        {/* Main Container - Use full available width inside the rounded screen */}
-        <div className="w-full h-full px-4 py-8">
-          <div className="w-full h-full  ">
-            <div className="text-left p-6 space-y-6 h-full">
-              {children}
+        {/* Main Container */}
+        {isStartScreen ? (
+          <>{children}</>
+        ) : (
+          <div className="w-full h-full px-4 py-8">
+            <div className="w-full h-full  ">
+              <div className="text-left p-6 space-y-6 h-full">
+                {children}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Overlay game menu (shows game selection) */}
         {showMenu && (
@@ -119,6 +138,63 @@ export function Layout({ children }) {
             </div>
           </div>
         )}
+        {/* Muse popup for switch/disconnect */}
+      {showMusePopup && (
+        <RetroModal title="MUSE OPTIONS" onCancel={() => setShowMusePopup(false)} showFooter={false}>
+          <div className="space-y-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <p className="text-[10px] opacity-80">Connected via {isMock ? 'Mock Data' : 'Real Device'}</p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              {!isMock && (
+                <button
+                  className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
+                  onClick={() => {
+                    setShowMusePopup(false);
+                    // Disconnect and redirect to home to reconnect in mock mode
+                    disconnectEEG();
+                    setIsSwitching(true);
+                  }}
+                >
+                  SWITCH TO MOCK
+                </button>
+              )}
+              {isMock && (
+                <button
+                  className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 hover:bg-[var(--nes-blue)] hover:text-black"
+                  onClick={() => {
+                    setShowMusePopup(false);
+                    // Disconnect and redirect to home to reconnect to real device
+                    disconnectEEG();
+                    setIsSwitching(true);
+                  }}
+                >
+                  SWITCH TO REAL
+                </button>
+              )}
+              <button
+                className="retro-button border-[var(--nes-red)] text-[var(--nes-red)] bg-transparent px-4 py-2 hover:bg-[var(--nes-red)] hover:text-black"
+                onClick={() => {
+                  setShowMusePopup(false);
+                  disconnectEEG();
+                  setIsSwitching(true);
+                }}
+              >
+                DISCONNECT
+              </button>
+            </div>
+            <p className="text-[9px] opacity-60 mt-1">Changes will return you to HOME to reconnect.</p>
+          </div>
+        </RetroModal>
+      )}
+
+      {/* Switching overlay */}
+      {isSwitching && (
+        <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <div className="text-sm text-[var(--nes-yellow)] mb-2">switching brain...</div>
+            <div className="text-center text-3xl">{countdown}</div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
