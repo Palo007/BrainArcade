@@ -10,9 +10,9 @@ export function MuseProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [rawEEG, setRawEEG] = useState([0, 0, 0, 0]);
 
-  const connectMuseDevice = async () => {
+  const connectMuseDevice = async (options = {}) => {
     try {
-      const museDevice = await connectMuse();
+      const museDevice = await connectMuse(options);
       setMuse(museDevice);
       setIsConnected(true);
       console.log('Muse connected successfully');
