@@ -65,7 +65,7 @@ export function Credits() {
               {' '}<span className="text-[var(--nes-green)]">Interaxon</span>.
             </p>
             <p className="opacity-80">
-              A collaborative, open‑source effort by builders —
+              A collaborative, open‑source effort by builders -
               showcasing that usable neurotechnology already exists today.
             </p>
           </div>
