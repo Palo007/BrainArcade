@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useEEG } from '../../contexts/MuseContext.jsx';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
+import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
 import '../../styles/retro.css';
 
 export function SweetSpot() {
   const { isConnected } = useEEG();
   const { ensureBaseline, isBaselineReady } = useBaseline();
   const { value01 } = useJoystick('relaxation', { range: 0.4 });
+  const { value: frontalTheta, baseline: frontalThetaBaseline } = useBiomarker('frontal-midline-theta');
 
   // Smoothed height 0..1
   const [height, setHeight] = useState(0.5);
@@ -91,6 +93,22 @@ export function SweetSpot() {
               {Math.round(value01 * 100)}
             </div>
             <div className="text-[8px] text-gray-400 text-center mt-1">relaxation</div>
+          </div>
+
+          <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
+            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">MIDLINE THETA</div>
+            <div className="text-2xl text-center font-mono">
+              {frontalTheta != null ? frontalTheta.toFixed(2) : '---'}
+            </div>
+            <div className="text-[8px] text-gray-400 text-center mt-1">AF7/AF8 avg (band power)</div>
+          </div>
+
+          <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
+            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">BASELINE (MIDLINE THETA)</div>
+            <div className="text-2xl text-center font-mono">
+              {frontalThetaBaseline != null ? frontalThetaBaseline.toFixed(2) : '---'}
+            </div>
+            <div className="text-[8px] text-gray-400 text-center mt-1">recorded average</div>
           </div>
         </div>
       </div>

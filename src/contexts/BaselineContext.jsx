@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useEEG } from './MuseContext.jsx';
 import { useProcessing } from './ProcessingContext.jsx';
+import { useQuality } from './QualityContext.jsx';
 
 const BaselineContext = createContext(null);
 
@@ -9,6 +10,7 @@ export const useBaseline = () => useContext(BaselineContext);
 export function BaselineProvider({ children, defaultSeconds = 30 }) {
   const { isConnected } = useEEG();
   const { bandPowers } = useProcessing();
+  const { hasRecentExtreme } = useQuality();
 
   const [baseline, setBaseline] = useState(null);
   const [inProgress, setInProgress] = useState(false);
@@ -46,6 +48,9 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       };
     }
     if (!bandPowers || !bandPowers[0]) return;
+    // Skip epochs with extremes over threshold in the last 1s
+    const hasExtreme = [0, 1, 2, 3].some((ch) => hasRecentExtreme(ch, 1000));
+    if (hasExtreme) return; // do not accumulate this tick
     const acc = accumRef.current;
     for (let ch = 0; ch < 4; ch++) {
       const bp = bandPowers[ch];
@@ -54,7 +59,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       }
     }
     acc.ticks += 1;
-  }, [bandPowers, inProgress]);
+  }, [bandPowers, inProgress, hasRecentExtreme]);
 
   // Timer to track seconds and finish
   useEffect(() => {
@@ -129,4 +134,3 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     <BaselineContext.Provider value={value}>{children}</BaselineContext.Provider>
   );
 }
-

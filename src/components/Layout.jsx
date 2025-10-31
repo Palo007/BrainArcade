@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
+import { useQuality } from '../contexts/QualityContext.jsx';
 import { NavBar } from './NavBar';
 import '../styles/retro.css';
 import { RetroModal } from './RetroModal';
+import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
 
 /**
  * Layout - Main layout wrapper with responsive handling
@@ -12,6 +14,7 @@ import { RetroModal } from './RetroModal';
  */
 export function Layout({ children }) {
   const { isConnected, isMock, disconnectEEG } = useEEG();
+  const { quality10s } = useQuality();
   const location = useLocation();
   const navigate = useNavigate();
   const isFullScreen = location.pathname === '/' || location.pathname === '/credits';
@@ -64,7 +67,7 @@ export function Layout({ children }) {
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 aria-label="Pause / Menu"
-                className="bg-[var(--nes-dark)] border-4 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 hover:bg-[var(--nes-yellow)] hover:text-black transition-colors"
+                className="bg-[var(--nes-dark)] border-4 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 ❚❚
@@ -74,9 +77,10 @@ export function Layout({ children }) {
             {/* Muse Connected Icon */}
             {isConnected && (
               <button
-                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 border-[var(--nes-green)] px-3 py-2 hover:border-[var(--nes-yellow)] transition-colors"
+                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 px-3 py-2 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
                 onClick={() => setShowMusePopup(true)}
-                title="Muse status"
+                title={`Muse status — ${quality10s?.label || 'Good'} • ${Math.round((quality10s?.stablePct || 1) * 100)}% stable${isMock ? ' • MOCK' : ''}`}
+                style={{ borderColor: `var(${quality10s?.var || '--nes-green'})` }}
               >
                 <div className="relative">
                   {/* Brain Icon */}
@@ -89,8 +93,8 @@ export function Layout({ children }) {
                   >
                     <path
                       d="M12 2C10.34 2 9 3.34 9 5c0 .35.07.68.18 1-.26.09-.51.2-.75.35A3.97 3.97 0 004 10c0 .77.22 1.49.59 2.1-.37.61-.59 1.33-.59 2.1 0 1.7 1.06 3.14 2.56 3.71.49.93 1.32 1.63 2.31 1.94.24 1.7 1.68 3.04 3.42 3.14 1.41.08 2.67-.52 3.52-1.49.85.97 2.11 1.57 3.52 1.49 1.74-.1 3.18-1.44 3.42-3.14.99-.31 1.82-1.01 2.31-1.94C20.94 17.24 22 15.8 22 14.1c0-.77-.22-1.49-.59-2.1.37-.61.59-1.33.59-2.1 0-1.83-1.24-3.37-2.93-3.84-.24-.15-.49-.26-.75-.35.11-.32.18-.65.18-1 0-1.66-1.34-3-3-3-1.31 0-2.42.84-2.83 2.01C12.89 2.87 12.46 2 12 2z"
-                      fill="var(--nes-green)"
-                      stroke="var(--nes-green)"
+                      fill={`var(${quality10s?.var || '--nes-green'})`}
+                      stroke={`var(${quality10s?.var || '--nes-green'})`}
                       strokeWidth="1"
                     />
                     {/* EEG Wave Lines */}
@@ -103,9 +107,9 @@ export function Layout({ children }) {
                     />
                   </svg>
                   {/* Connection Indicator Dot */}
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--nes-green)] rounded-full animate-pulse border border-white"></div>
+                  <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px] text-[var(--nes-green)]">MUSE{isMock ? ' • MOCK' : ''}</span>
+                <span className="text-[8px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>MUSE{isMock ? ' • MOCK' : ''}</span>
               </button>
             )}
           </div>
@@ -195,6 +199,8 @@ export function Layout({ children }) {
           </div>
         </div>
       )}
+      {/* Global frontal quality pause overlay for games */}
+      <FrontalPauseOverlay />
       </div>
     </div>
   );

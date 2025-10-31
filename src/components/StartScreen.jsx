@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
 import { MuseConnector } from './MuseConnector';
+import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
+import { useQuality } from '../contexts/QualityContext.jsx';
 import '../styles/retro.css';
 import background from '../assets/background.JPG';
 
@@ -12,6 +14,7 @@ import background from '../assets/background.JPG';
 export function StartScreen() {
   const navigate = useNavigate();
   const { isConnected } = useEEG();
+  const { ready } = useQuality();
   const [time, setTime] = useState('00:00');
   const titleRef = useRef(null);
 
@@ -143,32 +146,38 @@ export function StartScreen() {
             </>
           ) : (
             <>
-              {/* Connected - Show Start */}
-              <div className="text-center mt-24">
-                <div className="mb-8">
-                  <div
-                    className="text-6xl sm:text-8xl rgb-text text-white mb-8 blink"
+              {/* Connected - Setup Check first, then Start */}
+              {!ready ? (
+                <div className="mt-12">
+                  <ElectrodeSetupCheck />
+                </div>
+              ) : (
+                <div className="text-center mt-24">
+                  <div className="mb-8">
+                    <div
+                      className="text-6xl sm:text-8xl rgb-text text-white mb-8 blink"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      ▶
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleStart}
+                    className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12"
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
                   >
-                    ▶
-                  </div>
+                    START
+                  </button>
+
+                  <p
+                    className="text-xs text-white opacity-60 mt-8 blink"
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    PRESS START
+                  </p>
                 </div>
-
-                <button
-                  onClick={handleStart}
-                  className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  START
-                </button>
-
-                <p
-                  className="text-xs text-white opacity-60 mt-8 blink"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  PRESS START
-                </p>
-              </div>
+              )}
             </>
           )}
         </div>

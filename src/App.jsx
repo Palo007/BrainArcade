@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MuseProvider } from './contexts/MuseContext';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
+import { QualityProvider } from './contexts/QualityContext.jsx';
 import { BaselineProvider } from './contexts/BaselineContext.jsx';
 import { BiomarkerProvider } from './contexts/BiomarkerContext.jsx';
 import { JoystickProvider } from './contexts/JoystickContext.jsx';
@@ -60,6 +61,7 @@ function App() {
   return (
     <MuseProvider>
       <ProcessingProvider>
+        <QualityProvider>
         <BaselineProvider>
           <BiomarkerProvider>
             <JoystickProvider>
@@ -95,6 +97,7 @@ function App() {
             </JoystickProvider>
           </BiomarkerProvider>
         </BaselineProvider>
+        </QualityProvider>
       </ProcessingProvider>
     </MuseProvider>
   );

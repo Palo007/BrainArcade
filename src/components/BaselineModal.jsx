@@ -1,6 +1,8 @@
 import React from 'react';
 import { RetroModal } from './RetroModal.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
+import { useQuality } from '../contexts/QualityContext.jsx';
+import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import '../styles/retro.css';
 
 export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
@@ -13,6 +15,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     start,
     isBaselineReady,
   } = useBaseline();
+  const { ready } = useQuality();
 
   if (!visible || isBaselineReady) return null;
 
@@ -23,13 +26,18 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     <RetroModal
       title={title}
       onCancel={inProgress ? undefined : hide}
-      onConfirm={inProgress ? undefined : () => start(secondsRequested)}
-      confirmLabel={inProgress ? undefined : 'START'}
+      onConfirm={inProgress ? undefined : (ready ? () => start(secondsRequested) : undefined)}
+      confirmLabel={inProgress ? undefined : (ready ? 'START' : 'WAIT')}
       showFooter={!inProgress}
     >
       <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
         <p className="text-[10px] text-[var(--nes-yellow)] mb-3">This game needs a resting baseline.</p>
-        <p className="text-[10px] mb-4">Duration: {secondsRequested}s</p>
+        <p className="text-[10px] mb-2">Duration: {secondsRequested}s</p>
+        {!inProgress && (
+          <div className="mb-3">
+            <ElectrodeSetupCheck />
+          </div>
+        )}
         <div className="w-full bg-black border border-[var(--nes-gray)] h-4 relative">
           <div
             className="bg-[var(--nes-green)] h-full transition-all"
@@ -44,4 +52,3 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     </RetroModal>
   );
 }
-
