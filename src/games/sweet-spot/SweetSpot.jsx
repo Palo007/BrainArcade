@@ -8,7 +8,7 @@ import '../../styles/retro.css';
 export function SweetSpot() {
   const { isConnected } = useEEG();
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { value01 } = useJoystick('relaxation', { range: 0.4 });
+  const { value01 } = useJoystick('relaxation', { range: 0.4, baselineCenter: 0.8 });
   const { value: frontalTheta, baseline: frontalThetaBaseline } = useBiomarker('frontal-midline-theta');
 
   // Smoothed height 0..1

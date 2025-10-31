@@ -30,7 +30,9 @@ export function JoystickProvider({ children }) {
           const ratio = baseline && baseline > 0 ? value / baseline : 1;
           // Map ratio < 1 to > 0.5
           const range = options.range ?? 0.4;
-          return clamp01(0.5 + 0.5 * ((1 - ratio) / range));
+          const centerOut = options.baselineCenter ?? 0.5; // output when ratio == 1
+          const gain = options.gain ?? 0.5; // per-range scaling
+          return clamp01(centerOut + gain * ((1 - ratio) / range));
         }
         default:
           return 0.5;
@@ -48,4 +50,3 @@ export function useJoystick(axis, options) {
   const value01 = api?.value01(axis, options) ?? 0.5;
   return { value01 };
 }
-

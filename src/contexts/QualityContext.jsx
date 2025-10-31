@@ -96,7 +96,7 @@ export function QualityProvider({ children }) {
   const anyBad = perChannelBad.some(Boolean);
   const adjusting = now < adjustingUntil;
 
-  // Readiness gating: require all-good for 5s
+  // Readiness gating: last 5s must be >=99% stable (tolerates brief blips)
   const goodSinceRef = useRef(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -105,15 +105,17 @@ export function QualityProvider({ children }) {
       setReady(false);
       return;
     }
-    if (!anyBad && !adjusting) {
-      if (!goodSinceRef.current) goodSinceRef.current = Date.now();
-      const elapsed = Date.now() - goodSinceRef.current;
-      setReady(elapsed >= 5000);
-    } else {
-      goodSinceRef.current = null;
+    const t = now;
+    const last5 = historyRef.current.filter((x) => x.t >= t - 5000);
+    const total = last5.length;
+    if (total === 0) {
       setReady(false);
+      return;
     }
-  }, [isConnected, anyBad, adjusting]);
+    const bad = last5.reduce((s, x) => s + (x.bad ? 1 : 0), 0);
+    const ratioBad = bad / total;
+    setReady(ratioBad <= MAX_BAD_RATIO_1S);
+  }, [isConnected, now]);
 
   // Helper to check if a recent extreme occurred within windowMs for a channel
   const hasRecentExtreme = (ch, windowMs = 1000) => {
@@ -142,7 +144,9 @@ export function QualityProvider({ children }) {
   }, [now, anyBad, adjusting]);
 
   const quality10s = useMemo(() => {
-    const arr = historyRef.current;
+    // Use 15s window for UI quality indicators
+    const t = now;
+    const arr = historyRef.current.filter((x) => x.t >= t - 15000);
     const total = arr.length || 1;
     const bad = arr.reduce((s, x) => s + (x.bad ? 1 : 0), 0);
     const badRatio = bad / total;
@@ -160,6 +164,16 @@ export function QualityProvider({ children }) {
     return { badRatio, stablePct, color, var: colorVar, label };
   }, [now]);
 
+  // 15s quality summary for potential re-check trigger
+  const quality15s = useMemo(() => {
+    const t = now;
+    const arr = historyRef.current.filter((x) => x.t >= t - 15000);
+    const total = arr.length || 1;
+    const bad = arr.reduce((s, x) => s + (x.bad ? 1 : 0), 0);
+    const badRatio = bad / total;
+    return { badRatio, total };
+  }, [now]);
+
   const value = useMemo(() => ({
     sampleRate: SAMPLE_RATE,
     threshold: THRESH_SPIKE,
@@ -172,7 +186,9 @@ export function QualityProvider({ children }) {
     CHANNEL_INFO,
     hasRecentExtreme,
     quality10s,
-  }), [currentAbs, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s]);
+    quality15s,
+    recheck15sBad: (quality15s.badRatio >= 0.5),
+  }), [currentAbs, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s]);
 
   return <QualityContext.Provider value={value}>{children}</QualityContext.Provider>;
 }

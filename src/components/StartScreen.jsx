@@ -14,7 +14,9 @@ import background from '../assets/background.JPG';
 export function StartScreen() {
   const navigate = useNavigate();
   const { isConnected } = useEEG();
-  const { ready } = useQuality();
+  const { ready, recheck15sBad } = useQuality();
+  const [passedSetup, setPassedSetup] = useState(false);
+  const [showingRecheck, setShowingRecheck] = useState(false);
   const [time, setTime] = useState('00:00');
   const titleRef = useRef(null);
 
@@ -31,6 +33,18 @@ export function StartScreen() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Mark setup as passed once first ready occurs
+  useEffect(() => {
+    if (ready && !passedSetup) setPassedSetup(true);
+  }, [ready, passedSetup]);
+
+  // After initial pass, re-show check only if 15s window is >=50% bad; keep until ready again
+  useEffect(() => {
+    if (!passedSetup) return;
+    if (!showingRecheck && recheck15sBad) setShowingRecheck(true);
+    if (showingRecheck && ready) setShowingRecheck(false);
+  }, [passedSetup, recheck15sBad, showingRecheck, ready]);
 
   // Split text into chars for animation
   useEffect(() => {
@@ -147,7 +161,7 @@ export function StartScreen() {
           ) : (
             <>
               {/* Connected - Setup Check first, then Start */}
-              {!ready ? (
+              {((!passedSetup && !ready) || showingRecheck) ? (
                 <div className="mt-12">
                   <ElectrodeSetupCheck />
                 </div>
