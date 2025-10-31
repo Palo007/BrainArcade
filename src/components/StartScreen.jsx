@@ -142,7 +142,7 @@ export function StartScreen() {
           ) : (
             <>
               {/* Connected - Show Start */}
-              <div className="text-center">
+              <div className="text-center mt-24">
                 <div className="mb-8">
                   <div
                     className="text-6xl sm:text-8xl rgb-text text-white mb-8 blink"
@@ -154,7 +154,7 @@ export function StartScreen() {
 
                 <button
                   onClick={handleStart}
-                  className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white"
+                  className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   START
