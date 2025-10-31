@@ -61,7 +61,7 @@ export function Credits() {
               </a>.
             </p>
             <p>
-              Brain data powered by <span className="text-[var(--nes-blue)]">Muse</span> by
+              Neural signals acquired with <span className="text-[var(--nes-blue)]">Muse</span> by
               {' '}<span className="text-[var(--nes-green)]">Interaxon</span>.
             </p>
             <p className="opacity-80">

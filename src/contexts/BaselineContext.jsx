@@ -36,6 +36,14 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     setInProgress(true);
   }, [inProgress, defaultSeconds]);
 
+  const cancel = useCallback(() => {
+    if (!inProgress) return;
+    // Abort accumulation and return to pre-start state, keep modal visible
+    accumRef.current = null;
+    setInProgress(false);
+    setSecondsElapsed(0);
+  }, [inProgress]);
+
   // Accumulate baseline using periodic bandPowers snapshots (every ~250ms)
   const accumRef = useRef(null);
   useEffect(() => {
@@ -103,11 +111,10 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     setVisible(true);
     return new Promise((resolve) => {
       resolverRef.current = { resolve };
-      // Kick off after showing UI; allow callers to auto-start via options.autoStart
-      if (options.autoStart !== false) {
+      // Do NOT auto-start by default; show Start button in modal
+      setSecondsRequested(seconds);
+      if (options.autoStart === true) {
         start(seconds);
-      } else {
-        setSecondsRequested(seconds);
       }
     });
   }, [baseline, defaultSeconds, start]);
@@ -124,11 +131,12 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     secondsElapsed,
     visible,
     start,
+    cancel,
     ensureBaseline,
     hide: () => setVisible(false),
     show: () => setVisible(true),
     resetBaseline,
-  }), [baseline, inProgress, secondsRequested, secondsElapsed, visible, ensureBaseline, start, resetBaseline]);
+  }), [baseline, inProgress, secondsRequested, secondsElapsed, visible, ensureBaseline, start, cancel, resetBaseline]);
 
   return (
     <BaselineContext.Provider value={value}>{children}</BaselineContext.Provider>

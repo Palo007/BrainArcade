@@ -32,6 +32,8 @@ export function QualityProvider({ children }) {
   const lastValRef = useRef([0, 0, 0, 0]);
   const [currentAbs, setCurrentAbs] = useState([0, 0, 0, 0]);
   const [adjustingUntil, setAdjustingUntil] = useState(0);
+  const zerosSinceRef = useRef(null);
+  const [lostZero6s, setLostZero6s] = useState(false);
 
   // Heartbeat to advance time and prune
   useEffect(() => {
@@ -47,6 +49,8 @@ export function QualityProvider({ children }) {
       sampleTimesRef.current = [];
       setCurrentAbs([0, 0, 0, 0]);
       setAdjustingUntil(0);
+      zerosSinceRef.current = null;
+      setLostZero6s(false);
     }
   }, [isConnected]);
 
@@ -56,6 +60,14 @@ export function QualityProvider({ children }) {
     const absVals = rawEEG.map((v) => Math.abs(v || 0));
     setCurrentAbs(absVals);
     const t = Date.now();
+    // Track sustained zeros across all channels
+    const allZero = absVals.every((v) => v === 0);
+    if (allZero) {
+      if (zerosSinceRef.current == null) zerosSinceRef.current = t;
+    } else {
+      zerosSinceRef.current = null;
+      if (lostZero6s) setLostZero6s(false);
+    }
     // Record sample time per raw tick
     sampleTimesRef.current.push(t);
     for (let ch = 0; ch < 4; ch++) {
@@ -78,6 +90,14 @@ export function QualityProvider({ children }) {
       while (arr.length && arr[0] < keepSince) arr.shift();
     }
   }, [rawEEG, isConnected]);
+
+  // Detect sustained zeros condition over 6s
+  useEffect(() => {
+    if (!isConnected) return;
+    if (zerosSinceRef.current != null && now - zerosSinceRef.current >= 6000) {
+      if (!lostZero6s) setLostZero6s(true);
+    }
+  }, [now, isConnected, lostZero6s]);
 
   // Compute quality per channel using time-based rule: in last 1s, >=99% of samples must be below threshold to be good
   const perChannelBad = useMemo(() => {
@@ -188,7 +208,8 @@ export function QualityProvider({ children }) {
     quality10s,
     quality15s,
     recheck15sBad: (quality15s.badRatio >= 0.5),
-  }), [currentAbs, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s]);
+    lostZero6s,
+  }), [currentAbs, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s, lostZero6s]);
 
   return <QualityContext.Provider value={value}>{children}</QualityContext.Provider>;
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQuality, CHANNEL_INFO } from '../contexts/QualityContext.jsx';
 import '../styles/retro.css';
 
-export function ElectrodeSetupCheck({ onReady }) {
+export function ElectrodeSetupCheck({ onReady, showValues = true }) {
   const { currentAbs, perChannelBad, adjusting, ready } = useQuality();
   const [shownReady, setShownReady] = useState(false);
 
@@ -43,7 +43,11 @@ export function ElectrodeSetupCheck({ onReady }) {
           return (
             <div key={info.id} className={`flex items-center justify-between border px-2 py-1 text-[10px] ${bad ? 'border-[var(--nes-red)]' : 'border-[var(--nes-green)]'}`}>
               <span className={`${bad ? 'text-[var(--nes-red)]' : 'text-[var(--nes-green)]'}`}>{info.label}</span>
-              <span className="opacity-80">{abs}</span>
+              {showValues ? (
+                <span className="opacity-80">{abs}</span>
+              ) : (
+                <span className={`w-2 h-2 rounded-full ${bad ? 'bg-[var(--nes-red)]' : 'bg-[var(--nes-green)]'}`}></span>
+              )}
             </div>
           );
         })}
@@ -60,4 +64,3 @@ export function ElectrodeSetupCheck({ onReady }) {
     </div>
   );
 }
-

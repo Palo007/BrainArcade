@@ -12,6 +12,7 @@ import { Credits } from './components/Credits';
 import { games } from './games/games.config';
 import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
+import { LostBrainModal } from './components/LostBrainModal.jsx';
 
 /**
  * GamesPage - Main games listing and selection page
@@ -92,6 +93,8 @@ function App() {
                 </Routes>
                 {/* Global baseline modal */}
                 <BaselineModal />
+                {/* Global lost-brain modal */}
+                <LostBrainModal />
                 </Layout>
               </Router>
             </JoystickProvider>

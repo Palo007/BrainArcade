@@ -161,7 +161,9 @@ export function StartScreen() {
           ) : (
             <>
               {/* Connected - Setup Check first, then Start */}
-              {((!passedSetup && !ready) || showingRecheck) ? (
+              {/* Show electrode check immediately after connect until first ready pass; */}
+              {/* Also show again when recheck condition is active. */}
+              {((!passedSetup) || showingRecheck) ? (
                 <div className="mt-12">
                   <ElectrodeSetupCheck />
                 </div>
