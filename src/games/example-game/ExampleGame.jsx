@@ -53,51 +53,53 @@ export function ExampleGame() {
       <div className="flex gap-4 items-stretch">
         {/* EEG Waveform Visualization (Left - main column) */}
         <div className="flex-1 border-4 border-[var(--nes-blue)] p-4 bg-black">
-          <div className="text-xs text-[var(--nes-blue)] mb-2">WAVEFORM</div>
-          <div className="space-y-4">
-            {channels.map((channel, channelIdx) => (
-              <div key={channel} className="relative h-12">
+          <div className="flex flex-col h-full">
+            <div className="text-xs text-[var(--nes-blue)] mb-2">WAVEFORM</div>
+            <div className="flex flex-col gap-4 flex-1">
+              {channels.map((channel, channelIdx) => (
+                <div key={channel} className="relative flex-1">
                 {/* Channel Label */}
-                <div className="absolute left-0 top-0 text-[8px] text-gray-500">
-                  {channel}
-                </div>
+                  <div className="absolute left-0 top-0 text-[8px] text-gray-500">
+                    {channel}
+                  </div>
 
                 {/* Waveform */}
-                <svg className="w-full h-full" viewBox="0 0 400 48">
+                  <svg className="w-full h-full" viewBox="0 0 400 48" preserveAspectRatio="none">
                   {/* Center line */}
-                  <line
-                    x1="0"
-                    y1="24"
-                    x2="400"
-                    y2="24"
-                    stroke="rgba(255,255,255,0.1)"
-                    strokeWidth="1"
-                  />
-
-                  {/* EEG Signal */}
-                  {eegHistory.length > 1 && (
-                    <polyline
-                      fill="none"
-                      stroke={
-                        channelIdx === 0 ? 'var(--nes-red)' :
-                        channelIdx === 1 ? 'var(--nes-yellow)' :
-                        channelIdx === 2 ? 'var(--nes-blue)' :
-                        'var(--nes-green)'
-                      }
-                      strokeWidth="2"
-                      points={eegHistory
-                        .map((sample, idx) => {
-                          const x = (idx / eegHistory.length) * 400;
-                          const value = sample[channelIdx] || 0;
-                          const y = 24 - (value / maxValue) * 20; // Scale to fit
-                          return `${x},${y}`;
-                        })
-                        .join(' ')}
+                    <line
+                      x1="0"
+                      y1="24"
+                      x2="400"
+                      y2="24"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="1"
                     />
-                  )}
-                </svg>
-              </div>
-            ))}
+
+                {/* EEG Signal */}
+                    {eegHistory.length > 1 && (
+                      <polyline
+                        fill="none"
+                        stroke={
+                          channelIdx === 0 ? 'var(--nes-red)' :
+                          channelIdx === 1 ? 'var(--nes-yellow)' :
+                          channelIdx === 2 ? 'var(--nes-blue)' :
+                          'var(--nes-green)'
+                        }
+                        strokeWidth="2"
+                        points={eegHistory
+                          .map((sample, idx) => {
+                            const x = (idx / eegHistory.length) * 400;
+                            const value = sample[channelIdx] || 0;
+                            const y = 24 - (value / maxValue) * 20; // Scale to fit
+                            return `${x},${y}`;
+                          })
+                          .join(' ')}
+                      />
+                    )}
+                  </svg>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -106,9 +108,9 @@ export function ExampleGame() {
           {rawEEG && rawEEG.map((value, idx) => (
             <div
               key={idx}
-              className="border-4 border-[var(--nes-purple)] p-4 bg-[var(--nes-dark)]"
+              className="border-4 border-[var(--nes-blue)] p-4 bg-[var(--nes-dark)]"
             >
-              <div className="text-[10px] text-[var(--nes-purple)] mb-2">
+              <div className="text-[10px] text-[var(--nes-blue)] mb-2">
                 {channels[idx]}
               </div>
               <div className="text-2xl font-mono">
