@@ -14,7 +14,6 @@ export function Layout({ children }) {
   const { isConnected, isMock, disconnectEEG } = useEEG();
   const location = useLocation();
   const navigate = useNavigate();
-  const isStartScreen = location.pathname === '/';
   const isFullScreen = location.pathname === '/' || location.pathname === '/credits';
   const isGamePage = location.pathname.startsWith('/game/');
   const [showMenu, setShowMenu] = useState(false);

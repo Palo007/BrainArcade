@@ -20,6 +20,7 @@
  */
 
 import { ExampleGame } from './example-game/ExampleGame';
+import { SweetSpot } from './sweet-spot/SweetSpot.jsx';
 
 export const games = [
   {
@@ -28,6 +29,13 @@ export const games = [
     description: 'See your brainwaves in real-time with EEG visualization',
     icon: '🧠',
     component: ExampleGame,
+  },
+  {
+    id: 'sweet-spot',
+    name: 'SWEET SPOT',
+    description: 'Float the ball by relaxing',
+    icon: '🟡',
+    component: SweetSpot,
   },
   // Add more games here!
   // {

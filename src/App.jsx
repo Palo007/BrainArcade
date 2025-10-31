@@ -1,11 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MuseProvider } from './contexts/MuseContext';
+import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
+import { BaselineProvider } from './contexts/BaselineContext.jsx';
+import { BiomarkerProvider } from './contexts/BiomarkerContext.jsx';
+import { JoystickProvider } from './contexts/JoystickContext.jsx';
 import { Layout } from './components/Layout';
 import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
 import { Credits } from './components/Credits';
 import { games } from './games/games.config';
 import './styles/retro.css';
+import { BaselineModal } from './components/BaselineModal.jsx';
 
 /**
  * GamesPage - Main games listing and selection page
@@ -54,9 +59,13 @@ function GamePage({ gameId }) {
 function App() {
   return (
     <MuseProvider>
-      <Router>
-        <Layout>
-          <Routes>
+      <ProcessingProvider>
+        <BaselineProvider>
+          <BiomarkerProvider>
+            <JoystickProvider>
+              <Router>
+                <Layout>
+                  <Routes>
             {/* Home / Start Screen */}
             <Route path="/" element={<StartScreen />} />
 
@@ -78,9 +87,15 @@ function App() {
 
             {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </Router>
+                </Routes>
+                {/* Global baseline modal */}
+                <BaselineModal />
+                </Layout>
+              </Router>
+            </JoystickProvider>
+          </BiomarkerProvider>
+        </BaselineProvider>
+      </ProcessingProvider>
     </MuseProvider>
   );
 }

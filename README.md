@@ -202,6 +202,54 @@ npm run build
 npm run preview
 ```
 
+## EEG Processing Infrastructure
+
+Reusable building blocks for EEG-driven games are included:
+
+- Processing: `ProcessingProvider` computes Welch PSD (2s window, 1s overlap) and band powers for each channel at ~4Hz. Access via `useProcessing()`.
+- Baseline: `BaselineProvider` records a session baseline of band powers for a configurable duration (default 30s). Trigger via `useBaseline().ensureBaseline({ seconds })`. Baseline persists until device disconnect.
+- Biomarkers: `BiomarkerProvider` exposes derived markers and normalized values vs baseline. Use `useBiomarker(name)` or `useBiomarkers()`.
+- Joystick: `BiomarkerJoystick` renders a normalized 0–1 control stream from a biomarker to plug into gameplay.
+
+Biomarker keys:
+
+- `frontal-midline-theta` — avg theta across AF7/AF8 (approximation)
+- `frontal-alpha-asymmetry` — alpha(AF7) − alpha(AF8)
+- Bands (avg): `alpha`, `beta`, `theta`, `delta`, `gamma`
+- Bands (per-side): `alpha-left|right`, `beta-left|right`, `theta-left|right`, `delta-left|right`, `gamma-left|right`
+
+Usage in a game component:
+
+```jsx
+import React, { useEffect } from 'react';
+import { useBaseline } from '../contexts/BaselineContext.jsx';
+import { useBiomarker } from '../contexts/BiomarkerContext.jsx';
+import { BiomarkerJoystick } from '../components/BiomarkerJoystick.jsx';
+
+export function MyGame() {
+  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { norm01 } = useBiomarker('frontal-midline-theta', { range: 0.4 });
+
+  useEffect(() => {
+    ensureBaseline({ seconds: 30 });
+  }, [ensureBaseline]);
+
+  // Use norm01 (0..1, 0.5 at baseline) to drive gameplay
+  return (
+    <div>
+      {!isBaselineReady && <div>Waiting for baseline…</div>}
+      <BiomarkerJoystick
+        biomarker="frontal-midline-theta"
+        label="Focus"
+        hintDown="relaxation"
+        hintUp="cognitive control"
+      />
+      <div>Control value: {Math.round(norm01 * 100)}</div>
+    </div>
+  );
+}
+```
+
 ## Tech Stack
 
 - **React 19** - UI framework
