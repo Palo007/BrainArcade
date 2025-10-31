@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
 import { MuseConnector } from './MuseConnector';
 import '../styles/retro.css';
+import background from '../assets/background.JPG';
 
 /**
  * StartScreen - VHS/Retro video game start screen
@@ -49,7 +50,15 @@ export function StartScreen() {
   };
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: '#2b52ff' }}>
+    <div
+      className="absolute inset-0 overflow-hidden"
+      style={{
+        backgroundImage: `url(${background})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       {/* VHS Effects */}
       <div className="scanlines-vhs"></div>
       <div className="noise"></div>
@@ -100,26 +109,26 @@ export function StartScreen() {
         </div>
 
         {/* Center - Main UI */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <div className="absolute left-20 top-50">
           {!isConnected ? (
             <>
               {/* Subtitle */}
-              <div className="mb-12 text-center">
+              <div className="mb-12-center">
                 <p
-                  className="text-2xl text-white rgb-text uppercase"
+                  className="text-xl text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
-                  Use your thoughts as a remote
+                  Use your thoughts as a joystick
                 </p>
               </div>
 
               {/* Connection UI */}
-              <div className="w-full max-w-md">
+              <div className="w-full max-w-md mt-24">
                 <MuseConnector onConnected={() => {}} />
               </div>
 
               {/* Instructions */}
-              <div className="mt-8 text-center">
+              <div className="mt-8">
                 <p
                   className="text-md text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}

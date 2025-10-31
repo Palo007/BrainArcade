@@ -33,7 +33,7 @@ export function MuseConnector({ onConnected }) {
   }
 
   return (
-    <div className="text-center">
+    <div className="text-left">
       <button
         onClick={handleConnect}
         disabled={isConnecting}
