@@ -34,10 +34,12 @@ export function NavBar({ onActiveGameClick } = {}) {
                 }
               `}
               onClick={(e) => {
-                if (isActive && onActiveGameClick) {
+                // If already on this game, prevent navigation but still close menu
+                if (isActive) {
                   e.preventDefault();
-                  onActiveGameClick(game);
                 }
+                // Always notify parent to close modal/menu if provided
+                if (onActiveGameClick) onActiveGameClick(game);
               }}
             >
               <div className="flex items-center gap-4">

@@ -29,14 +29,20 @@ export function Layout({ children }) {
     setShowMenu(false);
   }, [location.pathname]);
 
-  // Close on ESC key
+  // Close overlays on ESC key (menu and Muse popup)
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape' && showMenu) setShowMenu(false);
+      if (e.key === 'Escape') {
+        if (showMusePopup) {
+          setShowMusePopup(false);
+          return;
+        }
+        if (showMenu) setShowMenu(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showMenu]);
+  }, [showMenu, showMusePopup]);
 
   // Handle switching countdown flow
   useEffect(() => {
@@ -109,7 +115,7 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>MUSE{isMock ? ' • MOCK' : ''}</span>
+                <span className="text-[8px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
               </button>
             )}
           </div>
@@ -144,7 +150,7 @@ export function Layout({ children }) {
         )}
         {/* Muse popup for switch/disconnect */}
       {showMusePopup && (
-        <RetroModal title="MUSE OPTIONS" onCancel={() => setShowMusePopup(false)} showFooter={false}>
+        <RetroModal title="MUSE OPTIONS" onCancel={() => setShowMusePopup(false)} cancelLabel="CANCEL" showFooter={true}>
           <div className="space-y-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
             <p className="text-[10px] opacity-80">Connected via {isMock ? 'Mock Data' : 'Real Device'}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
