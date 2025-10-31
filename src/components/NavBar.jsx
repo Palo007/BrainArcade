@@ -11,11 +11,11 @@ export function NavBar({ onActiveGameClick } = {}) {
 
   return (
     <nav className="mb-8 pb-4 border-b-4 border-[var(--nes-gray)]">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         <Link to="/" className="text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors">
           ← HOME
         </Link>
-        <h2 className="text-lg text-[var(--nes-green)] mr-32">SELECT GAME</h2>
+        <h2 className="text-lg text-[var(--nes-green)] ml-6">| SELECT GAME</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
