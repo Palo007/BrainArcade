@@ -3,6 +3,7 @@ import { MuseProvider } from './contexts/MuseContext';
 import { Layout } from './components/Layout';
 import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
+import { Credits } from './components/Credits';
 import { games } from './games/games.config';
 import './styles/retro.css';
 
@@ -61,6 +62,9 @@ function App() {
 
             {/* Games List */}
             <Route path="/games" element={<GamesPage />} />
+
+            {/* Credits */}
+            <Route path="/credits" element={<Credits />} />
 
             {/* Individual Game Routes */}
             <Route

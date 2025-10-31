@@ -15,6 +15,7 @@ export function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isStartScreen = location.pathname === '/';
+  const isFullScreen = location.pathname === '/' || location.pathname === '/credits';
   const isGamePage = location.pathname.startsWith('/game/');
   const [showMenu, setShowMenu] = useState(false);
   const [showMusePopup, setShowMusePopup] = useState(false);
@@ -55,9 +56,9 @@ export function Layout({ children }) {
   // Unified layout (applies to all routes); content varies per route
   return (
     <div className="arcade-frame">
-      <div className={`arcade-window ${isStartScreen ? '' : 'bg-[#181818]'}`}>
+      <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
-        {(isGamePage || isConnected) && !isStartScreen && (
+        {(isGamePage || isConnected) && !isFullScreen && (
           <div className="absolute top-10 right-10 z-50 flex items-center gap-4">
             {/* Pause button (only on game pages) */}
             {isGamePage && (
@@ -112,7 +113,7 @@ export function Layout({ children }) {
         )}
 
         {/* Main Container */}
-        {isStartScreen ? (
+        {isFullScreen ? (
           <>{children}</>
         ) : (
           <div className="w-full h-full px-4 py-8">

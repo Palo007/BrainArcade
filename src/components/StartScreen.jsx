@@ -98,14 +98,16 @@ export function StartScreen() {
           </div>
         </div>
 
-        {/* Bottom Right - Mode */}
+        {/* Bottom Right - Credits Button */}
         <div className="absolute right-20 bottom-20">
-          <div
-            className="text-xs sm:text-sm text-white opacity-70"
+          <button
+            onClick={() => navigate('/credits')}
+            className="text-xs sm:text-sm text-white opacity-80 hover:opacity-100 underline underline-offset-4"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
+            aria-label="Open Credits"
           >
-            EEG MODE
-          </div>
+            CREDITS
+          </button>
         </div>
 
         {/* Center - Main UI */}
