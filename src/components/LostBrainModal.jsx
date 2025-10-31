@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RetroModal } from './RetroModal.jsx';
+import { useEEG } from '../contexts/MuseContext';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import '../styles/retro.css';
 
@@ -10,12 +11,15 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
   const [count, setCount] = useState(redirectSeconds);
   const navigate = useNavigate();
   const location = useLocation();
+  const redirectedRef = useRef(false);
+  const { disconnectEEG } = useEEG();
 
   // When condition triggers, show modal and start countdown
   useEffect(() => {
     if (lostZero6s) {
       setShow(true);
       setCount(redirectSeconds);
+      redirectedRef.current = false;
     } else {
       setShow(false);
     }
@@ -27,8 +31,16 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
       setCount((c) => {
         if (c <= 1) {
           clearInterval(id);
-          // Redirect to start screen unless already there
-          if (location.pathname !== '/') navigate('/', { replace: true });
+          if (!redirectedRef.current) {
+            redirectedRef.current = true;
+            // Disconnect to ensure fresh start screen state
+            try { disconnectEEG(); } catch {}
+            if (location.pathname !== '/') {
+              navigate('/', { replace: true });
+            }
+            // Ensure modal hides after redirect to avoid appearing on home
+            setShow(false);
+          }
           return 0;
         }
         return c - 1;
@@ -37,7 +49,8 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
     return () => clearInterval(id);
   }, [show, navigate, location.pathname]);
 
-  if (!show) return null;
+  // Hide the modal on the home screen regardless
+  if (!show || location.pathname === '/') return null;
 
   return (
     <RetroModal
@@ -57,4 +70,3 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
     </RetroModal>
   );
 }
-

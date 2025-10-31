@@ -26,7 +26,7 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
   }, [perChannelBad]);
 
   return (
-    <div className="w-full max-w-lg border-4 border-white bg-[var(--nes-dark)] p-4 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+    <div className="w-full max-w-lg min-w-[22rem] border-4 border-white bg-[var(--nes-dark)] p-4 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
       <h4 className="text-[var(--nes-yellow)] text-xs mb-3">ELECTRODE CHECK</h4>
       {adjusting ? (
         <div className="text-[10px] flex items-center gap-2 mb-3">
@@ -37,14 +37,20 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
         <p className="text-[10px] opacity-80 mb-2">Hold still. Ensure contacts on skin.</p>
       )}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        {CHANNEL_INFO.map((info, idx) => {
+        {[
+          // Desired visual order:
+          // Row 1: left forehead (AF7), right forehead (AF8)
+          // Row 2: left ear (TP9), right ear (TP10)
+          1, 2, 0, 3,
+        ].map((idx) => {
+          const info = CHANNEL_INFO[idx];
           const abs = Math.round(Math.abs(currentAbs[idx] || 0));
           const bad = perChannelBad[idx];
           return (
             <div key={info.id} className={`flex items-center justify-between border px-2 py-1 text-[10px] ${bad ? 'border-[var(--nes-red)]' : 'border-[var(--nes-green)]'}`}>
               <span className={`${bad ? 'text-[var(--nes-red)]' : 'text-[var(--nes-green)]'}`}>{info.label}</span>
               {showValues ? (
-                <span className="opacity-80">{abs}</span>
+                <span className="opacity-80 font-mono tabular-nums w-12 text-right">{abs}</span>
               ) : (
                 <span className={`w-2 h-2 rounded-full ${bad ? 'bg-[var(--nes-red)]' : 'bg-[var(--nes-green)]'}`}></span>
               )}

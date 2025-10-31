@@ -17,6 +17,8 @@ export function StartScreen() {
   const { ready, recheck15sBad } = useQuality();
   const [passedSetup, setPassedSetup] = useState(false);
   const [showingRecheck, setShowingRecheck] = useState(false);
+  const [showLoadingQC, setShowLoadingQC] = useState(false);
+  const [hasEnteredStartPhase, setHasEnteredStartPhase] = useState(false);
   const [time, setTime] = useState('00:00');
   const titleRef = useRef(null);
 
@@ -42,9 +44,34 @@ export function StartScreen() {
   // After initial pass, re-show check only if 15s window is >=50% bad; keep until ready again
   useEffect(() => {
     if (!passedSetup) return;
+    if (hasEnteredStartPhase) return; // once in start phase, never go back to checks
     if (!showingRecheck && recheck15sBad) setShowingRecheck(true);
     if (showingRecheck && ready) setShowingRecheck(false);
-  }, [passedSetup, recheck15sBad, showingRecheck, ready]);
+  }, [passedSetup, recheck15sBad, showingRecheck, ready, hasEnteredStartPhase]);
+
+  // When Muse connects, show a brief loading screen before quality check
+  useEffect(() => {
+    let timer;
+    if (isConnected) {
+      setShowLoadingQC(true);
+      timer = setTimeout(() => {
+        setShowLoadingQC(false);
+      }, 3000);
+    } else {
+      // If disconnected, stop loading indicator
+      setShowLoadingQC(false);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isConnected]);
+
+  // Once quality is valid after loading, lock into start phase permanently
+  useEffect(() => {
+    if (isConnected && ready && !showLoadingQC && !hasEnteredStartPhase) {
+      setHasEnteredStartPhase(true);
+    }
+  }, [isConnected, ready, showLoadingQC, hasEnteredStartPhase]);
 
   // Split text into chars for animation
   useEffect(() => {
@@ -160,14 +187,17 @@ export function StartScreen() {
             </>
           ) : (
             <>
-              {/* Connected - Setup Check first, then Start */}
-              {/* Show electrode check immediately after connect until first ready pass; */}
-              {/* Also show again when recheck condition is active. */}
-              {((!passedSetup) || showingRecheck) ? (
-                <div className="mt-12">
-                  <ElectrodeSetupCheck />
+              {/* Connected flow: 3s loading -> electrode check -> start phase (locked) */}
+              {showLoadingQC && !hasEnteredStartPhase ? (
+                <div className="text-center mt-24">
+                  <p
+                    className="text-xl text-white rgb-text"
+                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  >
+                    loading quality check...
+                  </p>
                 </div>
-              ) : (
+              ) : hasEnteredStartPhase || (ready && !showLoadingQC && passedSetup && !showingRecheck) ? (
                 <div className="text-center mt-24">
                   <div className="mb-8">
                     <div
@@ -192,6 +222,10 @@ export function StartScreen() {
                   >
                     PRESS START
                   </p>
+                </div>
+              ) : (
+                <div className="mt-12">
+                  <ElectrodeSetupCheck />
                 </div>
               )}
             </>

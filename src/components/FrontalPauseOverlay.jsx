@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuality } from '../contexts/QualityContext.jsx';
+import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { RetroModal } from './RetroModal.jsx';
 
 export function FrontalPauseOverlay() {
   const { frontalBad, adjusting } = useQuality();
   const location = useLocation();
   const isGamePage = location.pathname.startsWith('/game/');
+  const { visible: baselineVisible } = useBaseline();
 
   // Debounce to avoid flicker; require bad for >1.5s to show, and good for >1.5s to hide
   const [visible, setVisible] = useState(false);
@@ -33,7 +35,8 @@ export function FrontalPauseOverlay() {
     return () => clearInterval(id);
   }, [badSince, goodSince]);
 
-  if (!isGamePage || !visible) return null;
+  // Suppress during baseline interaction (baseline modal handles quality guidance)
+  if (!isGamePage || !visible || baselineVisible) return null;
 
   return (
     <RetroModal title={adjusting ? 'EVALUATING SETUP…' : 'PAUSED: CHECK ELECTRODES'} showFooter={false}>
@@ -57,4 +60,3 @@ export function FrontalPauseOverlay() {
     </RetroModal>
   );
 }
-
