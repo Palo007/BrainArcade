@@ -40,8 +40,7 @@ function GamePage({ gameId }) {
 
   return (
     <div>
-      <NavBar />
-      <div className="mt-8">
+      <div className="mt-0">
         <GameComponent />
       </div>
     </div>

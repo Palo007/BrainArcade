@@ -6,7 +6,7 @@ import '../styles/retro.css';
  * NavBar - Navigation menu for all registered games
  * Automatically displays games from games.config.js
  */
-export function NavBar() {
+export function NavBar({ onActiveGameClick } = {}) {
   const location = useLocation();
 
   return (
@@ -33,6 +33,12 @@ export function NavBar() {
                   : 'border-[var(--nes-gray)] hover:border-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:bg-opacity-10'
                 }
               `}
+              onClick={(e) => {
+                if (isActive && onActiveGameClick) {
+                  e.preventDefault();
+                  onActiveGameClick(game);
+                }
+              }}
             >
               <div className="flex items-center gap-4">
                 {/* Game Icon */}
