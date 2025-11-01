@@ -3,8 +3,7 @@ import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { JOYSTICK_AXES } from '../../contexts/JoystickContext.jsx';
 import '../../styles/retro.css';
-// Use string path so missing asset doesn't break build
-const BRAIN_IMG_PATH = '/src/games/joystick-visualizer/assets/brain_command_center.png';
+import brainCommandCenterImg from './assets/brain_command_center.png';
 
 function AxisTile({ axis }) {
   const { value01 } = useJoystick(axis, {
@@ -63,7 +62,7 @@ export function BrainCommandCenter() {
           {/* Left: Image */}
           <div className="flex-shrink-0">
             <img
-              src={BRAIN_IMG_PATH}
+              src={brainCommandCenterImg}
               alt="Brain Command Center"
               className="select-none"
               draggable={false}
