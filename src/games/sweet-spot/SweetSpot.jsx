@@ -3,6 +3,10 @@ import { useEEG } from '../../contexts/MuseContext.jsx';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
+import { useGameHealth } from '../../hooks/useGameHealth.js';
+import { useGameScore } from '../../hooks/useGameScore.js';
+import { PixelHearts } from '../../components/PixelHearts.jsx';
+import { GameOverModal } from '../../components/GameOverModal.jsx';
 import '../../styles/retro.css';
 import chillImg from './assets/chill.png';
 import worriedImg from './assets/worried.png';
@@ -12,12 +16,35 @@ export function SweetSpot() {
   const { isConnected } = useEEG();
   const { ensureBaseline, isBaselineReady } = useBaseline();
   // Level 1: Cognitive joystick (0..1) for focus, built from FMT vs baseline
-  const { value01 } = useJoystick('focus', { range: 0.4, baselineCenter: 0.5 });
+  const { value01 } = useJoystick('focus', {
+    range: 0.4,
+    baselineCenter: 0.5,
+    autoAdjustBaseline: true // Enable adaptive baseline adjustment
+  });
   const { value: frontalTheta, baseline: frontalThetaBaseline } = useBiomarker('frontal-midline-theta');
 
   // Smoothed height 0..1
   const [height, setHeight] = useState(0.5);
   const rafRef = useRef(null);
+
+  // Calculate score from height
+  const score = Math.round(height * 100);
+
+  // Game mechanics: health and scoring
+  const { health, isDead } = useGameHealth({
+    initialHealth: 100,
+    drainWhen: score < 40,
+    drainRate: 5,
+  });
+
+  const { score: gameScore, velocity, isAccumulating } = useGameScore({
+    joystickValue: value01,
+    baseRate: 10,
+    minThreshold: 0.4,
+    dropThreshold: 0.1,
+    maxVelocity: 5,
+    velocityBuildRate: 0.1,
+  });
 
   // Generate random stars once
   const stars = useMemo(() => {
@@ -58,10 +85,13 @@ export function SweetSpot() {
     );
   }
 
+  // Show game over modal if dead
+  if (isDead) {
+    return <GameOverModal finalScore={gameScore} />;
+  }
+
   // Layout metrics
   const imgSize = 160; // base size in px (responsive via CSS width below)
-
-  const score = Math.round(height * 100);
   const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
 
   return (
@@ -138,7 +168,20 @@ export function SweetSpot() {
         </div>
 
         {/* Bottom right HUD */}
-        <div className="absolute bottom-4 right-4 flex gap-6 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+        <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="text-right">
+            <div className="text-[8px] opacity-60">HEALTH</div>
+            <div className="mt-2">
+              <PixelHearts health={health} maxHearts={3} size={20} />
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] opacity-60">SCORE</div>
+            <div className="text-xl text-[var(--nes-yellow)]">{gameScore.toLocaleString()}</div>
+            {isAccumulating && (
+              <div className="text-[6px] text-[var(--nes-green)] opacity-80">x{velocity.toFixed(1)}</div>
+            )}
+          </div>
           <div className="text-right">
             <div className="text-[8px] opacity-60">FOCUS</div>
             <div className="text-xl">{score}</div>
