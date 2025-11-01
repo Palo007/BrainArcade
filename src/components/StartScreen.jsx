@@ -197,7 +197,6 @@ export function StartScreen() {
                   className="text-md text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
-                                      TO ENTER THE BRAIN ARCADE <br />
                   CONNECT YOUR MUSE DEVICE 
                   <br />
                   OR SIMULATE BRAIN DATA
