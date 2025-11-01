@@ -8,7 +8,7 @@ Brain Arcade is an open-source platform that connects consumer-grade EEG devices
 
 This project serves **two audiences simultaneously**:
 
-1. **Users** 👾 — Experience what's possible with neurotechnology *today*. See that brain-computer interfaces aren't science fiction — they're in your browser.
+1. **Users** 👾 — Experience what's possible with neurotechnology _today_. See that brain-computer interfaces aren't science fiction — they're in your browser.
 
 2. **Builders & Hackers** 🛠️ — Discover that building with neurotechnology doesn't require a PhD. Use pre-processed biomarkers as simple joystick controls (normalized 0-1 values) or dive deeper into signal processing pipelines.
 
@@ -32,10 +32,15 @@ When connecting, choose **"Mock Mode"** to try all games without a Muse device. 
 ## Features
 
 🧠 **Consumer-Grade EEG** — Uses Muse headbands (cheapest consumer EEG available) via Web Bluetooth
+
 🎮 **Plug-and-Play Games** — Add new games without touching core files
+
 🕹️ **Three Levels of Complexity** — From simple joystick controls to custom DSP pipelines
+
 🔒 **Zero Data Collection** — Local-only processing, no neural data is ever saved or transmitted
+
 🧪 **Mock Mode** — Develop and play with real pre-recorded EEG data (no device required)
+
 🕹️ **Retro Aesthetic** — NES-style UI with 8-bit vibes
 
 ---
@@ -66,12 +71,14 @@ Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edg
 ### Connecting Your Brain
 
 **Option 1: With a Muse Device**
+
 1. Power on your Muse headband
 2. Click "Connect Muse" in the app
 3. Select your device from the browser's Bluetooth dialog
 4. Start playing!
 
 **Option 2: Mock Mode (No Device)**
+
 1. Click "Connect Muse"
 2. Select "Mock Mode"
 3. Experience real pre-recorded EEG data
@@ -88,10 +95,10 @@ Brain Arcade is designed for **modularity and scalability**. Developers can work
 Use pre-built **biomarker joysticks** — normalized 0-1 values representing cognitive states:
 
 ```jsx
-import { useBiomarker } from '../../contexts/BiomarkerContext';
+import { useBiomarker } from "../../contexts/BiomarkerContext";
 
 export function MyGame() {
-  const { norm01 } = useBiomarker('frontal-midline-theta');
+  const { norm01 } = useBiomarker("frontal-midline-theta");
 
   // norm01 is a number from 0 to 1
   // 0.5 = baseline, higher = more cognitive control
@@ -102,6 +109,7 @@ export function MyGame() {
 ```
 
 **Available Biomarkers:**
+
 - `frontal-midline-theta` — Cognitive control / focus
 - `frontal-alpha-asymmetry` — Approach/withdrawal motivation
 - `alpha`, `beta`, `theta`, `delta`, `gamma` — Band power averages
@@ -112,7 +120,7 @@ export function MyGame() {
 Work directly with **processed EEG features** like band powers (alpha, beta, theta, delta, gamma):
 
 ```jsx
-import { useProcessing } from '../../contexts/ProcessingContext';
+import { useProcessing } from "../../contexts/ProcessingContext";
 
 export function MyGame() {
   const { bandPowers } = useProcessing();
@@ -130,7 +138,7 @@ export function MyGame() {
 Create custom **signal processing pipelines** using raw EEG:
 
 ```jsx
-import { useEEG } from '../../contexts/MuseContext';
+import { useEEG } from "../../contexts/MuseContext";
 
 export function MyGame() {
   const { rawEEG } = useEEG();
@@ -144,10 +152,15 @@ export function MyGame() {
 ```
 
 **Full Processing Stack:**
+
 1. **MuseContext** → Raw EEG data (256 Hz, 4 channels)
+
 2. **ProcessingContext** → Welch PSD + band powers (~4 Hz updates)
+
 3. **BaselineContext** → Session normalization (30s calibration)
+
 4. **BiomarkerContext** → Cognitive markers (derived features)
+
 5. **JoystickContext** → Game-ready 0-1 controls
 
 ---
@@ -167,13 +180,13 @@ mkdir src/games/my-game
 Create `src/games/my-game/MyGame.jsx`:
 
 ```jsx
-import { useBiomarker } from '../../contexts/BiomarkerContext';
-import { useBaseline } from '../../contexts/BaselineContext';
-import { useEffect } from 'react';
+import { useBiomarker } from "../../contexts/BiomarkerContext";
+import { useBaseline } from "../../contexts/BaselineContext";
+import { useEffect } from "react";
 
 export function MyGame() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { norm01 } = useBiomarker('frontal-midline-theta');
+  const { norm01 } = useBiomarker("frontal-midline-theta");
 
   useEffect(() => {
     ensureBaseline({ seconds: 30 }); // 30s calibration
@@ -198,14 +211,14 @@ export function MyGame() {
 Add to `src/games/games.config.js`:
 
 ```javascript
-import { MyGame } from './my-game/MyGame';
+import { MyGame } from "./my-game/MyGame";
 
 export const games = [
   // ... existing games
   {
-    id: 'my-game',
-    name: 'MY BRAIN GAME',
-    description: 'Control the game with your thoughts',
+    id: "my-game",
+    name: "MY BRAIN GAME",
+    description: "Control the game with your thoughts",
     component: MyGame,
   },
 ];
@@ -269,9 +282,11 @@ When you close the browser, all neural data is destroyed. Your thoughts stay you
 ### Hooks
 
 #### `useEEG()` — Raw EEG Data
+
 ```javascript
 const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
 ```
+
 - `rawEEG`: `[TP9, AF7, AF8, TP10]` in microvolts
 - `isConnected`: Boolean device status
 - `isMock`: Boolean indicating mock mode
@@ -279,24 +294,32 @@ const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
 - `disconnectEEG()`: Disconnect device
 
 #### `useProcessing()` — Band Powers
+
 ```javascript
 const { bandPowers, psd } = useProcessing();
 ```
+
 - `bandPowers`: `{ alpha: [4], beta: [4], theta: [4], delta: [4], gamma: [4] }`
 - `psd`: Power spectral density (Welch method, 2s window, 1s overlap)
 
 #### `useBaseline()` — Calibration
+
 ```javascript
 const { ensureBaseline, isBaselineReady, baseline } = useBaseline();
 ```
+
 - `ensureBaseline({ seconds })`: Start calibration (default 30s)
 - `isBaselineReady`: Boolean indicating baseline captured
 - `baseline`: Baseline band power values
 
 #### `useBiomarker(name, options)` — Cognitive Markers
+
 ```javascript
-const { value, norm01, baseline } = useBiomarker('frontal-midline-theta', { range: 0.4 });
+const { value, norm01, baseline } = useBiomarker("frontal-midline-theta", {
+  range: 0.4,
+});
 ```
+
 - `value`: Current biomarker value
 - `norm01`: Normalized 0-1 (0.5 = baseline)
 - `baseline`: Baseline reference value
@@ -336,24 +359,9 @@ npm run lint
 
 - [Contributing Guidelines](./CONTRIBUTING.md)
 - [Privacy Policy](./PRIVACY.md)
-- [web-muse Documentation](./web-muse/README.md)
+- [web-muse Documentation](https://github.com/itayinbarr/web-muse)
 - [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 - [Muse Headband](https://choosemuse.com/)
-
----
-
-## Why This Matters
-
-Neurotechnology has historically been locked behind expensive equipment, academic expertise, and proprietary software. **Brain Arcade breaks that pattern.**
-
-By using the cheapest consumer EEG device ($200-300) and building with open web standards, we're proving that:
-
-1. **Neurotechnology is accessible** — You don't need a lab or a PhD
-2. **Builders can start today** — Pre-processed biomarkers = simple joystick values
-3. **There's a playful entry point** — Games make the tech approachable
-4. **It's not just deep-tech** — There's a layer of neurotech ready for hackers right now
-
-This is an invitation to build. The arcade is just the beginning.
 
 ---
 
@@ -362,23 +370,3 @@ This is an invitation to build. The arcade is just the beginning.
 MIT License — see [LICENSE](./LICENSE) for details.
 
 This project is completely open source. Build on it, fork it, learn from it, break it, remix it.
-
----
-
-## Contributing
-
-We welcome contributions at all levels:
-
-- **Game developers** — Add new minigames using biomarker joysticks
-- **Neuroscience experts** — Propose new biomarkers or improve existing ones
-- **Pipeline builders** — Extend signal processing capabilities
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
-
-**Important:** All contributions must respect the **zero data collection policy**. No saving or transmitting neural data.
-
----
-
-**Built with 🧠 by hackers who believe neurotechnology should be accessible to everyone.**
-
-*Control games with your mind. Build the future of human-computer interaction. Start today.*

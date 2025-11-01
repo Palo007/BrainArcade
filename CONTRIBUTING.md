@@ -42,11 +42,13 @@ We welcome contributions at **three levels of complexity**:
 **What you contribute:** New minigames using pre-built biomarker joysticks
 
 **What you need to know:**
+
 - React & JavaScript
 - How to use hooks (`useBiomarker`, `useBaseline`)
 - Basic game logic
 
 **Examples:**
+
 - Add a new minigame (Pong, Snake, Tetris, etc.)
 - Improve existing games
 - Create tutorials or game templates
@@ -60,11 +62,13 @@ We welcome contributions at **three levels of complexity**:
 **What you contribute:** New biomarkers, improved signal processing, or validation of existing markers
 
 **What you need to know:**
+
 - EEG signal processing (FFT, band powers, etc.)
 - Cognitive neuroscience (what markers represent)
 - JavaScript/React for implementation
 
 **Examples:**
+
 - Propose a new biomarker (e.g., `P300-amplitude`, `mu-rhythm-suppression`)
 - Improve existing biomarker calculations
 - Add validation studies or references
@@ -79,12 +83,14 @@ We welcome contributions at **three levels of complexity**:
 **What you contribute:** Core processing infrastructure, new contexts, optimization
 
 **What you need to know:**
+
 - Advanced signal processing (DSP)
 - React context architecture
 - Performance optimization
 - Web Bluetooth API (optional)
 
 **Examples:**
+
 - Add new processing contexts
 - Optimize Welch PSD performance
 - Improve baseline calibration algorithms
@@ -101,12 +107,14 @@ We welcome contributions at **three levels of complexity**:
 Brain Arcade has a **zero data collection policy**. This means:
 
 ### ✅ Allowed:
+
 - Processing neural data **in memory** during a session
 - Displaying data in real-time
 - Using data for game logic
 - Temporary storage in browser state (React state, context)
 
 ### ❌ Prohibited:
+
 - Saving neural data to disk (LocalStorage, IndexedDB, files)
 - Transmitting neural data to any server
 - Logging neural data to console in production builds
@@ -116,6 +124,7 @@ Brain Arcade has a **zero data collection policy**. This means:
 ### Why This Matters
 
 Users' neural data is **deeply personal**. By enforcing local-only processing, we:
+
 - Protect user privacy
 - Build trust in neurotechnology
 - Set an ethical standard for the field
@@ -136,17 +145,20 @@ If your game/feature requires data persistence for legitimate reasons (e.g., gam
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork:**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/brain-arcade.git
    cd brain-arcade
    ```
 
 3. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 4. **Create a branch for your contribution:**
+
    ```bash
    git checkout -b feature/my-awesome-game
    # or
@@ -156,6 +168,7 @@ If your game/feature requires data persistence for legitimate reasons (e.g., gam
    ```
 
 5. **Start the dev server:**
+
    ```bash
    npm run dev
    ```
@@ -165,12 +178,14 @@ If your game/feature requires data persistence for legitimate reasons (e.g., gam
 7. **Test your changes** thoroughly using both real and mock data
 
 8. **Commit your changes:**
+
    ```bash
    git add .
    git commit -m "Add: my awesome brain game"
    ```
 
 9. **Push to your fork:**
+
    ```bash
    git push origin feature/my-awesome-game
    ```
@@ -195,13 +210,13 @@ cd src/games/my-game
 Create `MyGame.jsx` in your game folder:
 
 ```jsx
-import { useBiomarker } from '../../contexts/BiomarkerContext';
-import { useBaseline } from '../../contexts/BaselineContext';
-import { useEffect } from 'react';
+import { useBiomarker } from "../../contexts/BiomarkerContext";
+import { useBaseline } from "../../contexts/BaselineContext";
+import { useEffect } from "react";
 
 export function MyGame() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { norm01 } = useBiomarker('frontal-midline-theta');
+  const { norm01 } = useBiomarker("frontal-midline-theta");
 
   useEffect(() => {
     ensureBaseline({ seconds: 30 }); // Request 30s calibration
@@ -231,15 +246,15 @@ export function MyGame() {
 Edit `src/games/games.config.js`:
 
 ```javascript
-import { MyGame } from './my-game/MyGame';
+import { MyGame } from "./my-game/MyGame";
 
 export const games = [
   // ... existing games ...
   {
-    id: 'my-game',                    // Unique ID (kebab-case)
-    name: 'MY AWESOME GAME',          // Display name (UPPERCASE for retro style)
-    description: 'Short description', // 1-2 sentences
-    component: MyGame,                // Your component
+    id: "my-game", // Unique ID (kebab-case)
+    name: "MY AWESOME GAME", // Display name (UPPERCASE for retro style)
+    description: "Short description", // 1-2 sentences
+    component: MyGame, // Your component
   },
 ];
 ```
@@ -247,6 +262,7 @@ export const games = [
 ### Step 4: Test Your Game
 
 1. **With Mock Data:**
+
    - Start the app (`npm run dev`)
    - Connect using "Mock Mode"
    - Test all game features
@@ -259,6 +275,7 @@ export const games = [
 ### Step 5: Document Your Game
 
 Add a `README.md` in your game folder explaining:
+
 - How the game works
 - Which biomarkers it uses
 - Controls and objectives
@@ -290,16 +307,19 @@ A brain-controlled [type of game] where you [objective].
 ### What NOT to Do
 
 ❌ **Don't modify core files:**
+
 - Don't edit `App.jsx`
 - Don't modify context files
 - Don't change routing logic
 
 ❌ **Don't violate data policy:**
+
 - Don't save neural data
 - Don't transmit data to servers
 - Don't use external analytics that capture biomarker values
 
 ❌ **Don't add large dependencies:**
+
 - Keep bundle size reasonable
 - Avoid heavy game engines unless necessary
 - Prefer lightweight libraries
@@ -317,6 +337,7 @@ New biomarkers go in `src/contexts/BiomarkerContext.jsx`.
 **Process:**
 
 1. **Open an issue** proposing the biomarker
+
    - What it measures (cognitive state)
    - How it's calculated (formula/algorithm)
    - References (research papers, if available)
@@ -344,6 +365,7 @@ New biomarkers go in `src/contexts/BiomarkerContext.jsx`.
 4. **Document the biomarker** in README and code comments
 
 5. **Test thoroughly:**
+
    - Verify calculations
    - Test with mock data
    - Test with real device
@@ -364,6 +386,7 @@ Changes to core processing (contexts, pipelines, optimization) require:
 4. **Backward compatibility** — Don't break existing games
 
 **Examples of core contributions:**
+
 - Artifact rejection algorithms
 - Improved baseline normalization
 - Performance optimizations
@@ -409,6 +432,7 @@ src/games/my-game/
 - Keep consistent with arcade theme
 
 Example:
+
 ```jsx
 <div className="arcade-cabinet pixel-border">
   <h1 className="text-nes-green font-pixel">MY GAME</h1>
@@ -427,6 +451,7 @@ const threshold = 0.6; // Set threshold to 0.6
 ```
 
 For DSP code, **explain the algorithm**:
+
 ```javascript
 // Apply Welch's method for PSD estimation
 // 2-second windows with 1-second overlap (50%)
@@ -509,6 +534,7 @@ We aim to review PRs within **1 week**.
 ### Manual Testing
 
 **For Games:**
+
 1. Test with mock data first
 2. Test all game mechanics
 3. Test baseline calibration flow
@@ -516,6 +542,7 @@ We aim to review PRs within **1 week**.
 5. Test with real device (if available)
 
 **For Core Contributions:**
+
 1. Test with multiple biomarkers
 2. Test edge cases (no signal, poor quality)
 3. Measure performance impact
@@ -540,23 +567,15 @@ await connectMuse({ mock: true });
 
 ```javascript
 // Check biomarker values in console
-const { value, norm01 } = useBiomarker('frontal-midline-theta');
-console.log('FMT value:', value, 'Normalized:', norm01);
+const { value, norm01 } = useBiomarker("frontal-midline-theta");
+console.log("FMT value:", value, "Normalized:", norm01);
 
 // Check band powers
 const { bandPowers } = useProcessing();
-console.log('Alpha:', bandPowers.alpha);
+console.log("Alpha:", bandPowers.alpha);
 ```
 
 **Note:** Console logging is fine for development, but remove or guard it for production.
-
----
-
-## Questions?
-
-- **General questions:** Open a [GitHub Discussion](https://github.com/yourusername/brain-arcade/discussions)
-- **Bug reports:** Open a [GitHub Issue](https://github.com/yourusername/brain-arcade/issues)
-- **Feature proposals:** Open an issue with the "enhancement" label
 
 ---
 

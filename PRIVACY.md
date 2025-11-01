@@ -29,11 +29,13 @@ Brain Arcade processes the following data **exclusively in your browser's memory
 ### Neural Data (In-Memory Only)
 
 1. **Raw EEG signals** (4 channels at 256 Hz)
+
    - Temporary storage in React state
    - Used for real-time processing
    - Destroyed on disconnect or page close
 
 2. **Processed features** (band powers, biomarkers)
+
    - Computed from raw EEG
    - Stored in React context
    - Cleared on disconnect
@@ -122,6 +124,7 @@ Here's exactly what happens to your neural data:
 ### 1. Connection
 
 When you connect your Muse device:
+
 - Web Bluetooth API establishes a **local** connection
 - No intermediary servers
 - Direct browser ↔ device communication
@@ -129,6 +132,7 @@ When you connect your Muse device:
 ### 2. Streaming
 
 While connected:
+
 - EEG data streams **only to your browser**
 - Processed in **React state** (in-memory)
 - Displayed in real-time
@@ -137,6 +141,7 @@ While connected:
 ### 3. Calibration (Baseline)
 
 During baseline calibration:
+
 - 30 seconds of data is **temporarily stored** in React context
 - Used to compute normalization parameters
 - **Cleared immediately** on disconnect
@@ -144,6 +149,7 @@ During baseline calibration:
 ### 4. Gameplay
 
 During games:
+
 - Biomarker values (0-1 normalized) drive game logic
 - Rendered to screen
 - **Not logged, saved, or transmitted**
@@ -151,6 +157,7 @@ During games:
 ### 5. Disconnection
 
 When you disconnect or close the browser:
+
 - All neural data is **immediately destroyed**
 - React state is cleared
 - No traces remain
@@ -188,30 +195,6 @@ When you disconnect or close the browser:
 
 ---
 
-## Your Rights
-
-Even though we collect **zero data**, here are your rights:
-
-### Right to Transparency
-
-- All code is open source
-- Processing algorithms are documented
-- You can audit everything
-
-### Right to Control
-
-- **You control the connection** — Connect/disconnect anytime
-- **You control the data** — Exists only while you allow it
-- **You control the experience** — Use mock mode without a device
-
-### Right to Deletion
-
-- Close the browser → Data is destroyed
-- Disconnect → Data is cleared
-- No "deletion request" needed (there's nothing to delete!)
-
----
-
 ## Contributor Guidelines
 
 If you're contributing to Brain Arcade, **you must respect the zero data collection policy**:
@@ -246,83 +229,7 @@ When using **Mock Mode** (no device required):
 - No data is transmitted
 
 Mock mode is perfect for:
+
 - Trying the app without hardware
 - Development and testing
 - Demos and education
-
----
-
-## Questions About Privacy
-
-### "Can I use Brain Arcade offline?"
-
-**Yes!** After the initial page load, Brain Arcade works **completely offline**. The app is a static site with no backend.
-
-### "Can I inspect the code?"
-
-**Absolutely!** Brain Arcade is open source (MIT License). Inspect every line:
-- [GitHub Repository](https://github.com/yourusername/brain-arcade)
-- All processing logic is in `/src/contexts/`
-- All games are in `/src/games/`
-
-### "What about browser extensions?"
-
-Brain Arcade can't control browser extensions. If you have extensions that log network traffic or capture DOM content, they might see rendered biomarker values (e.g., "Control: 78%").
-
-For maximum privacy, use a clean browser profile without extensions.
-
-### "Is Web Bluetooth secure?"
-
-Web Bluetooth requires:
-- **User permission** for each connection
-- **HTTPS** (encrypted page load)
-- **Same-origin policy** (no cross-site access)
-
-Brain Arcade uses Web Bluetooth according to W3C specifications. Learn more: [Web Bluetooth Security](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API#security_and_permissions)
-
----
-
-## Contact
-
-If you have privacy concerns or questions:
-
-1. **Open an issue:** [GitHub Issues](https://github.com/yourusername/brain-arcade/issues)
-2. **Start a discussion:** [GitHub Discussions](https://github.com/yourusername/brain-arcade/discussions)
-
-We take privacy seriously and will respond promptly.
-
----
-
-## Changes to This Policy
-
-If we ever change this policy (we won't — zero data collection is a core principle), we will:
-
-1. Update this document
-2. Increment the version number below
-3. Announce in the repository README
-
-**Version:** 1.0
-**Last Updated:** November 2024
-
----
-
-## Summary
-
-**Brain Arcade collects ZERO data.**
-
-Your neural data:
-- ✅ Stays in your browser
-- ✅ Processes locally
-- ✅ Never saved
-- ✅ Never transmitted
-- ✅ Destroyed on disconnect
-
-Your thoughts are yours. Always.
-
----
-
-**Questions?** Open an issue or discussion on GitHub.
-
-**Want to verify?** The code is open source. Audit it yourself.
-
-**Trust, but verify.** That's the hacker way. 🧠🕹️
