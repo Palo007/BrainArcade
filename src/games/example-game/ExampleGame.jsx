@@ -7,7 +7,7 @@ import '../../styles/retro.css';
  * This serves as a template for developers creating new games
  */
 export function ExampleGame() {
-  const { rawEEG, isConnected } = useEEG();
+  const { rawEEG } = useEEG();
   const [eegHistory, setEegHistory] = useState([]);
   const [maxValue, setMaxValue] = useState(100);
 
@@ -28,16 +28,6 @@ export function ExampleGame() {
       setMaxValue((prev) => Math.max(prev, currentMax));
     }
   }, [rawEEG]);
-
-  if (!isConnected) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-4xl mb-4">⚠️</div>
-        <p className="text-[var(--nes-red)] mb-2">MUSE NOT CONNECTED</p>
-        <p className="text-xs text-gray-400">Please return to home and connect your device</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

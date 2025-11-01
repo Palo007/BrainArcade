@@ -208,7 +208,7 @@ export function StartScreen() {
             <>
               {/* Connected flow: 3s loading -> electrode check -> start phase (locked) */}
               {showLoadingQC && !hasEnteredStartPhase ? (
-                <div className="text-center mt-24">
+                <div className="text-center">
                   <p
                     className="text-xl text-white rgb-text"
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -217,7 +217,7 @@ export function StartScreen() {
                   </p>
                 </div>
               ) : hasEnteredStartPhase || (ready && !showLoadingQC && passedSetup && !showingRecheck) ? (
-                <div className="text-center mt-24">
+                <div className="text-center">
                   <div className="mb-8">
                     <div
                       className="text-6xl sm:text-8xl rgb-text text-white mb-8 blink"

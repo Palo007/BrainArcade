@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
  * @param {number} config.dropThreshold - Joystick drop amount that stops accumulation (default: 0.1)
  * @param {number} config.maxVelocity - Maximum velocity multiplier (default: 5)
  * @param {number} config.velocityBuildRate - How fast velocity builds per second (default: 0.1)
+ * @param {boolean} config.frozen - When true, stops score accumulation (default: false)
  *
  * @returns {Object} { score, velocity, isAccumulating, reset }
  */
@@ -20,6 +21,7 @@ export function useGameScore({
   dropThreshold = 0.1,
   maxVelocity = 5,
   velocityBuildRate = 0.1,
+  frozen = false,
 } = {}) {
   const [score, setScore] = useState(0);
   const [velocity, setVelocity] = useState(1);
@@ -47,6 +49,9 @@ export function useGameScore({
 
   // Score accumulation and velocity management
   useEffect(() => {
+    // Don't run the interval if frozen
+    if (frozen) return;
+
     const interval = setInterval(() => {
       const now = Date.now();
       const deltaSeconds = (now - lastUpdateRef.current) / 1000;
@@ -65,7 +70,7 @@ export function useGameScore({
     }, 100); // Update 10 times per second
 
     return () => clearInterval(interval);
-  }, [isAccumulating, velocity, baseRate, maxVelocity, velocityBuildRate]);
+  }, [isAccumulating, velocity, baseRate, maxVelocity, velocityBuildRate, frozen]);
 
   const reset = () => {
     setScore(0);

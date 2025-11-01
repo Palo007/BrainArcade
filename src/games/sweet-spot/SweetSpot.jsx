@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { useEEG } from '../../contexts/MuseContext.jsx';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
 import { useGameHealth } from '../../hooks/useGameHealth.js';
 import { useGameScore } from '../../hooks/useGameScore.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
-import { GameOverModal } from '../../components/GameOverModal.jsx';
+import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import '../../styles/retro.css';
 import chillImg from './assets/chill.png';
 import worriedImg from './assets/worried.png';
 import fallingImg from './assets/falling.png';
 
 export function SweetSpot() {
-  const { isConnected } = useEEG();
   const { ensureBaseline, isBaselineReady } = useBaseline();
   // Level 1: Cognitive joystick (0..1) for focus, built from FMT vs baseline
   const { value01 } = useJoystick('focus', {
@@ -44,6 +42,7 @@ export function SweetSpot() {
     dropThreshold: 0.1,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
+    frozen: isDead, // Freeze score when game is over
   });
 
   // Generate random stars once
@@ -75,19 +74,20 @@ export function SweetSpot() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [value01]);
 
-  if (!isConnected) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-4xl mb-4">⚠️</div>
-        <p className="text-[var(--nes-red)] mb-2">MUSE NOT CONNECTED</p>
-        <p className="text-xs text-gray-400">Please return to home and connect your device</p>
-      </div>
-    );
-  }
-
-  // Show game over modal if dead
+  // Show game over screen if dead
   if (isDead) {
-    return <GameOverModal finalScore={gameScore} />;
+    return (
+      <GameOverScreen
+        finalScore={gameScore}
+        gameName="sweet-spot"
+        joystickAxis="focus"
+        joystickOptions={{
+          range: 0.4,
+          baselineCenter: 0.5,
+          autoAdjustBaseline: true,
+        }}
+      />
+    );
   }
 
   // Layout metrics

@@ -87,10 +87,10 @@ export function Layout({ children }) {
     <div className="arcade-frame">
       <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
-        {(isGamePage || isConnected) && !isFullScreen && (
+        {isConnected && !isFullScreen && (
           <div className="absolute top-10 right-10 z-50 flex items-center gap-4">
             {/* Pause button (only on game pages) */}
-            {isGamePage && (
+            {isGamePage && isConnected && (
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 aria-label="Pause / Menu"
@@ -147,9 +147,28 @@ export function Layout({ children }) {
           <>{children}</>
         ) : (
           <div className="w-full h-full px-4 py-8">
-            <div className="w-full h-full  ">
+            <div className="w-full h-full">
               <div className="text-left p-6 space-y-6 h-full">
-                {children}
+                {/* Global not-connected guard for game pages */}
+                {isGamePage && !isConnected ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-4">⚠️</div>
+                    <p className="text-[var(--nes-red)] mb-2">MUSE NOT CONNECTED</p>
+                    <p className="text-xs text-gray-400 mb-6">Please return to home and connect your device</p>
+                    <button
+                      className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
+                      onClick={() => {
+                        // Ensure clean state and go home to reconnect
+                        try { disconnectEEG(); } catch {}
+                        navigate('/');
+                      }}
+                    >
+                      RETURN HOME TO CONNECT
+                    </button>
+                  </div>
+                ) : (
+                  children
+                )}
               </div>
             </div>
           </div>
