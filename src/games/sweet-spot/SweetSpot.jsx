@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useEEG } from '../../contexts/MuseContext.jsx';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
@@ -17,6 +17,20 @@ export function SweetSpot() {
   // Smoothed height 0..1
   const [height, setHeight] = useState(0.5);
   const rafRef = useRef(null);
+
+  // Generate random stars once
+  const stars = useMemo(() => {
+    const starCount = 150;
+    return Array.from({ length: starCount }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 2 + 1,
+      opacity: Math.random() * 0.4 + 0.3,
+      duration: Math.random() * 3 + 2,
+      delay: Math.random() * 3,
+    }));
+  }, []);
 
   useEffect(() => {
     // Require baseline at start (game decides this)
@@ -50,39 +64,23 @@ export function SweetSpot() {
   const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
 
   return (
-    <div className="absolute inset-0 flex flex-col">
-      {/* Title */}
-      <div className="text-left p-6 pb-2">
-        <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-        <p className="text-xs text-gray-400">Keep the character floating by staying relaxed</p>
-      </div>
-
+    <div className="absolute inset-0">
       {/* Main stage - full screen */}
-      <div className="flex-1 bg-black relative overflow-hidden min-h-0">
-          {/* Local styles for starfield */}
+      <div className="absolute inset-0 bg-black overflow-hidden">
+          {/* Local styles */}
           <style>{`
-            .starfield, .starfield2, .starfield3 { position: absolute; inset: 0; pointer-events: none; }
-            .starfield {
-              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
-              background-size: 120px 120px;
-              image-rendering: pixelated;
-              animation: twinkle1 3.2s steps(2,end) infinite;
+            @keyframes twinkle {
+              0%, 100% { opacity: 0.2; }
+              50% { opacity: 1; }
             }
-            .starfield2 {
-              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
-              background-size: 95px 85px;
-              animation: twinkle2 2.7s steps(2,end) infinite;
-              image-rendering: pixelated;
+            @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+            .sprite-float { animation: float 2.5s ease-in-out infinite; }
+            .star {
+              position: absolute;
+              background: white;
+              border-radius: 50%;
+              pointer-events: none;
             }
-            .starfield3 {
-              background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
-              background-size: 150px 110px;
-              animation: twinkle3 4.1s steps(2,end) infinite;
-              image-rendering: pixelated;
-            }
-            @keyframes twinkle1 { 0%,100% { opacity: 0; } 50% { opacity: 0.4; } }
-            @keyframes twinkle2 { 0%,100% { opacity: 0; } 50% { opacity: 0.35; } }
-            @keyframes twinkle3 { 0%,100% { opacity: 0; } 50% { opacity: 0.3; } }
           `}</style>
         {!isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
@@ -93,26 +91,50 @@ export function SweetSpot() {
         )}
 
         {/* Stars */}
-        <div className="starfield" />
-        <div className="starfield2" />
-        <div className="starfield3" />
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className="star"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animation: `twinkle ${star.duration}s ease-in-out infinite`,
+              animationDelay: `${star.delay}s`,
+              opacity: star.opacity,
+            }}
+          />
+        ))}
+
+        {/* Title */}
+        <div className="absolute top-6 left-6">
+          <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
+          <p className="text-xs text-gray-400">Keep the character floating by staying relaxed</p>
+        </div>
 
         {/* Sprite */}
-        <img
-          src={sprite}
-          alt="relaxation sprite"
-          draggable={false}
-          className="absolute left-1/2 top-1/2 select-none"
+        <div
+          className="absolute left-1/2 top-1/2"
           style={{
-            transform: `translate(-50%, calc(-50% + ${(0.5 - height) * 35}%))`,
-            width: `min(${imgSize}px, 20vmin)`,
-            height: 'auto',
-            imageRendering: 'pixelated',
-            filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
-            pointerEvents: 'none',
-            transition: 'opacity 0.15s ease-out',
+            transform: `translate(-50%, calc(-50% + ${(0.5 - height) * 100}%))`,
           }}
-        />
+        >
+          <img
+            src={sprite}
+            alt="relaxation sprite"
+            draggable={false}
+            className="select-none sprite-float"
+            style={{
+              width: `min(${imgSize}px, 20vmin)`,
+              height: 'auto',
+              imageRendering: 'pixelated',
+              filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
+              pointerEvents: 'none',
+              transition: 'opacity 0.15s ease-out',
+            }}
+          />
+        </div>
 
         {/* Bottom right HUD */}
         <div className="absolute bottom-4 right-4 flex gap-6 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>

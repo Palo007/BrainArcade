@@ -43,7 +43,7 @@ export function ExampleGame() {
     <div className="space-y-6">
       {/* Game Title */}
       <div className="text-center mb-6">
-        <h2 className="text-2xl text-[var(--nes-blue)] mb-2">BRAINWAVE DEMO</h2>
+        <h2 className="text-2xl text-[var(--nes-blue)] mb-2">BRAINWAVE VISUALIZER</h2>
         <p className="text-xs text-gray-400">
           Real-time EEG visualization from your Muse device
         </p>

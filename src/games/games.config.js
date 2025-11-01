@@ -19,22 +19,22 @@
  * }
  */
 
-import { ExampleGame } from './example-game/ExampleGame';
-import { SweetSpot } from './sweet-spot/SweetSpot.jsx';
+import { ExampleGame } from "./example-game/ExampleGame";
+import { SweetSpot } from "./sweet-spot/SweetSpot.jsx";
 
 export const games = [
   {
-    id: 'example-game',
-    name: 'BRAINWAVE DEMO',
-    description: 'See your brainwaves in real-time with EEG visualization',
-    icon: '🧠',
+    id: "example-game",
+    name: "BRAINWAVE VISUALIZER",
+    description: "See your brainwaves in real-time with EEG visualization",
+    icon: "🧠",
     component: ExampleGame,
   },
   {
-    id: 'sweet-spot',
-    name: 'SWEET SPOT',
-    description: 'Float the ball by relaxing',
-    icon: '🟡',
+    id: "sweet-spot",
+    name: "SWEET SPOT",
+    description: "Float the character by staying relaxed",
+    icon: "🟡",
     component: SweetSpot,
   },
   // Add more games here!
