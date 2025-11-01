@@ -1,5 +1,9 @@
 # Brain Arcade 🧠🕹️
 
+<p align="center">
+  <img src="./src/assets/startscreeen_gif.gif" alt="Brain Arcade Start Screen" width="600">
+</p>
+
 > **A retro arcade of thought-controlled minigames — proving neurotechnology is already here, accessible, and ready to hack.**
 
 Brain Arcade is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
@@ -26,6 +30,16 @@ npm run dev
 ```
 
 When connecting, choose **"Mock Mode"** to try all games without a Muse device. The mock data is real neural signals, so you'll get authentic behavior.
+
+---
+
+## Games Showcase
+
+<p align="center">
+  <img src="./src/assets/sweet_spot_demo.gif" alt="Sweet Spot Game Demo" width="500">
+  <br>
+  <em>Sweet Spot: Float in a relaxation state by finding your cognitive sweet spot</em>
+</p>
 
 ---
 
