@@ -98,7 +98,7 @@ export function SweetSpot() {
   }
 
   // Layout metrics
-  const imgSize = 160; // base size in px (responsive via CSS width below)
+  const imgSize = 280; // base size in px (responsive via CSS width below)
   const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
 
   return (
@@ -164,7 +164,7 @@ export function SweetSpot() {
             draggable={false}
             className="select-none sprite-float"
             style={{
-              width: `min(${imgSize}px, 20vmin)`,
+              width: `min(${imgSize}px, 35vmin)`,
               height: 'auto',
               imageRendering: 'pixelated',
               filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',

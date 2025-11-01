@@ -113,7 +113,7 @@ Brain Arcade is **fully open source** (MIT License):
 - Community code review
 - No hidden telemetry
 
-**Inspect the code yourself:** [GitHub Repository](https://github.com/yourusername/brain-arcade)
+**Inspect the code yourself:** [GitHub Repository](https://github.com/itayinbarr/brain-arcade)
 
 ---
 

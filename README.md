@@ -65,7 +65,7 @@ When connecting, choose **"Mock Mode"** to try all games without a Muse device. 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/brain-arcade.git
+git clone https://github.com/itayinbarr/brain-arcade.git
 cd brain-arcade
 
 # Install dependencies

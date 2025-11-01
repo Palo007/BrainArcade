@@ -31,7 +31,7 @@ export const games = [
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
-    description: "Float the character by staying relaxed",
+    description: "The character is a brain sitting on a cloud trying to meditate. Help him stay on the sweet spot, and earn points!",
     component: SweetSpot,
   },
   // Add more games here!
