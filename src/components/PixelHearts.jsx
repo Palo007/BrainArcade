@@ -22,7 +22,6 @@ export function PixelHearts({ health = 100, maxHearts = 3, size = 24, className 
       viewBox="0 0 8 8"
       style={{
         imageRendering: 'pixelated',
-        imageRendering: 'crisp-edges',
       }}
     >
       {/* Pixel heart pattern */}
