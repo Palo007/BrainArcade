@@ -11,7 +11,8 @@ import fallingImg from './assets/falling.png';
 export function SweetSpot() {
   const { isConnected } = useEEG();
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { value01 } = useJoystick('relaxation', { range: 0.4, baselineCenter: 0.8 });
+  // Level 1: Cognitive joystick (0..1) for focus, built from FMT vs baseline
+  const { value01 } = useJoystick('focus', { range: 0.4, baselineCenter: 0.5 });
   const { value: frontalTheta, baseline: frontalThetaBaseline } = useBiomarker('frontal-midline-theta');
 
   // Smoothed height 0..1
@@ -110,7 +111,7 @@ export function SweetSpot() {
         {/* Title */}
         <div className="absolute top-6 left-6">
           <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-          <p className="text-xs text-gray-400">Keep the character floating by staying relaxed</p>
+          <p className="text-xs text-gray-400">Keep the character floating by staying focused</p>
         </div>
 
         {/* Sprite */}
@@ -139,7 +140,7 @@ export function SweetSpot() {
         {/* Bottom right HUD */}
         <div className="absolute bottom-4 right-4 flex gap-6 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">RELAX</div>
+            <div className="text-[8px] opacity-60">FOCUS</div>
             <div className="text-xl">{score}</div>
           </div>
           <div className="text-right">

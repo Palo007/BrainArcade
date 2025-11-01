@@ -142,15 +142,15 @@ export function StartScreen() {
           </div>
         </div>
 
-        {/* Bottom Right - Credits + GitHub + Privacy */}
+        {/* Bottom Right - About + GitHub + Privacy */}
         <div className="absolute right-20 bottom-20 flex flex-col items-end space-y-2">
           <button
-            onClick={() => navigate('/credits')}
-            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            onClick={() => navigate('/about')}
+            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
-            aria-label="Open Credits"
+            aria-label="Open About"
           >
-            CREDITS
+            ABOUT
           </button>
           <a
             href="https://github.com/itayinbarr/brain-arcade"
@@ -164,7 +164,7 @@ export function StartScreen() {
           </a>
           <button
             onClick={() => navigate('/privacy')}
-            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open Privacy Policy"
           >

@@ -36,7 +36,9 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
       title={title}
       onCancel={inProgress ? cancel : handleCancel}
       onConfirm={inProgress ? undefined : (ready ? () => start(secondsRequested) : undefined)}
-      confirmLabel={inProgress ? undefined : (ready ? 'START' : 'WAIT')}
+      confirmLabel={inProgress ? undefined : (ready ? 'START' : 'waiting for stable signal...')}
+      confirmVisible={!inProgress}
+      confirmDisabled={!inProgress && !ready}
       showFooter={true}
     >
       <div style={{ fontFamily: "'Press Start 2P', cursive" }}>

@@ -102,8 +102,8 @@ function App() {
             {/* Games List */}
             <Route path="/games" element={<GamesPage />} />
 
-            {/* Credits */}
-            <Route path="/credits" element={<Credits />} />
+            {/* About */}
+            <Route path="/about" element={<Credits />} />
 
             {/* Privacy Policy */}
             <Route path="/privacy" element={<Privacy />} />

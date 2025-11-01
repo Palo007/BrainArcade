@@ -42,32 +42,45 @@ export function Credits() {
             className="text-2xl sm:text-3xl rgb-text text-white mb-4"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
-            CREDITS
+            ABOUT
           </h2>
 
-          {/* Credits Text */}
-          <div className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
-               style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          {/* About Text */}
+          <div
+            className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            {/* Original credits content remains */}
             <p>
-              Made by 
+              Made by
               <a
-                href="https:/itayinbar.com/"
+                href="https://itayinbar.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--nes-yellow)] underline hover:opacity-90 ml-2"
-                title="Open Itay Inbar on GitHub"
+                title="Open Itay Inbar website"
               >
                 Itay Inbar
               </a>.
             </p>
             <p>
-              Neural signals acquired with <span className="text-[var(--nes-blue)]">Muse</span> by
-              {' '}<span className="text-[var(--nes-green)]">Interaxon</span>.
+              Neural signals acquired with <span className="text-[var(--nes-blue)]">Muse</span> by{' '}
+              <span className="text-[var(--nes-green)]">Interaxon</span>.
             </p>
             <p className="opacity-80">
-              A collaborative, open‑source effort -
-              showcasing that usable neurotechnology already exists today.
+              A collaborative, open‑source effort — showcasing that usable neurotechnology already exists today.
             </p>
+
+            {/* Why Muse section */}
+            <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
+              <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                WHY MUSE?
+              </h3>
+              <p>
+                Muse is one of the most affordable and widely available consumer EEG headsets. If reliable control can be
+                achieved with just two frontal dry electrodes, that’s a strong signal of robustness and real‑world viability.
+              </p>
+            </div>
           </div>
         </div>
       </div>

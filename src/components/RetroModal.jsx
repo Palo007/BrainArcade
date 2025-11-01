@@ -2,7 +2,7 @@ import React from 'react';
 import '../styles/retro.css';
 
 // Simple retro-styled modal matching arcade theme
-export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true }) {
+export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 1000 }}>
       {/* Backdrop */}
@@ -32,11 +32,15 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
                 {cancelLabel}
               </button>
             )}
-            {onConfirm && (
+            {(confirmVisible || onConfirm) && (
               <button
                 onClick={onConfirm}
-                disabled={isBusy}
-                className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
+                disabled={isBusy || confirmDisabled || !onConfirm}
+                className={
+                  (isBusy || confirmDisabled || !onConfirm)
+                    ? "retro-button border-[var(--nes-gray)] text-[var(--nes-gray)] bg-transparent px-4 py-2 opacity-60 cursor-not-allowed"
+                    : "retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
+                }
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 {isBusy ? 'WORKING…' : confirmLabel}

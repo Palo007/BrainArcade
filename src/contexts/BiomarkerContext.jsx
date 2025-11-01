@@ -106,5 +106,17 @@ export function BiomarkerProvider({ children }) {
 export function useBiomarker(name) {
   const { getBiomarker } = useBiomarkers();
   const { value, baseline } = getBiomarker(name);
-  return { value, baseline };
+  // Optional normalized outputs for convenience at Level 2
+  let ratio = null;
+  let norm01 = null;
+  if (value != null && baseline != null && baseline > 0) {
+    ratio = value / baseline; // >1 means above baseline
+    // Default mapping: center at baseline (1.0), 0.4 range => 0..1
+    const center = 1;
+    const range = 0.4;
+    const t = (ratio - center) / range; // -1..1
+    const clamped = Math.max(0, Math.min(1, 0.5 + 0.5 * t));
+    norm01 = clamped;
+  }
+  return { value, baseline, ratio, norm01 };
 }

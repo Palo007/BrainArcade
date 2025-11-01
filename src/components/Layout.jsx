@@ -17,7 +17,7 @@ export function Layout({ children }) {
   const { quality10s } = useQuality();
   const location = useLocation();
   const navigate = useNavigate();
-  const isFullScreen = location.pathname === '/' || location.pathname === '/credits';
+  const isFullScreen = location.pathname === '/' || location.pathname === '/about';
   const isGamePage = location.pathname.startsWith('/game/');
   const [showMenu, setShowMenu] = useState(false);
   const [showMusePopup, setShowMusePopup] = useState(false);
