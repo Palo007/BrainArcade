@@ -1,8 +1,9 @@
 {
-  "name": "minigames",
+  "name": "brain-arcade",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "A retro arcade of thought-controlled minigames using Muse EEG. 100% local processing, mock mode available.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <style>
+      @font-face {
+        font-family: 'Press Start 2P';
+        src: url('https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivY.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000"/>
+  <!-- Centered retro 'B' with padding -->
+  <g>
+    <!-- Using large text; padding is handled by viewBox and text anchor -->
+    <text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle"
+          fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="300">
+      B
+    </text>
+  </g>
+</svg>
+

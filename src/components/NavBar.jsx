@@ -81,7 +81,9 @@ export function NavBar({ onActiveGameClick } = {}) {
 
         {/* Contribute Block */}
         <a
-          href="#"
+          href="https://github.com/itayinbarr/brain-arcade"
+          target="_blank"
+          rel="noopener noreferrer"
           className="block p-4 border-4 border-[var(--nes-gray)] bg-gray-800 bg-opacity-40 hover:border-[var(--nes-green)] hover:bg-opacity-60 transition-all"
         >
           <div className="flex items-center gap-4">

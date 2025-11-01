@@ -142,19 +142,29 @@ export function StartScreen() {
           </div>
         </div>
 
-        {/* Bottom Right - Credits + Privacy */}
+        {/* Bottom Right - Credits + GitHub + Privacy */}
         <div className="absolute right-20 bottom-20 flex flex-col items-end space-y-2">
           <button
             onClick={() => navigate('/credits')}
-            className="text-xs sm:text-sm text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open Credits"
           >
             CREDITS
           </button>
+          <a
+            href="https://github.com/itayinbarr/brain-arcade"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            aria-label="Open GitHub Repository"
+          >
+            GITHUB
+          </a>
           <button
             onClick={() => navigate('/privacy')}
-            className="text-xs sm:text-sm text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open Privacy Policy"
           >
@@ -187,9 +197,11 @@ export function StartScreen() {
                   className="text-md text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
-                  CONNECT YOUR
+                                      TO ENTER THE BRAIN ARCADE <br />
+                  CONNECT YOUR MUSE DEVICE 
                   <br />
-                  MUSE DEVICE
+                  OR SIMULATE BRAIN DATA
+                 
                 </p>
               </div>
             </>
