@@ -142,8 +142,8 @@ export function StartScreen() {
           </div>
         </div>
 
-        {/* Bottom Right - Credits Button */}
-        <div className="absolute right-20 bottom-20">
+        {/* Bottom Right - Credits + Privacy */}
+        <div className="absolute right-20 bottom-20 flex flex-col items-end space-y-2">
           <button
             onClick={() => navigate('/credits')}
             className="text-xs sm:text-sm text-white opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -151,6 +151,14 @@ export function StartScreen() {
             aria-label="Open Credits"
           >
             CREDITS
+          </button>
+          <button
+            onClick={() => navigate('/privacy')}
+            className="text-xs sm:text-sm text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            aria-label="Open Privacy Policy"
+          >
+            PRIVACY POLICY
           </button>
         </div>
 

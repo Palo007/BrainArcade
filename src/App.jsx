@@ -11,6 +11,7 @@ import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
 import { GameLaunchModal } from './components/GameLaunchModal.jsx';
 import { Credits } from './components/Credits';
+import { Privacy } from './components/Privacy';
 import { games } from './games/games.config';
 import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
@@ -85,6 +86,9 @@ function App() {
 
             {/* Credits */}
             <Route path="/credits" element={<Credits />} />
+
+            {/* Privacy Policy */}
+            <Route path="/privacy" element={<Privacy />} />
 
             {/* Individual Game Routes */}
             <Route path="/game/:gameId" element={<GamePage />} />
