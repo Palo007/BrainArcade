@@ -50,17 +50,15 @@ export function SweetSpot() {
   const sprite = score > 70 ? chillImg : score > 40 ? worriedImg : fallingImg;
 
   return (
-    <div className="space-y-6">
+    <div className="absolute inset-0 flex flex-col">
       {/* Title */}
-      <div className="text-center mb-2">
+      <div className="text-left p-6 pb-2">
         <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
         <p className="text-xs text-gray-400">Keep the character floating by staying relaxed</p>
       </div>
 
-      {/* Main stage */}
-      <div className="flex gap-4 items-stretch">
-        {/* Stage */}
-        <div className="flex-1 bg-black p-0 relative overflow-hidden">
+      {/* Main stage - full screen */}
+      <div className="flex-1 bg-black relative overflow-hidden min-h-0">
           {/* Local styles for starfield */}
           <style>{`
             .starfield, .starfield2, .starfield3 { position: absolute; inset: 0; pointer-events: none; }
@@ -86,63 +84,49 @@ export function SweetSpot() {
             @keyframes twinkle2 { 0%,100% { opacity: 0; } 50% { opacity: 0.35; } }
             @keyframes twinkle3 { 0%,100% { opacity: 0; } 50% { opacity: 0.3; } }
           `}</style>
-          {!isBaselineReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-              <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                Waiting for baseline…
-              </div>
+        {!isBaselineReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+              Waiting for baseline…
             </div>
-          )}
-          <div className="relative h-[420px]">
-            {/* Stars */}
-            <div className="starfield" />
-            <div className="starfield2" />
-            <div className="starfield3" />
-
-            {/* Sprite */}
-            <img
-              src={sprite}
-              alt="relaxation sprite"
-              draggable={false}
-              className="absolute left-1/2 select-none"
-              style={{
-                top: `${15 + (1 - height) * 70}%`,
-                transform: `translate(-50%, -50%)`,
-                width: `min(${imgSize}px, 20vmin)`,
-                height: 'auto',
-                imageRendering: 'pixelated',
-                filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
-                pointerEvents: 'none',
-                transition: 'opacity 0.15s ease-out',
-              }}
-            />
           </div>
-        </div>
+        )}
 
-        {/* Sidebar with joystick value */}
-        <div className="w-60 shrink-0 space-y-4">
-          <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
-            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">STATUS</div>
-            <div className="text-4xl text-center" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-              {score}
-            </div>
-            <div className="text-[8px] text-gray-400 text-center mt-1">relaxation</div>
+        {/* Stars */}
+        <div className="starfield" />
+        <div className="starfield2" />
+        <div className="starfield3" />
+
+        {/* Sprite */}
+        <img
+          src={sprite}
+          alt="relaxation sprite"
+          draggable={false}
+          className="absolute left-1/2 top-1/2 select-none"
+          style={{
+            transform: `translate(-50%, calc(-50% + ${(0.5 - height) * 35}%))`,
+            width: `min(${imgSize}px, 20vmin)`,
+            height: 'auto',
+            imageRendering: 'pixelated',
+            filter: 'drop-shadow(0 2px 0 rgba(255,255,255,0.05)) drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s ease-out',
+          }}
+        />
+
+        {/* Bottom right HUD */}
+        <div className="absolute bottom-4 right-4 flex gap-6 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="text-right">
+            <div className="text-[8px] opacity-60">RELAX</div>
+            <div className="text-xl">{score}</div>
           </div>
-
-          <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
-            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">MIDLINE THETA</div>
-            <div className="text-2xl text-center font-mono">
-              {frontalTheta != null ? frontalTheta.toFixed(2) : '---'}
-            </div>
-            <div className="text-[8px] text-gray-400 text-center mt-1">AF7/AF8 avg (band power)</div>
+          <div className="text-right">
+            <div className="text-[8px] opacity-60">THETA</div>
+            <div className="text-xl">{frontalTheta != null ? frontalTheta.toFixed(2) : '---'}</div>
           </div>
-
-          <div className="border-4 border-[var(--nes-yellow)] p-4 bg-[var(--nes-dark)]">
-            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">BASELINE (MIDLINE THETA)</div>
-            <div className="text-2xl text-center font-mono">
-              {frontalThetaBaseline != null ? frontalThetaBaseline.toFixed(2) : '---'}
-            </div>
-            <div className="text-[8px] text-gray-400 text-center mt-1">recorded average</div>
+          <div className="text-right">
+            <div className="text-[8px] opacity-60">BASE</div>
+            <div className="text-xl">{frontalThetaBaseline != null ? frontalThetaBaseline.toFixed(2) : '---'}</div>
           </div>
         </div>
       </div>
