@@ -14,7 +14,6 @@
  *   id: string           - Unique identifier (use kebab-case)
  *   name: string         - Display name
  *   description: string  - Short description (1-2 sentences)
- *   icon: string         - Emoji or text icon
  *   component: Component - Your game's React component
  * }
  */
@@ -27,14 +26,12 @@ export const games = [
     id: "example-game",
     name: "BRAINWAVE VISUALIZER",
     description: "See your brainwaves in real-time with EEG visualization",
-    icon: "🧠",
     component: ExampleGame,
   },
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
     description: "Float the character by staying relaxed",
-    icon: "🟡",
     component: SweetSpot,
   },
   // Add more games here!
@@ -42,7 +39,6 @@ export const games = [
   //   id: 'my-awesome-game',
   //   name: 'MY AWESOME GAME',
   //   description: 'Description of what your game does',
-  //   icon: '🎮',
   //   component: MyAwesomeGame,
   // },
 ];

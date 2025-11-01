@@ -47,11 +47,6 @@ export function NavBar({ onActiveGameClick } = {}) {
               }}
             >
               <div className="flex items-center gap-4">
-                {/* Game Icon */}
-                <div className="text-3xl w-12 h-12 flex items-center justify-center">
-                  {game.icon}
-                </div>
-
                 {/* Game Info */}
                 <div className="flex-1 text-left">
                   <h3 className="text-sm mb-1 text-white">{game.name}</h3>
@@ -68,6 +63,39 @@ export function NavBar({ onActiveGameClick } = {}) {
             </Link>
           );
         })}
+
+        {/* Coming Soon Block */}
+        <div className="block p-4 border-4 border-[var(--nes-gray)] bg-gray-800 bg-opacity-40">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 text-left">
+              <h3 className="text-sm mb-1 text-gray-300">MORE GAMES COMING SOON</h3>
+              <p className="text-[10px] text-gray-500 leading-relaxed">
+                Stay tuned for more brain-controlled minigames
+              </p>
+            </div>
+            <div className="text-gray-600 text-xl">
+              ⋯
+            </div>
+          </div>
+        </div>
+
+        {/* Contribute Block */}
+        <a
+          href="#"
+          className="block p-4 border-4 border-[var(--nes-gray)] bg-gray-800 bg-opacity-40 hover:border-[var(--nes-green)] hover:bg-opacity-60 transition-all"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex-1 text-left">
+              <h3 className="text-sm mb-1 text-[var(--nes-green)]">CONTRIBUTE YOUR GAME</h3>
+              <p className="text-[10px] text-gray-400 leading-relaxed">
+                Build your own minigame and submit to GitHub
+              </p>
+            </div>
+            <div className="text-[var(--nes-green)] text-xl">
+              +
+            </div>
+          </div>
+        </a>
       </div>
 
       {games.length === 0 && (
