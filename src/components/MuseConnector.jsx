@@ -73,7 +73,7 @@ export function MuseConnector({ onConnected }) {
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
-          {isConnecting ? 'CONNECTING...' : 'SIMULATE BRAIN DATA'}
+          {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT MUSE'}
         </button>
       </div>
 
@@ -92,7 +92,7 @@ export function MuseConnector({ onConnected }) {
       {showMockInfo && (
         <RetroModal
           title="SIMULATE BRAIN DATA"
-          confirmLabel="USE SIMULATED DATA"
+          confirmLabel="USE SIMULATED REAL-TIME DATA"
           cancelLabel="CANCEL"
           isBusy={isConnecting}
           onCancel={() => setShowMockInfo(false)}

@@ -141,6 +141,30 @@ export function GameOverScreen({
   const readinessComplete = readinessElapsed >= readinessDuration && qualityReady;
   const readinessProgress = Math.min(100, Math.floor((readinessElapsed / readinessDuration) * 100));
 
+  // Axis-aware wording
+  const axisAdjective = (() => {
+    switch (joystickAxis) {
+      case 'relaxation':
+        return 'calm';
+      case 'focus':
+      case 'focused-attention':
+        return 'focused';
+      default:
+        return 'steady';
+    }
+  })();
+  const lowAxisLabel = (() => {
+    switch (joystickAxis) {
+      case 'relaxation':
+        return 'Low relaxation detected';
+      case 'focus':
+      case 'focused-attention':
+        return 'Low focus detected';
+      default:
+        return 'Low readiness detected';
+    }
+  })();
+
   // Determine button state
   let confirmLabel = 'RETRY';
   let confirmDisabled = false;
@@ -216,7 +240,7 @@ export function GameOverScreen({
 
             <div className="text-[8px] opacity-80">
               {readinessElapsed < readinessDuration
-                ? `${readinessDuration - readinessElapsed}s remaining • Stay focused and still`
+                ? `${readinessDuration - readinessElapsed}s remaining • Stay ${axisAdjective} and still`
                 : qualityReady
                   ? 'Ready to play!'
                   : 'Adjust electrodes for better signal'
@@ -228,9 +252,7 @@ export function GameOverScreen({
         {/* Recalibration message */}
         {needsRecalibration && (
           <div className="mb-4 p-3 border border-[var(--nes-yellow)] bg-black/40">
-            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">
-              Low focus detected
-            </div>
+            <div className="text-[10px] text-[var(--nes-yellow)] mb-2">{lowAxisLabel}</div>
             <div className="text-[8px] text-gray-300 leading-relaxed">
               Your baseline may have shifted. Recalibrate for better experience.
             </div>

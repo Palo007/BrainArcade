@@ -13,8 +13,8 @@ import fallingImg from './assets/falling.png';
 
 export function SweetSpot() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  // Level 1: Cognitive joystick (0..1) for focus, built from FMT vs baseline
-  const { value01 } = useJoystick('focus', {
+  // Level 1: Cognitive joystick (0..1) for relaxation, built from biomarker vs baseline
+  const { value01 } = useJoystick('relaxation', {
     range: 0.4,
     baselineCenter: 0.5,
     autoAdjustBaseline: true // Enable adaptive baseline adjustment
@@ -86,7 +86,7 @@ export function SweetSpot() {
       <GameOverScreen
         finalScore={gameScore}
         gameName="sweet-spot"
-        joystickAxis="focus"
+        joystickAxis="relaxation"
         joystickOptions={{
           range: 0.4,
           baselineCenter: 0.5,
@@ -148,7 +148,7 @@ export function SweetSpot() {
         {/* Title */}
         <div className="absolute top-6 left-6">
           <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-          <p className="text-xs text-gray-400">Keep the character floating by staying focused</p>
+          <p className="text-xs text-gray-400">Keep your brain chilling on a cloud — stay calm to keep it afloat</p>
         </div>
 
         {/* Sprite */}
@@ -190,7 +190,7 @@ export function SweetSpot() {
             )}
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">FOCUS</div>
+            <div className="text-[8px] opacity-60">CALM</div>
             <div className="text-xl">{score}</div>
           </div>
           <div className="text-right">

@@ -20,8 +20,15 @@
 
 import { ExampleGame } from "./example-game/ExampleGame";
 import { SweetSpot } from "./sweet-spot/SweetSpot.jsx";
+import { BrainCommandCenter } from "./joystick-visualizer/JoystickVisualizer.jsx";
 
 export const games = [
+  {
+    id: "brain-command-center",
+    name: "BRAIN COMMAND CENTER",
+    description: "Monitor all of your cognitive traits in real time",
+    component: BrainCommandCenter,
+  },
   {
     id: "example-game",
     name: "BRAINWAVE VISUALIZER",
@@ -31,7 +38,7 @@ export const games = [
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
-    description: "The character is a brain sitting on a cloud trying to meditate. Help him stay on the sweet spot, and earn points!",
+    description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren’t relaxed.",
     component: SweetSpot,
   },
   // Add more games here!
