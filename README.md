@@ -1,41 +1,54 @@
-# Muse Games - Brainwave Powered Minigames
+# Brain Arcade 🧠🕹️
 
-A modular platform for creating EEG-controlled minigames using the Muse headband and Web Bluetooth API.
+> **A retro arcade of thought-controlled minigames — proving neurotechnology is already here, accessible, and ready to hack.**
+
+Brain Arcade is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
+
+## The Vision
+
+This project serves **two audiences simultaneously**:
+
+1. **Users** 👾 — Experience what's possible with neurotechnology *today*. See that brain-computer interfaces aren't science fiction — they're in your browser.
+
+2. **Builders & Hackers** 🛠️ — Discover that building with neurotechnology doesn't require a PhD. Use pre-processed biomarkers as simple joystick controls (normalized 0-1 values) or dive deeper into signal processing pipelines.
+
+The arcade setting makes it **playful and approachable** while the modular architecture makes it **serious and extensible**. Neurotechnology for everyone.
+
+---
+
+## Try It Now (No Hardware Needed!)
+
+You can explore the entire platform using **mock mode** with real pre-recorded EEG data:
+
+```bash
+npm install
+npm run dev
+```
+
+When connecting, choose **"Mock Mode"** to try all games without a Muse device. The mock data is real neural signals, so you'll get authentic behavior.
+
+---
 
 ## Features
 
-- 🧠 **Muse EEG Integration** - Direct browser connection to Muse devices via Web Bluetooth
-- 🎮 **Modular Game System** - Easy-to-extend architecture for adding new games
-- 🕹️ **Retro 8-bit Aesthetic** - NES-style UI with scanlines, pixel fonts, and arcade vibes
-- ⚛️ **React + Vite** - Modern development stack with hot module replacement
-- 🎨 **Tailwind CSS** - Utility-first styling with custom retro theme
+🧠 **Consumer-Grade EEG** — Uses Muse headbands (cheapest consumer EEG available) via Web Bluetooth
+🎮 **Plug-and-Play Games** — Add new games without touching core files
+🕹️ **Three Levels of Complexity** — From simple joystick controls to custom DSP pipelines
+🔒 **Zero Data Collection** — Local-only processing, no neural data is ever saved or transmitted
+🧪 **Mock Mode** — Develop and play with real pre-recorded EEG data (no device required)
+🕹️ **Retro Aesthetic** — NES-style UI with 8-bit vibes
 
-## Project Structure
+---
 
-```
-/src
-  /components
-    - Layout.jsx              # Main layout with Muse status indicator
-    - MuseConnector.jsx       # Muse connection UI
-    - StartScreen.jsx         # Retro start screen
-    - NavBar.jsx              # Game navigation menu
-  /contexts
-    - MuseContext.jsx         # Muse/EEG state management
-  /games
-    /example-game
-      - ExampleGame.jsx       # Demo game component
-    - games.config.js         # Central game registry
-  /styles
-    - retro.css               # 8-bit styling and effects
-  - App.jsx                   # Main app with routing
-  - index.css                 # Global styles + Tailwind
-```
-
-## Getting Started
+## Quick Start
 
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/brain-arcade.git
+cd brain-arcade
+
 # Install dependencies
 npm install
 
@@ -43,44 +56,137 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173/`
+Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edge, or Opera).
 
 ### Browser Requirements
 
 - Chrome, Edge, or Opera (Web Bluetooth support required)
-- Safari and iOS devices are not currently supported
+- Safari and iOS devices are **not supported** (no Web Bluetooth API)
 
-## Adding a New Game
+### Connecting Your Brain
 
-### 1. Create Your Game Folder
+**Option 1: With a Muse Device**
+1. Power on your Muse headband
+2. Click "Connect Muse" in the app
+3. Select your device from the browser's Bluetooth dialog
+4. Start playing!
 
-Create a new folder in `/src/games/` with your game name:
+**Option 2: Mock Mode (No Device)**
+1. Click "Connect Muse"
+2. Select "Mock Mode"
+3. Experience real pre-recorded EEG data
+4. Perfect for development and demos
 
-```bash
-mkdir src/games/my-game
+---
+
+## Architecture: Three Levels of Building
+
+Brain Arcade is designed for **modularity and scalability**. Developers can work at different levels based on their expertise:
+
+### Level 1: Game Developers (No Neuroscience Required)
+
+Use pre-built **biomarker joysticks** — normalized 0-1 values representing cognitive states:
+
+```jsx
+import { useBiomarker } from '../../contexts/BiomarkerContext';
+
+export function MyGame() {
+  const { norm01 } = useBiomarker('frontal-midline-theta');
+
+  // norm01 is a number from 0 to 1
+  // 0.5 = baseline, higher = more cognitive control
+  const playerY = norm01 * screenHeight;
+
+  return <GameCharacter y={playerY} />;
+}
 ```
 
-### 2. Create Your Game Component
+**Available Biomarkers:**
+- `frontal-midline-theta` — Cognitive control / focus
+- `frontal-alpha-asymmetry` — Approach/withdrawal motivation
+- `alpha`, `beta`, `theta`, `delta`, `gamma` — Band power averages
+- `alpha-left`, `alpha-right`, etc. — Hemispheric band powers
 
-Create a React component in your game folder (`MyGame.jsx`):
+### Level 2: Biomarker Users
+
+Work directly with **processed EEG features** like band powers (alpha, beta, theta, delta, gamma):
+
+```jsx
+import { useProcessing } from '../../contexts/ProcessingContext';
+
+export function MyGame() {
+  const { bandPowers } = useProcessing();
+
+  // bandPowers = { alpha: [ch1, ch2, ch3, ch4], beta: [...], ... }
+  const leftAlpha = bandPowers.alpha[0];
+  const rightAlpha = bandPowers.alpha[3];
+
+  return <VisualizeBandPowers data={bandPowers} />;
+}
+```
+
+### Level 3: Pipeline Builders
+
+Create custom **signal processing pipelines** using raw EEG:
 
 ```jsx
 import { useEEG } from '../../contexts/MuseContext';
 
 export function MyGame() {
-  const { rawEEG, isConnected } = useEEG();
+  const { rawEEG } = useEEG();
 
-  // rawEEG is an array of 4 channel values: [TP9, AF7, AF8, TP10]
-  // Values are in microvolts (μV), typically in range [-1000, 1000]
+  // rawEEG = [TP9, AF7, AF8, TP10] in microvolts
+  // Sampling rate: 256 Hz
+  const customMetric = myCustomDSPFunction(rawEEG);
 
-  if (!isConnected) {
-    return <div>Please connect your Muse device</div>;
+  return <UseCustomMetric value={customMetric} />;
+}
+```
+
+**Full Processing Stack:**
+1. **MuseContext** → Raw EEG data (256 Hz, 4 channels)
+2. **ProcessingContext** → Welch PSD + band powers (~4 Hz updates)
+3. **BaselineContext** → Session normalization (30s calibration)
+4. **BiomarkerContext** → Cognitive markers (derived features)
+5. **JoystickContext** → Game-ready 0-1 controls
+
+---
+
+## Adding a New Game
+
+Games are **completely modular** — add yours without touching core files:
+
+### 1. Create Your Game Folder
+
+```bash
+mkdir src/games/my-game
+```
+
+### 2. Build Your Game Component
+
+Create `src/games/my-game/MyGame.jsx`:
+
+```jsx
+import { useBiomarker } from '../../contexts/BiomarkerContext';
+import { useBaseline } from '../../contexts/BaselineContext';
+import { useEffect } from 'react';
+
+export function MyGame() {
+  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { norm01 } = useBiomarker('frontal-midline-theta');
+
+  useEffect(() => {
+    ensureBaseline({ seconds: 30 }); // 30s calibration
+  }, [ensureBaseline]);
+
+  if (!isBaselineReady) {
+    return <div>Calibrating baseline... relax for 30 seconds</div>;
   }
 
   return (
     <div>
-      <h2>My Awesome Game</h2>
-      <p>Channel 1: {rawEEG[0]}</p>
+      <h2>My Brain Game</h2>
+      <p>Control value: {Math.round(norm01 * 100)}%</p>
       {/* Your game logic here */}
     </div>
   );
@@ -89,7 +195,7 @@ export function MyGame() {
 
 ### 3. Register Your Game
 
-Add your game to `/src/games/games.config.js`:
+Add to `src/games/games.config.js`:
 
 ```javascript
 import { MyGame } from './my-game/MyGame';
@@ -98,101 +204,110 @@ export const games = [
   // ... existing games
   {
     id: 'my-game',
-    name: 'MY AWESOME GAME',
-    description: 'Description of what your game does',
-    icon: '🎮',
+    name: 'MY BRAIN GAME',
+    description: 'Control the game with your thoughts',
     component: MyGame,
   },
 ];
 ```
 
-That's it! Your game will automatically appear in the navigation menu.
+**That's it!** Your game appears in the arcade menu automatically.
 
-## Using EEG Data
+For detailed contribution guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-### Available Hook
+---
 
+## Privacy & Data Policy
+
+🔒 **Zero Data Collection. Period.**
+
+- **No neural data is ever saved** to disk
+- **No data is transmitted** to any server
+- **All processing happens locally** in your browser
+- **Data exists only in memory** during your session
+
+This is a hard rule for the project. Games that attempt to save or transmit neural data will not be accepted.
+
+When you close the browser, all neural data is destroyed. Your thoughts stay yours.
+
+**Read our full privacy policy:** [PRIVACY.md](./PRIVACY.md)
+
+---
+
+## Project Structure
+
+```
+/src
+  /components
+    - Layout.jsx              # Main UI layout
+    - MuseConnector.jsx       # Device connection UI
+    - BiomarkerJoystick.jsx   # Visual joystick component
+    - StartScreen.jsx         # Retro start screen
+    - NavBar.jsx              # Game navigation
+  /contexts
+    - MuseContext.jsx         # Raw EEG streaming (256 Hz)
+    - ProcessingContext.jsx   # PSD + band powers
+    - BaselineContext.jsx     # Session normalization
+    - BiomarkerContext.jsx    # Derived cognitive markers
+    - JoystickContext.jsx     # Game controls
+    - QualityContext.jsx      # Signal quality monitoring
+  /games
+    /example-game            # Visualization demo
+    /sweet-spot              # Relaxation floating game
+    - games.config.js        # Central game registry
+  /lib
+    - signalProcessing.js    # DSP utilities
+  /styles
+    - retro.css              # 8-bit aesthetic
+  - App.jsx                  # Main app + routing
+```
+
+---
+
+## API Reference
+
+### Hooks
+
+#### `useEEG()` — Raw EEG Data
 ```javascript
-import { useEEG } from '../contexts/MuseContext';
-
-const { rawEEG, isConnected, muse, connectMuse, disconnectEEG } = useEEG();
+const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
 ```
+- `rawEEG`: `[TP9, AF7, AF8, TP10]` in microvolts
+- `isConnected`: Boolean device status
+- `isMock`: Boolean indicating mock mode
+- `connectMuse(options)`: Connect to device (`{ mock: true }` for mock mode)
+- `disconnectEEG()`: Disconnect device
 
-### Hook Returns
-
-- `rawEEG`: Array of 4 EEG channel values `[TP9, AF7, AF8, TP10]`
-- `isConnected`: Boolean indicating Muse connection status
-- `muse`: Raw Muse device object with buffers and properties
-- `connectMuse()`: Function to initiate Muse connection
-- `disconnectEEG()`: Function to disconnect from Muse
-
-### EEG Data Details
-
-- **Sampling Rate**: 256 Hz (256 samples per second)
-- **Channels**: 4 electrodes (TP9, AF7, AF8, TP10)
-- **Value Range**: Typically -1000 to 1000 microvolts (μV)
-- **Update Frequency**: Real-time updates via React state
-
-### Example: Using EEG for Game Logic
-
+#### `useProcessing()` — Band Powers
 ```javascript
-import { useState, useEffect } from 'react';
-import { useEEG } from '../../contexts/MuseContext';
-
-export function ConcentrationGame() {
-  const { rawEEG, isConnected } = useEEG();
-  const [score, setScore] = useState(0);
-
-  useEffect(() => {
-    if (isConnected) {
-      // Calculate average brain activity
-      const avgActivity = rawEEG.reduce((sum, val) => sum + Math.abs(val), 0) / 4;
-
-      // Increase score based on activity
-      if (avgActivity > 500) {
-        setScore((prev) => prev + 1);
-      }
-    }
-  }, [rawEEG, isConnected]);
-
-  return (
-    <div>
-      <h2>Concentration Challenge</h2>
-      <p>Score: {score}</p>
-      <p>Keep your brain activity high!</p>
-    </div>
-  );
-}
+const { bandPowers, psd } = useProcessing();
 ```
+- `bandPowers`: `{ alpha: [4], beta: [4], theta: [4], delta: [4], gamma: [4] }`
+- `psd`: Power spectral density (Welch method, 2s window, 1s overlap)
 
-## Styling
-
-### Retro Theme
-
-The app includes pre-built retro styling classes:
-
-- `.retro-button` - 8-bit style button
-- `.pixel-border` - Pixelated borders
-- `.scanlines` - CRT scanline effect
-- `.blink` - Blinking animation
-- `.arcade-cabinet` - Arcade machine style container
-
-### Custom CSS Variables
-
-```css
---nes-red: #FC8080
---nes-blue: #40C0FF
---nes-purple: #8040FF
---nes-green: #00C020
---nes-yellow: #FCC060
---nes-dark: #282828
---nes-gray: #505050
+#### `useBaseline()` — Calibration
+```javascript
+const { ensureBaseline, isBaselineReady, baseline } = useBaseline();
 ```
+- `ensureBaseline({ seconds })`: Start calibration (default 30s)
+- `isBaselineReady`: Boolean indicating baseline captured
+- `baseline`: Baseline band power values
+
+#### `useBiomarker(name, options)` — Cognitive Markers
+```javascript
+const { value, norm01, baseline } = useBiomarker('frontal-midline-theta', { range: 0.4 });
+```
+- `value`: Current biomarker value
+- `norm01`: Normalized 0-1 (0.5 = baseline)
+- `baseline`: Baseline reference value
+- `range`: Sensitivity parameter (default 0.4)
+
+---
 
 ## Development
 
 ```bash
-# Start dev server
+# Start dev server with hot reload
 npm run dev
 
 # Build for production
@@ -200,82 +315,70 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Lint code
+npm run lint
 ```
 
-## EEG Processing Infrastructure
-
-Reusable building blocks for EEG-driven games are included:
-
-- Processing: `ProcessingProvider` computes Welch PSD (2s window, 1s overlap) and band powers for each channel at ~4Hz. Access via `useProcessing()`.
-- Baseline: `BaselineProvider` records a session baseline of band powers for a configurable duration (default 30s). Trigger via `useBaseline().ensureBaseline({ seconds })`. Baseline persists until device disconnect.
-- Biomarkers: `BiomarkerProvider` exposes derived markers and normalized values vs baseline. Use `useBiomarker(name)` or `useBiomarkers()`.
-- Joystick: `BiomarkerJoystick` renders a normalized 0–1 control stream from a biomarker to plug into gameplay.
-
-Biomarker keys:
-
-- `frontal-midline-theta` — avg theta across AF7/AF8 (approximation)
-- `frontal-alpha-asymmetry` — alpha(AF7) − alpha(AF8)
-- Bands (avg): `alpha`, `beta`, `theta`, `delta`, `gamma`
-- Bands (per-side): `alpha-left|right`, `beta-left|right`, `theta-left|right`, `delta-left|right`, `gamma-left|right`
-
-Usage in a game component:
-
-```jsx
-import React, { useEffect } from 'react';
-import { useBaseline } from '../contexts/BaselineContext.jsx';
-import { useBiomarker } from '../contexts/BiomarkerContext.jsx';
-import { BiomarkerJoystick } from '../components/BiomarkerJoystick.jsx';
-
-export function MyGame() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { norm01 } = useBiomarker('frontal-midline-theta', { range: 0.4 });
-
-  useEffect(() => {
-    ensureBaseline({ seconds: 30 });
-  }, [ensureBaseline]);
-
-  // Use norm01 (0..1, 0.5 at baseline) to drive gameplay
-  return (
-    <div>
-      {!isBaselineReady && <div>Waiting for baseline…</div>}
-      <BiomarkerJoystick
-        biomarker="frontal-midline-theta"
-        label="Focus"
-        hintDown="relaxation"
-        hintUp="cognitive control"
-      />
-      <div>Control value: {Math.round(norm01 * 100)}</div>
-    </div>
-  );
-}
-```
+---
 
 ## Tech Stack
 
-- **React 19** - UI framework
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **Tailwind CSS v4** - Utility-first CSS
-- **web-muse** - Muse EEG device library
+- **React 19** — UI framework
+- **Vite** — Build tool & dev server
+- **React Router** — Client-side routing
+- **Tailwind CSS v4** — Utility-first styling
+- **web-muse** — Muse EEG device library (bundled)
+
+---
 
 ## Resources
 
+- [Contributing Guidelines](./CONTRIBUTING.md)
+- [Privacy Policy](./PRIVACY.md)
 - [web-muse Documentation](./web-muse/README.md)
 - [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 - [Muse Headband](https://choosemuse.com/)
 
-## License
+---
 
-MIT
+## Why This Matters
 
-## Contributing
+Neurotechnology has historically been locked behind expensive equipment, academic expertise, and proprietary software. **Brain Arcade breaks that pattern.**
 
-1. Fork the repository
-2. Create your game in a new folder
-3. Register it in `games.config.js`
-4. Submit a pull request!
+By using the cheapest consumer EEG device ($200-300) and building with open web standards, we're proving that:
+
+1. **Neurotechnology is accessible** — You don't need a lab or a PhD
+2. **Builders can start today** — Pre-processed biomarkers = simple joystick values
+3. **There's a playful entry point** — Games make the tech approachable
+4. **It's not just deep-tech** — There's a layer of neurotech ready for hackers right now
+
+This is an invitation to build. The arcade is just the beginning.
 
 ---
 
-Built with 🧠 and powered by brainwaves
-# brain-minigames
+## License
+
+MIT License — see [LICENSE](./LICENSE) for details.
+
+This project is completely open source. Build on it, fork it, learn from it, break it, remix it.
+
+---
+
+## Contributing
+
+We welcome contributions at all levels:
+
+- **Game developers** — Add new minigames using biomarker joysticks
+- **Neuroscience experts** — Propose new biomarkers or improve existing ones
+- **Pipeline builders** — Extend signal processing capabilities
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+
+**Important:** All contributions must respect the **zero data collection policy**. No saving or transmitting neural data.
+
+---
+
+**Built with 🧠 by hackers who believe neurotechnology should be accessible to everyone.**
+
+*Control games with your mind. Build the future of human-computer interaction. Start today.*
