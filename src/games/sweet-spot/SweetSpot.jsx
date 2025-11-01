@@ -29,13 +29,13 @@ export function SweetSpot() {
   const score = Math.round(height * 100);
 
   // Game mechanics: health and scoring
-  const { health, isDead } = useGameHealth({
+  const { health, isDead, reset: resetHealth } = useGameHealth({
     initialHealth: 100,
     drainWhen: score < 40,
     drainRate: 5,
   });
 
-  const { score: gameScore, velocity, isAccumulating } = useGameScore({
+  const { score: gameScore, velocity, isAccumulating, reset: resetScore } = useGameScore({
     joystickValue: value01,
     baseRate: 10,
     minThreshold: 0.4,
@@ -76,6 +76,12 @@ export function SweetSpot() {
 
   // Show game over screen if dead
   if (isDead) {
+    const handleRetry = () => {
+      // Reset game-specific state without reloading or disconnecting
+      resetHealth();
+      resetScore();
+      setHeight(0.5);
+    };
     return (
       <GameOverScreen
         finalScore={gameScore}
@@ -86,6 +92,7 @@ export function SweetSpot() {
           baselineCenter: 0.5,
           autoAdjustBaseline: true,
         }}
+        onRetry={handleRetry}
       />
     );
   }

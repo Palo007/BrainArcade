@@ -37,7 +37,7 @@ export function GameOverScreen({
 }) {
   const navigate = useNavigate();
   const { ready: qualityReady } = useQuality();
-  const { resetBaseline } = useBaseline();
+  const { resetBaseline, ensureBaseline } = useBaseline();
   const { value01 } = useJoystick(joystickAxis, joystickOptions);
 
   // Readiness check state
@@ -112,10 +112,17 @@ export function GameOverScreen({
     setCheckingReadiness(true);
   };
 
-  const handleRecalibrate = () => {
+  const handleRecalibrate = async () => {
+    // Reset baseline to trigger recalibration
     resetBaseline();
     setCheckingReadiness(false);
     setNeedsRecalibration(false);
+
+    // Trigger baseline collection - this will show the baseline modal
+    await ensureBaseline({ seconds: 30 });
+
+    // After baseline completes, automatically retry the game
+    handleRetry();
   };
 
   const handleRetry = () => {
