@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { MuseProvider } from './contexts/MuseContext';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
@@ -16,6 +16,7 @@ import { games } from './games/games.config';
 import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
 import { LostBrainModal } from './components/LostBrainModal.jsx';
+import { MobileBlock } from './components/MobileBlock.jsx';
 
 /**
  * GamesPage - Main games listing and selection page
@@ -68,6 +69,23 @@ function GamePage() {
  * App - Main application component with routing
  */
 function App() {
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 1024; // desktop threshold
+  });
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  if (!isDesktop) {
+    return <MobileBlock />;
+  }
+
   return (
     <MuseProvider>
       <ProcessingProvider>
