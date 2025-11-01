@@ -339,6 +339,34 @@ const { value, norm01, baseline } = useBiomarker("frontal-midline-theta", {
 - `baseline`: Baseline reference value
 - `range`: Sensitivity parameter (default 0.4)
 
+### Biomarkers & Joysticks (Updated)
+
+- Biomarkers (BiomarkerContext `getBiomarker(name)`)
+  - `frontal-midline-theta` — AF7/AF8 theta average (focus)
+  - `frontal-alpha-asymmetry` — Alpha L-R difference (valence/approach)
+  - `frontal-delta` — AF7/AF8 delta average (drowsiness)
+  - `beta-alpha-ratio` — Beta/Alpha (frontal; stress proxy)
+  - `theta-alpha-ratio` — Theta/Alpha (frontal; workload)
+  - `theta-beta-ratio` — Theta/Beta (frontal; engagement inverse / fatigue)
+  - `engagement-index` — Beta/(Alpha+Theta) (frontal; attention)
+  - `relaxation-index` — (Alpha+Theta)/Beta (frontal; calm state)
+
+- Joystick axes (JoystickContext `useJoystick(axis)` → `{ value01 }`)
+  - `focus` — From `frontal-midline-theta` vs baseline
+  - `alertness` — Inverse of `frontal-delta` increase (0=drowsy → 1=alert)
+  - `drowsiness` — `frontal-delta` increase vs baseline
+  - `stress` — `beta-alpha-ratio` (higher ⇒ more stressed)
+  - `workload` — `theta-alpha-ratio` (higher ⇒ more load)
+  - `engagement` — `engagement-index` (beta/(alpha+theta))
+  - `relaxation` — `relaxation-index` ((alpha+theta)/beta)
+  - `flow` — Composite of engagement, moderate beta, low delta, non-excessive theta
+  - `frustration` — Composite of theta↑ + beta↑ with right-leaning theta asymmetry
+
+Notes
+- All axes gate on frontal signal quality to avoid artifacts.
+- Most axes normalize against the session baseline (30s by default).
+- Games can enable `autoAdjustBaseline` to adapt when users stick at extremes.
+
 ---
 
 ## Development
