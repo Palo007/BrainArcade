@@ -8,6 +8,7 @@ import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { Animations } from './components/Animations.jsx';
 import sailorImg from './assets/sailor-right.png';
+import sailorWorriedImg from './assets/sailor-right-worried.png';
 import barrelImg from './assets/barrel.png';
 import sceneImg from './assets/scene.png';
 import './sailor-animations.css';
@@ -68,6 +69,9 @@ export function Sailor() {
     velocityBuildRate: 0.1,
     frozen: isDead || hasWon,
   });
+
+  // Choose sailor sprite based on engagement tier (lowest level -> worried)
+  const sailorSprite = UNDER_ENGAGED ? sailorWorriedImg : sailorImg;
 
   // Ensure baseline is ready
   useEffect(() => {
@@ -191,7 +195,7 @@ export function Sailor() {
           >
             <div className="sailor-float" style={{ width: 'min(120px, 15vmin)' }}>
               <img
-                src={sailorImg}
+                src={sailorSprite}
                 alt="Sailor"
                 className="w-full h-auto"
                 style={{ imageRendering: 'pixelated' }}
