@@ -52,11 +52,13 @@ export function BrainCommandCenter() {
         </div>
       )}
 
-      <div className="p-6 min-h-full flex flex-col items-center">
-        <div className="mb-8 w-full max-w-6xl mx-auto">
-          <h2 className="text-2xl text-[var(--nes-yellow)] text-left">BRAIN COMMAND CENTER</h2>
-          <p className="text-xs text-gray-400 mt-1 mb-8 text-left">Check out your brain's cognitive traits in real-time</p>
-        </div>
+      {/* Title (aligned like SweetSpot) */}
+      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
+        <h2 className="text-2xl text-[var(--nes-yellow)] text-left">BRAIN COMMAND CENTER</h2>
+        <p className="text-xs text-gray-400 mt-2 text-left">Check out your brain's cognitive traits in real-time</p>
+      </div>
+
+      <div className="p-6 pt-24 min-h-full flex flex-col items-center">
 
         <div className="w-full max-w-6xl mx-auto flex gap-6 items-start">
           {/* Left: Image */}

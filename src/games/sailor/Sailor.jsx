@@ -7,6 +7,7 @@ import { useGameScore } from '../../hooks/useGameScore.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { Animations } from './components/Animations.jsx';
+import { GameHint } from '../../components/GameHint.jsx';
 import sailorImg from './assets/sailor-right.png';
 import sailorWorriedImg from './assets/sailor-right-worried.png';
 import barrelImg from './assets/barrel.png';
@@ -192,6 +193,12 @@ export function Sailor() {
       {/* Decorative Animations (birds, clouds, fish) */}
       <Animations />
 
+      {/* Title (aligned like SweetSpot) */}
+      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
+        <h2 className="text-2xl text-[var(--nes-dark)]">SEA OF THOUGHTS</h2>
+        <p className="text-xs text-gray-800 mt-2">Oh no! you lost your idea in a sea of thoughts! hurry up to recollect it!</p>
+      </div>
+
       {/* Game Elements */}
       <div className="absolute inset-0 flex items-center justify-center">
         {/* Water Level Line (60% down from top) */}
@@ -255,11 +262,15 @@ export function Sailor() {
         
       </div>
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 border-2 border-white px-4 py-2 text-white text-center" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: '10px' }}>
-        <div>Reach the barrel to recollect your train of thought!</div>
-        <div className="text-[8px] opacity-70 mt-1">Engagement 30-70% = best speed</div>
-      </div>
+      {/* Instructions - standardized component (bottom-left, left-aligned) */}
+      <GameHint
+        position="bottom-left"
+        offset={8}
+        scheme="light"
+        align="left"
+        primary={"Move faster by being more engaged."}
+        secondary={"Engagement 30–70% = best speed"}
+      />
     </div>
   );
 }

@@ -30,13 +30,11 @@ export function ExampleGame() {
   }, [rawEEG]);
 
   return (
-    <div className="space-y-6">
-      {/* Game Title */}
-      <div className="text-center mb-6">
-        <h2 className="text-2xl text-[var(--nes-blue)] mb-2">BRAINWAVE VISUALIZER</h2>
-        <p className="text-xs text-gray-400">
-          Real-time EEG visualization from your Muse device
-        </p>
+    <div className="relative space-y-6 pt-24">
+      {/* Title (aligned like SweetSpot) */}
+      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
+        <h2 className="text-2xl text-[var(--nes-yellow)]">BRAINWAVE VISUALIZER</h2>
+        <p className="text-xs text-gray-400 mt-2">Real-time EEG visualization from your Muse device</p>
       </div>
 
       {/* Layout: Plot left, Values right */}

@@ -7,6 +7,7 @@ import { useGameScore } from '../../hooks/useGameScore.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import '../../styles/retro.css';
+import { GameHint } from '../../components/GameHint.jsx';
 import chillImg from './assets/chill.png';
 import worriedImg from './assets/worried.png';
 import fallingImg from './assets/falling.png';
@@ -147,9 +148,9 @@ export function SweetSpot() {
         ))}
 
         {/* Title */}
-        <div className="absolute top-6 left-6">
+        <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
           <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-          <p className="text-xs text-gray-400">Keep your brain chilling on a cloud — stay calm to keep it afloat</p>
+          <p className="text-xs text-gray-400 mt-2">Keep your brain chilling on a cloud — stay calm to keep it afloat</p>
         </div>
 
         {/* Sprite */}
@@ -203,6 +204,16 @@ export function SweetSpot() {
             <div className="text-xl">{relaxIdxBaseline != null ? relaxIdxBaseline.toFixed(2) : '---'}</div>
           </div>
         </div>
+
+        {/* Instructions - standardized component (bottom-left, dark scheme) */}
+        <GameHint
+          position="bottom-left"
+          offset={8}
+          scheme="dark"
+          align="left"
+          primary={"Keep calm to float up!"}
+          secondary={"Relaxation 40–70% scores best"}
+        />
       </div>
     </div>
   );
