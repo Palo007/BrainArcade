@@ -11,6 +11,7 @@ import sailorImg from './assets/sailor-right.png';
 import barrelImg from './assets/barrel.png';
 import sceneImg from './assets/scene.png';
 import './sailor-animations.css';
+import '../../styles/retro.css';
 
 export function Sailor() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
@@ -23,9 +24,14 @@ export function Sailor() {
   // Game state
   const [sailorX, setSailorX] = useState(15); // Start at 15% from left
   const [barrelX, setBarrelX] = useState(50); // Start at center (50%)
+  const [barrelMoving, setBarrelMoving] = useState(false); // Is barrel moving left?
   const [collected, setCollected] = useState(0); // Number of barrels collected
+  const [hasWon, setHasWon] = useState(false); // Reached right checkpoint
   const animationFrameRef = useRef(null);
   const lastTimeRef = useRef(Date.now());
+
+  const RIGHT_CHECKPOINT = 85; // Win when sailor reaches this point
+  const BARREL_STOP_DISTANCE = 15; // Barrel stops this % ahead of sailor
 
   // Thresholds
   const LOW_THRESHOLD = 0.3;
@@ -48,7 +54,7 @@ export function Sailor() {
     minThreshold: LOW_THRESHOLD,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
-    frozen: isDead,
+    frozen: isDead || hasWon,
   });
 
   // Ensure baseline is ready
@@ -58,7 +64,7 @@ export function Sailor() {
 
   // Game loop
   useEffect(() => {
-    if (!isBaselineReady || isDead) return;
+    if (!isBaselineReady || isDead || hasWon) return;
 
     const gameLoop = () => {
       const now = Date.now();
@@ -75,13 +81,31 @@ export function Sailor() {
         } else if (OVER_ENGAGED) {
           speed = 8; // Still moves but losing health (8% per second)
         }
-        return Math.min(prevX + speed * deltaTime, 95); // Cap at 95%
+        const newX = Math.min(prevX + speed * deltaTime, 95); // Cap at 95%
+
+        // Check if reached right checkpoint
+        if (newX >= RIGHT_CHECKPOINT) {
+          setHasWon(true);
+        }
+
+        return newX;
       });
 
-      // Update barrel position - drifts right slowly
+      // Update barrel position - moves left if active, stops when close enough to sailor
       setBarrelX(prevX => {
-        const driftSpeed = 2; // 2% per second
-        return Math.min(prevX + driftSpeed * deltaTime, 90); // Cap at 90%
+        if (!barrelMoving) return prevX;
+
+        // Move left toward sailor
+        const moveSpeed = 8; // 8% per second
+        const targetX = sailorX + BARREL_STOP_DISTANCE;
+
+        // If barrel has reached the target distance ahead of sailor, stop moving
+        if (prevX <= targetX) {
+          setBarrelMoving(false);
+          return targetX;
+        }
+
+        return Math.max(prevX - moveSpeed * deltaTime, targetX);
       });
 
       animationFrameRef.current = requestAnimationFrame(gameLoop);
@@ -95,22 +119,22 @@ export function Sailor() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isBaselineReady, isDead, UNDER_ENGAGED, GOOD_RANGE, OVER_ENGAGED]);
+  }, [isBaselineReady, isDead, hasWon, UNDER_ENGAGED, GOOD_RANGE, OVER_ENGAGED, barrelMoving, sailorX, RIGHT_CHECKPOINT, BARREL_STOP_DISTANCE]);
 
-  // Collision detection
+  // Collision detection and barrel collection
   useEffect(() => {
-    if (isDead) return;
+    if (isDead || hasWon) return;
 
-    // Check if sailor has reached the barrel (within 3% tolerance)
-    if (sailorX >= barrelX - 3) {
-      // Collection bonus!
+    // Check if sailor has reached the barrel (within 5% tolerance)
+    if (sailorX >= barrelX - 5 && !barrelMoving) {
+      // Collection!
       setCollected(prev => prev + 1);
 
-      // Reset positions
-      setSailorX(15);
-      setBarrelX(50);
+      // Spawn new barrel from the right
+      setBarrelX(90); // Start from right side
+      setBarrelMoving(true); // Start moving left toward sailor
     }
-  }, [sailorX, barrelX, isDead]);
+  }, [sailorX, barrelX, isDead, hasWon, barrelMoving]);
 
   // Waiting for baseline
   if (!isBaselineReady) {
@@ -124,16 +148,22 @@ export function Sailor() {
     );
   }
 
-  // Game over
-  if (isDead) {
+  // Game over (win or loss)
+  if (isDead || hasWon) {
     const handleRetry = () => {
       resetHealth();
       resetScore();
       setSailorX(15);
       setBarrelX(50);
+      setBarrelMoving(false);
       setCollected(0);
+      setHasWon(false);
       lastTimeRef.current = Date.now();
     };
+
+    const message = hasWon
+      ? "You've recollected your train of thought!"
+      : "Seems like you lost your train of thought...";
 
     return (
       <GameOverScreen
@@ -142,7 +172,7 @@ export function Sailor() {
         joystickAxis="engagement"
         joystickOptions={{ range: 0.4 }}
         onRetry={handleRetry}
-        customMessage="Seems like you lost your train of thought..."
+        customMessage={message}
       />
     );
   }
@@ -194,7 +224,7 @@ export function Sailor() {
             className="absolute barrel-float"
             style={{
               left: `${barrelX}%`,
-              transform: 'translate(-50%, -50%)',
+              transform: 'translate(-50%, 15%)', // Lowered significantly to align with sailor's bottom
               width: 'min(80px, 10vmin)',
               transition: 'left 0.1s linear',
             }}
@@ -210,7 +240,7 @@ export function Sailor() {
       </div>
 
       {/* HUD */}
-      <div className="absolute top-4 right-4 bg-black/70 border-2 border-white p-3 font-mono text-white">
+      <div className="absolute bottom-4 right-4 bg-black/70 border-2 border-white p-3 font-mono text-white">
         <div className="flex items-center gap-3 mb-2">
           <PixelHearts health={health} maxHearts={3} size={16} />
         </div>

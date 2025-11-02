@@ -117,13 +117,29 @@ export function Animations() {
   );
 }
 
-// Bird component with wings
+// Bird component with wings and body
 function Bird() {
   return (
     <div className="relative" style={{ width: '28px', height: '14px' }}>
+      {/* Left Wing */}
       <div className="left-wing">
         <span></span>
       </div>
+      {/* Body - small black circle in center */}
+      <div
+        className="absolute"
+        style={{
+          width: '6px',
+          height: '6px',
+          backgroundColor: '#030308',
+          borderRadius: '50%',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+        }}
+      />
+      {/* Right Wing */}
       <div className="right-wing">
         <span></span>
       </div>
