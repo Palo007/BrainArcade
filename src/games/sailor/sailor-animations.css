@@ -1,0 +1,201 @@
+/* ==========================================
+   SEA OF THOUGHTS - ANIMATIONS
+   ========================================== */
+
+/* Sailor Boat Float Animation */
+.sailor-float {
+    animation: sailorFloat 2s ease-in-out infinite;
+}
+
+@keyframes sailorFloat {
+    0% {
+        transform: translate(-50%, -50%) translateY(0) rotate(0);
+    }
+    25% {
+        transform: translate(-50%, -50%) translateY(0) rotate(-3deg);
+    }
+    50% {
+        transform: translate(-50%, -50%) translateY(-8px) rotate(0);
+    }
+    75% {
+        transform: translate(-50%, -50%) translateY(0) rotate(3deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) translateY(0) rotate(0);
+    }
+}
+
+/* Barrel Float Animation - slower, lower amplitude */
+.barrel-float {
+    animation: barrelFloat 3s ease-in-out infinite;
+}
+
+@keyframes barrelFloat {
+    0% {
+        transform: translate(-50%, -50%) translateY(0) rotate(0);
+    }
+    25% {
+        transform: translate(-50%, -50%) translateY(0) rotate(-2deg);
+    }
+    50% {
+        transform: translate(-50%, -50%) translateY(-5px) rotate(0);
+    }
+    75% {
+        transform: translate(-50%, -50%) translateY(0) rotate(2deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) translateY(0) rotate(0);
+    }
+}
+
+/* Bird Animations */
+.bird-wrapper {
+    animation: birdFly 3.5s ease-in-out infinite;
+}
+
+@keyframes birdFly {
+    0%{
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-40px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.left-wing {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    transform-origin: right bottom;
+    animation: wingLeft 0.4s ease infinite;
+}
+
+.left-wing span {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border: 2px solid #030308;
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    border-color: #030308 transparent transparent transparent;
+    transform: translate(4px, 12px);
+}
+
+@keyframes wingLeft {
+    0%{
+        transform: rotate(0);
+    }
+    50% {
+        transform: rotate(40deg);
+    }
+    100% {
+        transform: rotate(0);
+    }
+}
+
+.right-wing {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    transform-origin: left bottom;
+    animation: wingRight 0.4s ease infinite;
+}
+
+.right-wing span {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border: 2px solid #030308;
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    border-color: #030308 transparent transparent transparent;
+    transform: translate(-4px, 12px);
+}
+
+@keyframes wingRight {
+    0%{
+        transform: rotate(0);
+    }
+    50% {
+        transform: rotate(-40deg);
+    }
+    100% {
+        transform: rotate(0);
+    }
+}
+
+/* Cloud Animations */
+.cloud {
+    animation: cloudMove 1.7s linear infinite;
+}
+
+@keyframes cloudMove {
+    0%{
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(10px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.cloud-circle {
+    position: absolute;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Fish Animations */
+.fish-wrapper {
+    position: absolute;
+    display: block;
+    z-index: 4;
+}
+
+.fish-swim {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    transform-origin: center center;
+    animation: fishSwim 3.5s ease-in-out infinite;
+}
+
+@keyframes fishSwim {
+    0% {
+        transform: translateX(0) translateY(0);
+    }
+    25% {
+        transform: translateX(20px) translateY(-10px);
+    }
+    50% {
+        transform: translateX(0) translateY(0);
+    }
+    75% {
+        transform: translateX(-20px) translateY(10px);
+    }
+    100% {
+        transform: translateX(0) translateY(0);
+    }
+}
+
+.fish-swim img {
+    image-rendering: pixelated;
+}
+
+/* Utility classes for positioning and styling */
+.pixel-art {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}

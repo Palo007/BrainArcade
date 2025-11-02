@@ -21,6 +21,7 @@
 import { ExampleGame } from "./example-game/ExampleGame";
 import { SweetSpot } from "./sweet-spot/SweetSpot.jsx";
 import { BrainCommandCenter } from "./joystick-visualizer/JoystickVisualizer.jsx";
+import { Sailor } from "./sailor/Sailor.jsx";
 
 export const games = [
   {
@@ -38,8 +39,14 @@ export const games = [
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
-    description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren’t relaxed.",
+    description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren't relaxed.",
     component: SweetSpot,
+  },
+  {
+    id: "sailor",
+    name: "SEA OF THOUGHTS",
+    description: "Navigate the ocean of your mind and recollect your lost train of thought by staying engaged",
+    component: Sailor,
   },
   // Add more games here!
   // {
