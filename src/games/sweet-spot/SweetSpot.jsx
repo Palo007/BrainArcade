@@ -19,7 +19,8 @@ export function SweetSpot() {
     baselineCenter: 0.5,
     autoAdjustBaseline: true // Enable adaptive baseline adjustment
   });
-  const { value: frontalTheta, baseline: frontalThetaBaseline } = useBiomarker('frontal-midline-theta');
+  // Display relaxation biomarker instead of theta to match joystick axis
+  const { value: relaxIdx, baseline: relaxIdxBaseline } = useBiomarker('relaxation-index');
 
   // Smoothed height 0..1
   const [height, setHeight] = useState(0.5);
@@ -194,12 +195,12 @@ export function SweetSpot() {
             <div className="text-xl">{score}</div>
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">THETA</div>
-            <div className="text-xl">{frontalTheta != null ? frontalTheta.toFixed(2) : '---'}</div>
+            <div className="text-[8px] opacity-60">RELAX IDX</div>
+            <div className="text-xl">{relaxIdx != null ? relaxIdx.toFixed(2) : '---'}</div>
           </div>
           <div className="text-right">
             <div className="text-[8px] opacity-60">BASE</div>
-            <div className="text-xl">{frontalThetaBaseline != null ? frontalThetaBaseline.toFixed(2) : '---'}</div>
+            <div className="text-xl">{relaxIdxBaseline != null ? relaxIdxBaseline.toFixed(2) : '---'}</div>
           </div>
         </div>
       </div>
