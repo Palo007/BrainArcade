@@ -87,11 +87,11 @@ export function Sailor() {
       const v = latestEngagementRef.current ?? 0.5;
       let speed = 0;
       if (v < LOW_THRESHOLD) {
-        speed = 1; // Very slow (1% per second)
+        speed = 0.5; // Very slow (1% per second)
       } else if (v <= HIGH_THRESHOLD) {
-        speed = 10; // Good speed (10% per second)
+        speed = 2; // Good speed (10% per second)
       } else {
-        speed = 12; // Slightly faster than mid-range without health penalty
+        speed = 3; // Slightly faster than mid-range without health penalty
       }
 
       // Update sailor position
@@ -179,8 +179,9 @@ export function Sailor() {
             className="absolute"
             style={{
               left: `${sailorX}%`,
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
+              // Position sailor 1% higher than the barrel (barrel uses 36%)
+              top: '0%',
+              transform: 'translate(-50%, 35%)',
             }}
           >
             <div className="sailor-float" style={{ width: 'min(120px, 15vmin)' }}>
@@ -198,7 +199,7 @@ export function Sailor() {
             className="absolute barrel-float"
             style={{
               left: `${BARREL_X}%`,
-              transform: 'translate(-50%, 15%)',
+              transform: 'translate(-50%, 106%)',
               width: 'min(80px, 10vmin)',
             }}
           >
