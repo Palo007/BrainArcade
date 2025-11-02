@@ -59,5 +59,16 @@ export function useGameHealth({
 
   const isDead = health <= 0;
 
-  return { health, isDead, reset };
+  // Apply immediate damage or healing in absolute health points
+  const damage = (amount = 0) => {
+    if (!amount) return;
+    setHealth((current) => Math.max(0, Math.min(maxHealth, current - amount)));
+  };
+
+  const heal = (amount = 0) => {
+    if (!amount) return;
+    setHealth((current) => Math.max(0, Math.min(maxHealth, current + amount)));
+  };
+
+  return { health, isDead, reset, damage, heal };
 }

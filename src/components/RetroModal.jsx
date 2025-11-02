@@ -2,7 +2,7 @@ import React from 'react';
 import '../styles/retro.css';
 
 // Simple retro-styled modal matching arcade theme
-export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false }) {
+export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false, leftActions = null }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 1000 }}>
       {/* Backdrop */}
@@ -22,6 +22,7 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
 
         {showFooter && (
           <div className="mt-6 flex gap-3 justify-end flex-wrap">
+            {leftActions}
             {onCancel && (
               <button
                 onClick={onCancel}

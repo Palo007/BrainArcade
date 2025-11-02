@@ -40,13 +40,11 @@ export function Sailor() {
     latestEngagementRef.current = value01 ?? 0.5;
   }, [value01]);
 
-  // Convenience flags for HUD only (do not drive the game loop)
-  const GOOD_RANGE = value01 >= LOW_THRESHOLD && value01 <= HIGH_THRESHOLD;
-  const OVER_ENGAGED = value01 > HIGH_THRESHOLD;
+  // Engagement tier flags (UNDER_ENGAGED also drives sprite)
   const UNDER_ENGAGED = value01 < LOW_THRESHOLD;
 
   // Health system - drains when over-engaged
-  const { health, reset: resetHealth } = useGameHealth({
+  const { health, reset: resetHealth, damage } = useGameHealth({
     initialHealth: 100,
     drainWhen: false,
     drainRate: 0,
@@ -82,6 +80,11 @@ export function Sailor() {
   useEffect(() => {
     if (!isBaselineReady || isDead || hasWon) return;
 
+    const LOW_PENALTY_THRESHOLD = 0.1; // 10%
+    const LOW_PENALTY_DURATION = 2; // seconds to lose a heart
+    const HEART_SIZE = 100 / MAX_HEARTS; // health points per heart
+    const lowDurationRef = { current: 0 };
+
     const gameLoop = () => {
       const now = Date.now();
       const deltaTime = (now - lastTimeRef.current) / 1000; // seconds
@@ -93,7 +96,7 @@ export function Sailor() {
       // - High: unchanged
       // - Mid: reduced to previous low speed
       // - Low: stop movement
-      const PREVIOUS_LOW_SPEED = 0.5; // keep as reference for mid tier
+      const PREVIOUS_LOW_SPEED = 1.5; // keep as reference for mid tier
       let speed = 0;
       if (v < LOW_THRESHOLD) {
         speed = 0; // Stop movement at low engagement
@@ -109,6 +112,17 @@ export function Sailor() {
         if (newX >= BARREL_X - 3) setHasWon(true);
         return newX;
       });
+
+      // Penalty: if engagement stays below 10% for 8s, lose one heart
+      if (v < LOW_PENALTY_THRESHOLD) {
+        lowDurationRef.current += deltaTime;
+        if (lowDurationRef.current >= LOW_PENALTY_DURATION) {
+          damage(HEART_SIZE);
+          lowDurationRef.current = 0;
+        }
+      } else {
+        lowDurationRef.current = 0;
+      }
 
       animationFrameRef.current = requestAnimationFrame(gameLoop);
     };
@@ -231,10 +245,6 @@ export function Sailor() {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[8px] opacity-60">SCORE</div>
-          <div className="text-xl text-[var(--nes-yellow)]">{Math.floor(gameScore)}</div>
-        </div>
-        <div className="text-right">
           <div className="text-[8px] opacity-60">ENGAGE</div>
           <div className="text-xl">{(value01 * 100).toFixed(0)}</div>
         </div>
@@ -242,14 +252,7 @@ export function Sailor() {
           <div className="text-[8px] opacity-60">X</div>
           <div className="text-xl">{sailorX.toFixed(1)}%</div>
         </div>
-        <div className="text-right">
-          <div className="text-[8px] opacity-60">STATUS</div>
-          <div className="text-[10px] mt-1">
-            {UNDER_ENGAGED && <div className="text-red-400">LOW</div>}
-            {GOOD_RANGE && <div className="text-[var(--nes-green)]">OK</div>}
-            {OVER_ENGAGED && <div className="text-yellow-400">HIGH</div>}
-          </div>
-        </div>
+        
       </div>
 
       {/* Instructions */}

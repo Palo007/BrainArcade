@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
+import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { NavBar } from './NavBar';
 import '../styles/retro.css';
@@ -14,6 +15,7 @@ import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
  */
 export function Layout({ children }) {
   const { isConnected, isMock, disconnectEEG } = useEEG();
+  const { isBaselineReady, resetBaseline, ensureBaseline, show: showBaselineModal } = useBaseline();
   const { quality10s } = useQuality();
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,6 +28,10 @@ export function Layout({ children }) {
   const [isGameSwitching, setIsGameSwitching] = useState(false);
   const [gameCountdown, setGameCountdown] = useState(2);
   const [targetGameId, setTargetGameId] = useState(null);
+  const [isRecalibrating, setIsRecalibrating] = useState(false);
+  const [pendingRecalibrate, setPendingRecalibrate] = useState(false);
+  const [didResetBaseline, setDidResetBaseline] = useState(false);
+  const [didStartBaseline, setDidStartBaseline] = useState(false);
 
   // Close overlay menu on route change
   useEffect(() => {
@@ -81,6 +87,37 @@ export function Layout({ children }) {
     }, 1000);
     return () => clearInterval(interval);
   }, [isGameSwitching, targetGameId, navigate]);
+
+  // Recalibration orchestrator: ensure baseline resets before starting collection
+  useEffect(() => {
+    if (!pendingRecalibrate) return;
+
+    // Step 1: issue reset once
+    if (!didResetBaseline) {
+      resetBaseline();
+      // Proactively show baseline modal; it will render once baseline clears
+      try { showBaselineModal(); } catch {}
+      setDidResetBaseline(true);
+      return;
+    }
+
+    // Step 2: when baseline is cleared, start baseline collection
+    if (didResetBaseline && !didStartBaseline && !isBaselineReady) {
+      setDidStartBaseline(true);
+      (async () => {
+        try {
+          await ensureBaseline({ seconds: 30 });
+        } finally {
+          setPendingRecalibrate(false);
+          setDidResetBaseline(false);
+          setDidStartBaseline(false);
+          setIsRecalibrating(false);
+          // Return to the Muse modal after completion
+          setShowMusePopup(true);
+        }
+      })();
+    }
+  }, [pendingRecalibrate, didResetBaseline, didStartBaseline, isBaselineReady, ensureBaseline, resetBaseline]);
 
   // Unified layout (applies to all routes); content varies per route
   return (
@@ -199,7 +236,27 @@ export function Layout({ children }) {
         )}
         {/* Muse popup for switch/disconnect */}
       {showMusePopup && (
-        <RetroModal title="MUSE OPTIONS" onCancel={() => setShowMusePopup(false)} cancelLabel="CANCEL" showFooter={true}>
+        <RetroModal
+          title="MUSE OPTIONS"
+          onCancel={() => setShowMusePopup(false)}
+          cancelLabel="CANCEL"
+          showFooter={true}
+          leftActions={
+            isBaselineReady ? (
+              <button
+                className="retro-button border-[var(--nes-green)] text-[var(--nes-green)] bg-transparent px-4 py-2 hover:bg-[var(--nes-green)] hover:text-black"
+                onClick={() => {
+                  // Close Muse modal and begin recalibration state machine
+                  setShowMusePopup(false);
+                  setIsRecalibrating(true);
+                  setPendingRecalibrate(true);
+                }}
+              >
+                RECALIBRATE BASELINE
+              </button>
+            ) : null
+          }
+        >
           <div className="space-y-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
             <p className="text-[10px] opacity-80">Connected via {isMock ? 'Mock Data' : 'Real Device'}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
