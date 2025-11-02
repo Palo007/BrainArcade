@@ -85,13 +85,18 @@ export function Sailor() {
 
       // Read latest engagement each frame and compute speed
       const v = latestEngagementRef.current ?? 0.5;
+      // Speed tiers adjustment:
+      // - High: unchanged
+      // - Mid: reduced to previous low speed
+      // - Low: stop movement
+      const PREVIOUS_LOW_SPEED = 0.5; // keep as reference for mid tier
       let speed = 0;
       if (v < LOW_THRESHOLD) {
-        speed = 0.5; // Very slow (1% per second)
+        speed = 0; // Stop movement at low engagement
       } else if (v <= HIGH_THRESHOLD) {
-        speed = 2; // Good speed (10% per second)
+        speed = PREVIOUS_LOW_SPEED; // Mid uses the former low speed
       } else {
-        speed = 3; // Slightly faster than mid-range without health penalty
+        speed = 3; // High engagement unchanged
       }
 
       // Update sailor position

@@ -64,13 +64,18 @@ export function useGameScore({
         // Accumulate score with current velocity multiplier
         setScore((s) => s + baseRate * velocity * deltaSeconds);
       } else {
-        // Reset velocity when not accumulating
-        setVelocity(1);
+        // When below threshold, gradually decay velocity back toward 1
+        if (joystickValue < minThreshold) {
+          setVelocity((v) => Math.max(1, v - velocityBuildRate * deltaSeconds));
+        } else {
+          // Otherwise, immediately reset
+          setVelocity(1);
+        }
       }
     }, 100); // Update 10 times per second
 
     return () => clearInterval(interval);
-  }, [isAccumulating, velocity, baseRate, maxVelocity, velocityBuildRate, frozen]);
+  }, [isAccumulating, velocity, baseRate, maxVelocity, velocityBuildRate, frozen, joystickValue, minThreshold]);
 
   const reset = () => {
     setScore(0);
