@@ -22,6 +22,7 @@ import { ExampleGame } from "./example-game/ExampleGame";
 import { SweetSpot } from "./sweet-spot/SweetSpot.jsx";
 import { BrainCommandCenter } from "./joystick-visualizer/JoystickVisualizer.jsx";
 import { Sailor } from "./sailor/Sailor.jsx";
+import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
 
 export const games = [
   {
@@ -47,6 +48,12 @@ export const games = [
     name: "SEA OF THOUGHTS",
     description: "Navigate the ocean of your mind and recollect your lost train of thought by staying engaged",
     component: Sailor,
+  },
+  {
+    id: "blinking-contest",
+    name: "BLINKING CONTEST",
+    description: "Keep your eyes open! You have 3 blinks before losing. Try to last as long as possible.",
+    component: BlinkingContest,
   },
   // Add more games here!
   // {

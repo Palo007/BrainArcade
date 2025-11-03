@@ -6,6 +6,7 @@ import { QualityProvider } from './contexts/QualityContext.jsx';
 import { BaselineProvider } from './contexts/BaselineContext.jsx';
 import { BiomarkerProvider } from './contexts/BiomarkerContext.jsx';
 import { JoystickProvider } from './contexts/JoystickContext.jsx';
+import { BlinkProvider } from './contexts/BlinkContext.jsx';
 import { Layout } from './components/Layout';
 import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
@@ -93,33 +94,35 @@ function App() {
         <BaselineProvider>
           <BiomarkerProvider>
             <JoystickProvider>
-              <Router>
-                <Layout>
-                  <Routes>
-            {/* Home / Start Screen */}
-            <Route path="/" element={<StartScreen />} />
+              <BlinkProvider>
+                <Router>
+                  <Layout>
+                    <Routes>
+              {/* Home / Start Screen */}
+              <Route path="/" element={<StartScreen />} />
 
-            {/* Games List */}
-            <Route path="/games" element={<GamesPage />} />
+              {/* Games List */}
+              <Route path="/games" element={<GamesPage />} />
 
-            {/* About */}
-            <Route path="/about" element={<Credits />} />
+              {/* About */}
+              <Route path="/about" element={<Credits />} />
 
-            {/* Privacy Policy */}
-            <Route path="/privacy" element={<Privacy />} />
+              {/* Privacy Policy */}
+              <Route path="/privacy" element={<Privacy />} />
 
-            {/* Individual Game Routes */}
-            <Route path="/game/:gameId" element={<GamePage />} />
+              {/* Individual Game Routes */}
+              <Route path="/game/:gameId" element={<GamePage />} />
 
-            {/* Catch all - redirect to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                {/* Global baseline modal */}
-                <BaselineModal />
-                {/* Global lost-brain modal */}
-                <LostBrainModal />
-                </Layout>
-              </Router>
+              {/* Catch all - redirect to home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                  {/* Global baseline modal */}
+                  <BaselineModal />
+                  {/* Global lost-brain modal */}
+                  <LostBrainModal />
+                  </Layout>
+                </Router>
+              </BlinkProvider>
             </JoystickProvider>
           </BiomarkerProvider>
         </BaselineProvider>
