@@ -24,7 +24,7 @@ export function Credits() {
       {/* Content */}
       <div className="relative z-10 w-full h-full">
         {/* Left Third - Credits Panel */}
-        <div className="absolute left-20 top-40 w-1/3 max-w-xl">
+        <div className="absolute left-20 top-20 w-2/5 max-w-2xl">
           {/* Back Button */}
           <div className="mb-4">
             <button
@@ -47,7 +47,7 @@ export function Credits() {
 
       {/* About Text */}
       <div
-        className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
+        className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-10"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
             {/* Original credits content remains */}
@@ -76,7 +76,7 @@ export function Credits() {
               <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                 WHY MUSE?
               </h3>
-              <p>
+              <p className="text-[10px] sm:text-xs">
                 Muse is one of the most affordable and widely available consumer EEG headsets. If reliable control can be
                 achieved with just two frontal dry electrodes, that’s a strong signal of robustness and real‑world viability.
               </p>
@@ -87,12 +87,12 @@ export function Credits() {
             <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
               LICENSE & PRIVACY
             </h3>
-            <p>
+            <p className="text-[10px] sm:text-xs">
               Brain Arcade — Open-source core (AGPL-3.0-or-later). Games under CC BY-SA 4.0.
               No data is saved or transmitted. See
-              {' '}<a href="/PRIVACY.md" className="text-[var(--nes-yellow)] underline">Privacy</a>,
-              {' '}<a href="/LICENSE" className="text-[var(--nes-yellow)] underline">License</a>,
-              {' '}<a href="/LICENSE.games" className="text-[var(--nes-yellow)] underline">Games License</a>, and
+              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Privacy</a>,
+              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">License</a>,
+              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/LICENSE.games" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Games License</a>, and
               {' '}<a href="https://github.com/itayinbarr/brain-arcade" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Repo</a>.
             </p>
           </div>
