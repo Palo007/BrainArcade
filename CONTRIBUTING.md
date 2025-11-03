@@ -35,16 +35,16 @@ Harassment, trolling, or discriminatory behavior will not be tolerated.
 
 ## Types of Contributions
 
-We welcome contributions at **three levels of complexity**:
+We welcome contributions at **four levels**:
 
-### 1. Game Developers (No Neuroscience Required)
+### 1. Joystick-Only Games (No Neuroscience)
 
-**What you contribute:** New minigames using pre-built biomarker joysticks
+**What you contribute:** New minigames using pre-built cognitive joysticks (0–100%).
 
 **What you need to know:**
 
 - React & JavaScript
-- How to use hooks (`useBiomarker`, `useBaseline`)
+- How to use `useJoystick(axis, options)`
 - Basic game logic
 
 **Examples:**
@@ -57,44 +57,57 @@ We welcome contributions at **three levels of complexity**:
 
 ---
 
-### 2. Neuroscience Experts & Biomarker Builders
+### 2. Biomarker Users/Builders (Basic Neuroscience)
 
-**What you contribute:** New biomarkers, improved signal processing, or validation of existing markers
+**What you contribute:** New biomarkers, tweaks to existing ones, or games that directly use biomarkers.
 
 **What you need to know:**
 
-- EEG signal processing (FFT, band powers, etc.)
-- Cognitive neuroscience (what markers represent)
+- EEG basics and cognitive markers
+- Band powers and ratios
 - JavaScript/React for implementation
 
 **Examples:**
 
-- Propose a new biomarker (e.g., `P300-amplitude`, `mu-rhythm-suppression`)
+- Propose a new biomarker (e.g., `theta-beta-ratio` variant)
 - Improve existing biomarker calculations
-- Add validation studies or references
-- Optimize processing algorithms
+- Add validation notes/references
 
 👉 **Start here:** [Core Contributions - Biomarkers](#adding-a-biomarker)
 
 ---
 
-### 3. Pipeline Builders & Infrastructure
+### 3. Preprocessed EEG Users
 
-**What you contribute:** Core processing infrastructure, new contexts, optimization
+**What you contribute:** Tools or games that consume preprocessed EEG outputs (e.g., band powers) via `ProcessingContext`.
 
 **What you need to know:**
 
-- Advanced signal processing (DSP)
-- React context architecture
-- Performance optimization
+- Band power interpretation (alpha/beta/theta/delta/gamma)
+- React hooks for accessing processing outputs
+
+**Examples:**
+
+- Visualizations of band powers or PSD
+- Experimental game mechanics based on specific bands
+
+---
+
+### 4. Raw EEG & Pipelines (Advanced)
+
+**What you contribute:** Core processing infrastructure or custom pipelines built from raw EEG.
+
+**What you need to know:**
+
+- DSP (filters, PSD, feature extraction)
+- React context architecture and performance
 - Web Bluetooth API (optional)
 
 **Examples:**
 
-- Add new processing contexts
-- Optimize Welch PSD performance
-- Improve baseline calibration algorithms
-- Add artifact rejection pipelines
+- New processing contexts or feature extractors
+- Artifact rejection pipelines
+- Baseline and normalization improvements
 
 👉 **Start here:** [Core Contributions - Infrastructure](#core-infrastructure)
 
@@ -210,36 +223,23 @@ cd src/games/my-game
 Create `MyGame.jsx` in your game folder:
 
 ```jsx
-import { useBiomarker } from "../../contexts/BiomarkerContext";
-import { useBaseline } from "../../contexts/BaselineContext";
-import { useEffect } from "react";
+import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { norm01 } = useBiomarker("frontal-midline-theta");
-
-  useEffect(() => {
-    ensureBaseline({ seconds: 30 }); // Request 30s calibration
-  }, [ensureBaseline]);
-
-  if (!isBaselineReady) {
-    return (
-      <div className="p-8 text-center">
-        <p>Calibrating your baseline...</p>
-        <p>Relax for 30 seconds...</p>
-      </div>
-    );
-  }
+  // Use joystick axes like 'engagement', 'focus', or 'relaxation'
+  const { value01 } = useJoystick('engagement', { range: 0.4, autoAdjustBaseline: true });
 
   return (
     <div className="game-container">
-      <h1>My Awesome Brain Game</h1>
-      <p>Control: {Math.round(norm01 * 100)}%</p>
+      <h1>MY AWESOME BRAIN GAME</h1>
+      <p>ENGAGEMENT: {Math.round(value01 * 100)}%</p>
       {/* Your game logic here */}
     </div>
   );
 }
 ```
+
+Tip: The app includes a built-in calibration flow. If your game must force calibration, call `useBaseline().ensureBaseline({ seconds: 30 })` at start.
 
 ### Step 3: Register Your Game
 
@@ -277,7 +277,7 @@ export const games = [
 Add a `README.md` in your game folder explaining:
 
 - How the game works
-- Which biomarkers it uses
+- Which joystick axis it uses (and optional biomarker if relevant)
 - Controls and objectives
 - Any special features
 
@@ -294,9 +294,10 @@ A brain-controlled [type of game] where you [objective].
 - **Objective:** [What you're trying to do]
 - **Scoring:** [How scoring works]
 
-## Biomarkers Used
+## Controls
 
-- `frontal-midline-theta`: Controls [aspect of game]
+- Joystick axis: `engagement` (0–100%)
+  - Underlying biomarker: `engagement-index` (beta/(alpha+theta))
 
 ## Tips for Players
 
@@ -566,13 +567,17 @@ await connectMuse({ mock: true });
 ### Console Testing
 
 ```javascript
-// Check biomarker values in console
-const { value, norm01 } = useBiomarker("frontal-midline-theta");
-console.log("FMT value:", value, "Normalized:", norm01);
+// Level 1: Joystick value (0..1)
+const { value01 } = useJoystick('engagement', { range: 0.4 });
+console.log('Engagement (0-100):', Math.round(value01 * 100));
 
-// Check band powers
+// Level 2: Biomarker value and normalized helper
+const { value, norm01 } = useBiomarker('frontal-midline-theta');
+console.log('FMT value:', value, 'Normalized:', norm01);
+
+// Level 3: Band powers
 const { bandPowers } = useProcessing();
-console.log("Alpha:", bandPowers.alpha);
+console.log('Alpha (AF7):', bandPowers?.[1]?.alpha);
 ```
 
 **Note:** Console logging is fine for development, but remove or guard it for production.

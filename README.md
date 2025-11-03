@@ -49,7 +49,7 @@ When connecting, choose **"Mock Mode"** to try all games without a Muse device. 
 
 🎮 **Plug-and-Play Games** — Add new games without touching core files
 
-🕹️ **Three Levels of Complexity** — From simple joystick controls to custom DSP pipelines
+🕹️ **Four Contribution Levels** — From joystick-only games to raw EEG pipelines
 
 🔒 **Zero Data Collection** — Local-only processing, no neural data is ever saved or transmitted
 
@@ -100,68 +100,74 @@ Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edg
 
 ---
 
-## Architecture: Three Levels of Building
+## Contribution Levels
 
-Brain Arcade is designed for **modularity and scalability**. Developers can work at different levels based on their expertise:
+Brain Arcade is designed for **modularity and scalability**. Contribute at any of four levels — pick what matches your skills and needs:
 
-### Level 1: Game Developers (No Neuroscience Required)
+### Level 1: Joystick-Only Games (No Neuroscience)
 
-Use pre-built **biomarker joysticks** — normalized 0-1 values representing cognitive states:
+Use pre-built **cognitive joysticks** — simple 0–1 values (map to 0–100%) that represent states like focus, engagement, or relaxation. You do not need to touch biomarkers or signal processing.
 
 ```jsx
-import { useBiomarker } from "../../contexts/BiomarkerContext";
+import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
-  const { norm01 } = useBiomarker("frontal-midline-theta");
+  // Choose an axis like 'engagement', 'focus', or 'relaxation'
+  const { value01 } = useJoystick("engagement", { range: 0.4, autoAdjustBaseline: true });
 
-  // norm01 is a number from 0 to 1
-  // 0.5 = baseline, higher = more cognitive control
-  const playerY = norm01 * screenHeight;
-
-  return <GameCharacter y={playerY} />;
+  const power = Math.round(value01 * 100); // 0..100
+  return <div>ENGINE POWER: {power}%</div>;
 }
 ```
 
-**Available Biomarkers:**
+Notes
+- Joysticks auto-normalize against a session baseline and gate on signal quality.
+- You can rely on the built-in calibration flow in the UI, or call `useBaseline().ensureBaseline({ seconds: 30 })` if your game needs to force calibration.
 
-- `frontal-midline-theta` — Cognitive control / focus
-- `frontal-alpha-asymmetry` — Approach/withdrawal motivation
-- `alpha`, `beta`, `theta`, `delta`, `gamma` — Band power averages
-- `alpha-left`, `alpha-right`, etc. — Hemispheric band powers
+### Level 2: Biomarker Users/Builders (Basic Neuroscience)
 
-### Level 2: Biomarker Users
-
-Work directly with **processed EEG features** like band powers (alpha, beta, theta, delta, gamma):
+Use or add **biomarkers** that joysticks are based on. Biomarkers expose raw values plus normalized helpers.
 
 ```jsx
-import { useProcessing } from "../../contexts/ProcessingContext";
+import { useBiomarker } from "../../contexts/BiomarkerContext.jsx";
 
 export function MyGame() {
+  const { norm01, value, baseline } = useBiomarker("frontal-midline-theta");
+  return <div>FOCUS: {Math.round((norm01 ?? 0.5) * 100)}%</div>;
+}
+```
+
+Common biomarkers
+- `frontal-midline-theta` (focus/control)
+- `engagement-index` (beta/(alpha+theta))
+- `relaxation-index` ((alpha+theta)/beta)
+- Ratios and bands: `beta-alpha-ratio`, `theta-alpha-ratio`, `alpha`, `beta`, `theta`, etc.
+
+### Level 3: Preprocessed EEG Users
+
+Use **preprocessed features** like band powers directly from the processing pipeline.
+
+```jsx
+import { useProcessing } from "../../contexts/ProcessingContext.jsx";
+
+export function MyTool() {
   const { bandPowers } = useProcessing();
-
-  // bandPowers = { alpha: [ch1, ch2, ch3, ch4], beta: [...], ... }
-  const leftAlpha = bandPowers.alpha[0];
-  const rightAlpha = bandPowers.alpha[3];
-
-  return <VisualizeBandPowers data={bandPowers} />;
+  // bandPowers[ch].alpha, .beta, .theta, .delta, .gamma
+  return <SpectrumBars data={bandPowers} />;
 }
 ```
 
-### Level 3: Pipeline Builders
+### Level 4: Raw EEG & Custom Pipelines
 
-Create custom **signal processing pipelines** using raw EEG:
+Access **raw EEG** and design your own DSP pipeline.
 
 ```jsx
-import { useEEG } from "../../contexts/MuseContext";
+import { useEEG } from "../../contexts/MuseContext.jsx";
 
-export function MyGame() {
-  const { rawEEG } = useEEG();
-
-  // rawEEG = [TP9, AF7, AF8, TP10] in microvolts
-  // Sampling rate: 256 Hz
-  const customMetric = myCustomDSPFunction(rawEEG);
-
-  return <UseCustomMetric value={customMetric} />;
+export function MyDSP() {
+  const { rawEEG } = useEEG(); // [TP9, AF7, AF8, TP10] @ 256 Hz
+  const metric = myCustomDSPFunction(rawEEG);
+  return <Metric value={metric} />;
 }
 ```
 
@@ -194,31 +200,22 @@ mkdir src/games/my-game
 Create `src/games/my-game/MyGame.jsx`:
 
 ```jsx
-import { useBiomarker } from "../../contexts/BiomarkerContext";
-import { useBaseline } from "../../contexts/BaselineContext";
-import { useEffect } from "react";
+import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { norm01 } = useBiomarker("frontal-midline-theta");
-
-  useEffect(() => {
-    ensureBaseline({ seconds: 30 }); // 30s calibration
-  }, [ensureBaseline]);
-
-  if (!isBaselineReady) {
-    return <div>Calibrating baseline... relax for 30 seconds</div>;
-  }
-
+  // Use joystick axes like 'engagement', 'focus', or 'relaxation'
+  const { value01 } = useJoystick("relaxation", { range: 0.4, autoAdjustBaseline: true });
   return (
     <div>
-      <h2>My Brain Game</h2>
-      <p>Control value: {Math.round(norm01 * 100)}%</p>
+      <h2>MY BRAIN GAME</h2>
+      <p>Relaxation: {Math.round(value01 * 100)}%</p>
       {/* Your game logic here */}
     </div>
   );
 }
 ```
+
+Tip: The app provides a built-in calibration flow. If your game needs to force calibration at start, you may call `useBaseline().ensureBaseline({ seconds: 30 })`.
 
 ### 3. Register Your Game
 
@@ -295,6 +292,17 @@ When you close the browser, all neural data is destroyed. Your thoughts stay you
 
 ### Hooks
 
+#### `useJoystick(axis, options)` — Cognitive Joysticks
+
+```javascript
+const { value01 } = useJoystick('engagement', { range: 0.4, autoAdjustBaseline: true });
+```
+
+- `axis`: one of the documented joystick axes (see below)
+- `value01`: normalized 0–1 control (map to 0–100%)
+- `range` (optional): sensitivity around baseline (default ~0.4)
+- `autoAdjustBaseline` (optional): gently shifts center if user sits at extremes
+
 #### `useEEG()` — Raw EEG Data
 
 ```javascript
@@ -313,7 +321,7 @@ const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
 const { bandPowers, psd } = useProcessing();
 ```
 
-- `bandPowers`: `{ alpha: [4], beta: [4], theta: [4], delta: [4], gamma: [4] }`
+- `bandPowers`: `Array(4)` of per-channel objects: `bandPowers[ch].alpha|beta|theta|delta|gamma`
 - `psd`: Power spectral density (Welch method, 2s window, 1s overlap)
 
 #### `useBaseline()` — Calibration
@@ -340,6 +348,8 @@ const { value, norm01, baseline } = useBiomarker("frontal-midline-theta", {
 - `range`: Sensitivity parameter (default 0.4)
 
 ### Biomarkers & Joysticks (Updated)
+
+Games should prefer joystick axes as the primary control surface. Biomarkers remain available for Level 2+.
 
 - Biomarkers (BiomarkerContext `getBiomarker(name)`)
   - `frontal-midline-theta` — AF7/AF8 theta average (focus)
