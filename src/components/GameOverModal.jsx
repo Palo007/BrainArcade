@@ -54,3 +54,6 @@ export function GameOverModal({ finalScore = 0, onRetry, showScore = true }) {
     </RetroModal>
   );
 }
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

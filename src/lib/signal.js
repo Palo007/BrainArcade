@@ -98,4 +98,6 @@ export function averageChannels(values) {
   for (let i = 0; i < values.length; i++) sum += values[i];
   return sum / values.length;
 }
-
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

@@ -130,3 +130,6 @@ function App() {
 }
 
 export default App;
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

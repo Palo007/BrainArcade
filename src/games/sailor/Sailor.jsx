@@ -274,3 +274,6 @@ export function Sailor() {
     </div>
   );
 }
+/* SPDX-License-Identifier: CC-BY-SA-4.0
+   Copyright (c) 2025 Itay Inbar and contributors
+*/

@@ -213,3 +213,6 @@ export function QualityProvider({ children }) {
 
   return <QualityContext.Provider value={value}>{children}</QualityContext.Provider>;
 }
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

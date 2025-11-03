@@ -1,5 +1,9 @@
 # Brain Arcade 🧠🕹️
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](./LICENSE)
+[![Games: CC BY-SA 4.0](https://img.shields.io/badge/Games-CC_BY--SA_4.0-lightgrey.svg)](./LICENSE.games)
+[![Contributing](https://img.shields.io/badge/Contributing-CLA-green.svg)](./CLA.md)
+
 <p align="center">
   <img src="./src/assets/startscreeen_gif.gif" alt="Brain Arcade Start Screen" width="600">
 </p>
@@ -7,6 +11,21 @@
 > **A retro arcade of thought-controlled minigames — proving neurotechnology is already here, accessible, and ready to hack.**
 
 Brain Arcade is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
+
+## License
+
+- **Core (this repo except `/src/games`)**: **AGPL-3.0-or-later**  
+- **Games (everything under `/src/games`)**: **CC BY-SA 4.0**  
+
+Commercial licenses are available for closed-source integrations. See **COMMERCIAL.md**.
+
+**Curation & Deployment Policy:**  
+Community games are welcome, but inclusion in the official arcade and hosted deployments
+is curated. Submissions may be accepted, modified, or declined at the maintainer’s discretion.
+
+**Unregistered Mark Notice:**  
+“Brain Arcade” is an unregistered mark used to identify the original project and official deployments.
+Forks and derivatives should use distinct naming and branding.
 
 ## The Vision
 
@@ -411,14 +430,11 @@ npm run lint
 
 - [Contributing Guidelines](./CONTRIBUTING.md)
 - [Privacy Policy](./PRIVACY.md)
+- [Curation & Deployment Policy](./DEPLOYMENT.md)
 - [web-muse Documentation](https://github.com/itayinbarr/web-muse)
 - [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 - [Muse Headband](https://choosemuse.com/)
 
 ---
 
-## License
-
-MIT License — see [LICENSE](./LICENSE) for details.
-
-This project is completely open source. Build on it, fork it, learn from it, break it, remix it.
+ 

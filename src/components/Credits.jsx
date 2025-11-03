@@ -45,11 +45,11 @@ export function Credits() {
             ABOUT
           </h2>
 
-          {/* About Text */}
-          <div
-            className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
-          >
+      {/* About Text */}
+      <div
+        className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
+        style={{ fontFamily: "'Press Start 2P', cursive" }}
+      >
             {/* Original credits content remains */}
             <p>
               Made by
@@ -82,8 +82,25 @@ export function Credits() {
               </p>
             </div>
           </div>
+          {/* License & Privacy */}
+          <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
+            <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+              LICENSE & PRIVACY
+            </h3>
+            <p>
+              Brain Arcade — Open-source core (AGPL-3.0-or-later). Games under CC BY-SA 4.0.
+              No data is saved or transmitted. See
+              {' '}<a href="/PRIVACY.md" className="text-[var(--nes-yellow)] underline">Privacy</a>,
+              {' '}<a href="/LICENSE" className="text-[var(--nes-yellow)] underline">License</a>,
+              {' '}<a href="/LICENSE.games" className="text-[var(--nes-yellow)] underline">Games License</a>, and
+              {' '}<a href="https://github.com/itayinbarr/brain-arcade" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Repo</a>.
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

@@ -9,3 +9,6 @@ export function BiomarkerJoystick({ biomarker, label, range = 0.4, hintUp, hintD
     <Joystick axis={biomarker} label={label} range={range} hintLow={hintDown} hintHigh={hintUp} />
   );
 }
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

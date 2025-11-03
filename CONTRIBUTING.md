@@ -6,6 +6,18 @@ This guide will help you understand how to contribute effectively while respecti
 
 ---
 
+## Licensing & CLA (Read First)
+
+- **Core changes** → AGPL-3.0-or-later + lightweight CLA (see [CLA.md](./CLA.md))
+- **New games under `/src/games`** → CC BY-SA 4.0 (see [LICENSE.games](./LICENSE.games))
+- You retain copyright to your contributions.
+- We curate what ships in official deployments; there is **no obligation** to deploy any submission. See [DEPLOYMENT.md](./DEPLOYMENT.md).
+- We enforce a strict **Zero Data Collection** policy.
+
+By opening a PR, you agree to the terms in **[CLA.md](./CLA.md)**. See also [LICENSE](./LICENSE) and [LICENSE.games](./LICENSE.games).
+
+---
+
 ## Table of Contents
 
 1. [Code of Conduct](#code-of-conduct)

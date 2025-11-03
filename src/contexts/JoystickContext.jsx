@@ -275,3 +275,6 @@ export function useJoystick(axis, options) {
   const value01 = api?.value01(axis, options) ?? 0.5;
   return { value01 };
 }
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Copyright (c) 2025 Itay Inbar
+*/

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "AGPL-3.0-or-later",
   "description": "A retro arcade of thought-controlled minigames using Muse EEG. 100% local processing, mock mode available.",
   "scripts": {
     "dev": "vite",
@@ -30,5 +31,6 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
     "vite": "^7.1.7"
-  }
+  },
+  "funding": [{ "type": "github", "url": "https://github.com/sponsors/itayinbarr" }]
 }
