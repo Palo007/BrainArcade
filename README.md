@@ -1,7 +1,7 @@
 # Brain Arcade 🧠🕹️
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](./LICENSE)
-[![Games: CC BY-SA 4.0](https://img.shields.io/badge/Games-CC_BY--SA_4.0-lightgrey.svg)](./LICENSE.games)
+[![Games: CC BY-SA 4.0](https://img.shields.io/badge/Games-CC_BY--SA_4.0-lightgrey.svg)](./GAMES-LICENSING.md)
 [![Contributing](https://img.shields.io/badge/Contributing-CLA-green.svg)](./CLA.md)
 
 <p align="center">
@@ -15,7 +15,7 @@ Brain Arcade is an open-source platform that connects consumer-grade EEG devices
 ## License
 
 - **Core (this repo except `/src/games`)**: **AGPL-3.0-or-later**  
-- **Games (everything under `/src/games`)**: **CC BY-SA 4.0**  
+- **Games (everything under `/src/games`)**: **CC BY-SA 4.0** ([details](./GAMES-LICENSING.md))  
 
 Commercial licenses are available for closed-source integrations. See **COMMERCIAL.md**.
 
