@@ -14,12 +14,22 @@ export function MuseProvider({ children }) {
   const connectMuseDevice = async (options = {}) => {
     try {
       const museDevice = await connectMuse(options);
-      setMuse(museDevice);
-      setIsConnected(true);
-      setIsMock(!!options.mock);
-      console.log('Muse connected successfully');
+      // Only mark connected if the underlying device reports connected state (2)
+      if (museDevice && museDevice.state === 2) {
+        setMuse(museDevice);
+        setIsConnected(true);
+        setIsMock(!!options.mock);
+        console.log('Muse connected successfully');
+      } else {
+        // Treat non-connected return (e.g., user cancel) as a cancellation
+        throw new Error('User cancelled or connection not established');
+      }
     } catch (error) {
       console.error('Error connecting to Muse:', error);
+      // Ensure we remain in a clean disconnected state on failure/cancel
+      setMuse(null);
+      setIsConnected(false);
+      setIsMock(!!options.mock && false);
       throw error;
     }
   };

@@ -24,7 +24,12 @@ export function MuseConnector({ onConnected }) {
         onConnected();
       }
     } catch (err) {
-      setError(err.message || 'Failed to connect to Muse device');
+      const name = err?.name || '';
+      const msg = (err?.message || '').toLowerCase();
+      const isUserCancel = name === 'NotFoundError' || msg.includes('cancel');
+      if (!isUserCancel) {
+        setError(err.message || 'Failed to connect to Muse device');
+      }
       console.error('Muse connection error:', err);
     } finally {
       setIsConnecting(false);
@@ -64,7 +69,7 @@ export function MuseConnector({ onConnected }) {
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
-          {isConnecting ? 'CONNECTING…' : 'CONNECT'}
+          {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE'}
         </button>
 
         <button
@@ -73,7 +78,7 @@ export function MuseConnector({ onConnected }) {
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
-          {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT MUSE'}
+          {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT A DEVICE'}
         </button>
       </div>
 
@@ -91,7 +96,7 @@ export function MuseConnector({ onConnected }) {
 
       {showMockInfo && (
         <RetroModal
-          title="SIMULATE BRAIN DATA"
+          title="EXPLORE WITHOUT A DEVICE"
           confirmLabel="USE SIMULATED REAL-TIME DATA"
           cancelLabel="CANCEL"
           isBusy={isConnecting}
