@@ -33,12 +33,6 @@ export const games = [
     component: BrainCommandCenter,
   },
   {
-    id: "example-game",
-    name: "BRAINWAVE VISUALIZER",
-    description: "See your brainwaves in real-time with EEG visualization",
-    component: ExampleGame,
-  },
-  {
     id: "sweet-spot",
     name: "SWEET SPOT",
     description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren't relaxed.",
@@ -61,6 +55,12 @@ export const games = [
     name: "BAD DIVER",
     description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
     component: Diver,
+  },
+  {
+    id: "example-game",
+    name: "BRAINWAVE VISUALIZER",
+    description: "See your brainwaves in real-time with EEG visualization",
+    component: ExampleGame,
   },
   // Add more games here!
   // {

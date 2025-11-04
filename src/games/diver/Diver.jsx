@@ -24,6 +24,7 @@ export function Diver() {
   const warnLevelRef = useRef(0); // 0..3 for !, !!, !!!
   const [drainActive, setDrainActive] = useState(false); // more permissive drain gate
   const drainActiveRef = useRef(false);
+  const scoreHappyUntilRef = useRef(0); // force diver happy until timestamp (ms)
 
   // Baseline and joystick
   const { ensureBaseline, isBaselineReady } = useBaseline();
@@ -257,7 +258,7 @@ export function Diver() {
 
     // Diver class (predator with sprite)
     class Diver {
-      constructor(x, y, images, frustrationRef) {
+      constructor(x, y, images, frustrationRef, happyBoostUntilRef) {
         this.x = x;
         this.y = y;
         this.size = 100; // Much bigger sprite
@@ -265,6 +266,7 @@ export function Diver() {
         this.speed = diverSpeed;
         this.images = images;
         this.frustrationRef = frustrationRef;
+        this.happyBoostUntilRef = happyBoostUntilRef;
         this.targetFish = null; // Track current target
         this.targetChangeTimer = 0; // Timer to reduce target switching
         this.targetChangeInterval = 60; // Change target every ~60 frames (1 second at 60fps)
@@ -272,7 +274,8 @@ export function Diver() {
 
       draw() {
         const frustrationLevel = this.frustrationRef.current;
-        const currentImage = frustrationLevel > 0.5 ? this.images.happy : this.images.sad;
+        const forcedHappy = this.happyBoostUntilRef && performance.now() < this.happyBoostUntilRef.current;
+        const currentImage = (frustrationLevel > 0.5 || forcedHappy) ? this.images.happy : this.images.sad;
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -366,7 +369,8 @@ export function Diver() {
       canvas.width / 2,
       canvas.height / 2,
       imagesRef.current,
-      frustrationRef
+      frustrationRef,
+      scoreHappyUntilRef
     );
 
     // Utilities for transient text effects
@@ -420,6 +424,39 @@ export function Diver() {
       // Update and draw diver
       diverRef.current.chase(fishSchoolRef.current);
       diverRef.current.draw();
+
+      // Catch fish near the diver: trigger +1 and temporary happiness
+      if (diverRef.current) {
+        const catchRadius = diverRef.current.size * 0.6;
+        for (const fish of fishSchoolRef.current) {
+          const dx = fish.x - diverRef.current.x;
+          const dy = fish.y - diverRef.current.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < catchRadius) {
+            // Respawn fish at a new random location and random direction
+            fish.x = Math.random() * canvas.width;
+            fish.y = Math.random() * canvas.height;
+            fish.angle = Math.random() * Math.PI * 2;
+            fish.velocityX = Math.cos(fish.angle) * fish.speed;
+            fish.velocityY = Math.sin(fish.angle) * fish.speed;
+            // Visual +1
+            pushFloatingText({
+              x: diverRef.current.x,
+              y: diverRef.current.y - 60,
+              text: '+ 1',
+              color: '#7CFC00',
+              shadow: 'rgba(0,0,0,0.95)',
+              font: "18px 'Press Start 2P', cursive",
+              life: 0.8,
+              vy: -80,
+            });
+            // Happy boost for 0.5s
+            const nowMs = performance.now();
+            const remaining = Math.max(0, scoreHappyUntilRef.current - nowMs);
+            scoreHappyUntilRef.current = nowMs + remaining + 500;
+          }
+        }
+      }
 
       // Update permissive drain logic and warnings (reuse isBad from above)
       if (isBad) {
@@ -503,20 +540,21 @@ export function Diver() {
     };
   }, [isBaselineReady, imagesLoaded, isDead]); // Removed frustration to prevent reinitialization
 
-  // Spawn +1 retro text each time the integer score increases
+  // Show +1 when the visible fish count (score) increases
   useEffect(() => {
     const floor = Math.floor(gameScore);
-    if (prevFloorScoreRef.current === 0) prevFloorScoreRef.current = Math.floor(gameScore);
+    if (prevFloorScoreRef.current === 0) prevFloorScoreRef.current = floor;
     const diff = floor - prevFloorScoreRef.current;
-    if (diff > 0 && diverRef.current) {
+    if (diff > 0) {
+      const x = diverRef.current ? diverRef.current.x : window.innerWidth / 2;
+      const y = diverRef.current ? diverRef.current.y : window.innerHeight / 2;
       for (let i = 0; i < diff; i++) {
-        // Stagger slight vertical offset for bursts
         const yOffset = -60 - i * 6;
         floatingTextsRef.current.push({
-          x: diverRef.current.x,
-          y: diverRef.current.y + yOffset,
+          x,
+          y: y + yOffset,
           text: '+ 1',
-          color: '#7CFC00', // retro green
+          color: '#7CFC00',
           shadow: 'rgba(0,0,0,0.95)',
           font: "18px 'Press Start 2P', cursive",
           life: 0.8,
