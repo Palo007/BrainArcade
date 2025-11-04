@@ -111,9 +111,16 @@ export function Diver() {
     const numFish = 200;
     const fishSpeed = 2;
     const diverSpeed = 2; // Reduced from 3 for smoother movement
-    const visionRadius = 70;
-    const avoidanceRadius = 40;
-    const predatorAvoidanceRadius = 150;
+    // Base radii; will be dynamically adjusted by frustration each frame
+    const baseVisionRadius = 70;
+    const successVisionMax = 110;
+    const lossVisionMin = 50;
+    const baseAvoidanceRadiusMin = 10;
+    const baseAvoidanceRadiusMax = 50; // default ~40
+    const lossAvoidanceRadiusMax = 120;
+    const basePredatorAvoidMin = 40; // allow tighter approach on success
+    const basePredatorAvoidMax = 200; // default ~150
+    const lossPredatorAvoidMax = 320;
 
     // Build a pixelated retro fish sprite (shared by all fish)
     const fishSpriteCanvas = (() => {
@@ -174,7 +181,7 @@ export function Diver() {
         ctx.restore();
       }
 
-      flock(fishSchool, diver) {
+      flock(fishSchool, diver, radii = { visionRadius: baseVisionRadius, avoidanceRadius: baseAvoidanceRadiusMax, predatorAvoidanceRadius: basePredatorAvoidMax }) {
         let alignment = { x: 0, y: 0 };
         let cohesion = { x: 0, y: 0 };
         let separation = { x: 0, y: 0 };
@@ -185,14 +192,14 @@ export function Diver() {
           let dy = otherFish.y - this.y;
           let distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < visionRadius && otherFish !== this) {
+          if (distance < radii.visionRadius && otherFish !== this) {
             alignment.x += otherFish.velocityX;
             alignment.y += otherFish.velocityY;
 
             cohesion.x += otherFish.x;
             cohesion.y += otherFish.y;
 
-            if (distance < avoidanceRadius) {
+            if (distance < radii.avoidanceRadius) {
               separation.x -= dx;
               separation.y -= dy;
             }
@@ -222,7 +229,7 @@ export function Diver() {
           let dy = diver.y - this.y;
           let distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < predatorAvoidanceRadius) {
+          if (distance < radii.predatorAvoidanceRadius) {
             this.velocityX -= dx * 0.2;
             this.velocityY -= dy * 0.2;
           }
@@ -379,8 +386,34 @@ export function Diver() {
       ctx.drawImage(imagesRef.current.background, 0, 0, canvas.width, canvas.height);
 
       // Update and draw fish
+      // Dynamically adjust radii by frustration: closer on success, further on loss
+      const f = Math.min(1, Math.max(0, frustrationRef.current));
+      const success = Math.max(0, Math.min(1, (f - 0.3) / 0.7));
+      const badThreshold = 0.2;
+      const isBad = f < badThreshold;
+      const lossIntensity = isBad ? Math.max(0, Math.min(1, (badThreshold - f) / badThreshold)) : 0;
+
+      const currentAvoidance = isBad
+        ? baseAvoidanceRadiusMax + lossIntensity * (lossAvoidanceRadiusMax - baseAvoidanceRadiusMax)
+        : baseAvoidanceRadiusMax - success * (baseAvoidanceRadiusMax - baseAvoidanceRadiusMin);
+
+      const currentPredatorAvoid = isBad
+        ? basePredatorAvoidMax + lossIntensity * (lossPredatorAvoidMax - basePredatorAvoidMax)
+        : basePredatorAvoidMax - success * (basePredatorAvoidMax - basePredatorAvoidMin);
+
+      const currentVision = isBad
+        ? baseVisionRadius - lossIntensity * (baseVisionRadius - lossVisionMin)
+        : baseVisionRadius + success * (successVisionMax - baseVisionRadius);
       fishSchoolRef.current.forEach(fish => {
-        fish.flock(fishSchoolRef.current, diverRef.current);
+        fish.flock(
+          fishSchoolRef.current,
+          diverRef.current,
+          {
+            visionRadius: currentVision,
+            avoidanceRadius: currentAvoidance,
+            predatorAvoidanceRadius: currentPredatorAvoid,
+          }
+        );
         fish.draw();
       });
 
@@ -388,9 +421,7 @@ export function Diver() {
       diverRef.current.chase(fishSchoolRef.current);
       diverRef.current.draw();
 
-      // Update permissive drain logic and warnings
-      const badThreshold = 0.2;
-      const isBad = frustrationRef.current < badThreshold;
+      // Update permissive drain logic and warnings (reuse isBad from above)
       if (isBad) {
         lowFrustrationTimerRef.current += dt;
         const t = lowFrustrationTimerRef.current;
