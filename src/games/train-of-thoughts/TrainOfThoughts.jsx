@@ -10,6 +10,8 @@ import '../../styles/retro.css';
 import train1 from './assets/train1.png';
 import train2 from './assets/train2.png';
 import train3 from './assets/train3.png';
+import villainTrain from './assets/villain.png';
+import cityBackground from './assets/city-background.png';
 
 export function TrainOfThoughts() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
@@ -27,13 +29,14 @@ export function TrainOfThoughts() {
   const [scoreMs, setScoreMs] = useState(0); // cumulative across rounds
 
   // Train state
-  const [trainX, setTrainX] = useState(-320); // px from left (off-screen start)
+  const [trainX, setTrainX] = useState(-600); // px from left (off-screen start)
   const [roundRunning, setRoundRunning] = useState(true);
   const [showLostLife, setShowLostLife] = useState(false);
 
   const rafRef = useRef(null);
   const lastTsRef = useRef(null);
   const charRef = useRef(null);
+  const trainRef = useRef(null);
 
   // Character sprite based on stress level
   const characterImg = useMemo(() => {
@@ -49,10 +52,10 @@ export function TrainOfThoughts() {
 
   // Game loop: update train position and time-based score
   useEffect(() => {
-    if (!roundRunning || showLostLife) return; // paused during modal
+    // Pause when modal is open or after game over
+    if (!roundRunning || showLostLife || lives <= 0) return;
 
-    const TRAIN_WIDTH = 310; // matches CSS
-    const CHARACTER_HIT_OFFSET = 100; // px from right where character sits
+    // Width is measured for collision separately; keep logic focused here
     const BASE_SPEED = 40; // px/s minimal speed when fully calm (slower)
     const EXTRA_SPEED = 140; // px/s gained as stress rises to 1 (slower)
 
@@ -72,7 +75,7 @@ export function TrainOfThoughts() {
 
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [roundRunning, showLostLife, stress01]);
+  }, [roundRunning, showLostLife, stress01, lives]);
 
   // Detect collision (train reaches character on right)
   useEffect(() => {
@@ -83,7 +86,8 @@ export function TrainOfThoughts() {
     const stageRect = stage.getBoundingClientRect();
     const charRect = charRef.current.getBoundingClientRect();
     const CHARACTER_X = charRect.left - stageRect.left; // character left edge inside stage
-    const TRAIN_NOSE_X = trainX + 310; // 310px train width
+    const trainWidth = trainRef.current?.getBoundingClientRect().width || 310;
+    const TRAIN_NOSE_X = trainX + trainWidth; // use measured image width
 
     if (TRAIN_NOSE_X >= CHARACTER_X) {
       setRoundRunning(false);
@@ -96,7 +100,7 @@ export function TrainOfThoughts() {
   const handleNextRound = () => {
     setShowLostLife(false);
     setLives((l) => l - 1);
-    setTrainX(-320);
+    setTrainX(-600);
     lastTsRef.current = null;
     // If still have lives, keep playing
     setRoundRunning(true);
@@ -107,7 +111,7 @@ export function TrainOfThoughts() {
     const handleRetry = () => {
       setLives(MAX_LIVES);
       setScoreMs(0);
-      setTrainX(-320);
+      setTrainX(-600);
       lastTsRef.current = null;
       setRoundRunning(true);
     };
@@ -128,6 +132,13 @@ export function TrainOfThoughts() {
   return (
     <div className="absolute inset-0">
       <div className="absolute inset-0 overflow-hidden" id="train-stage">
+        {/* Background image */}
+        <img
+          src={cityBackground}
+          alt="city background"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ imageRendering: 'pixelated' }}
+        />
         {/* Local styles for stage, sky, clouds and train */}
         <style>{`
           :root { --red: #e04f60; --yellow: #ffc928; }
@@ -146,7 +157,7 @@ export function TrainOfThoughts() {
           .sky .cloud:nth-child(2) { animation: wind 150s infinite linear; }
           @keyframes wind { 0%{ right:0; } 100%{ right:110%; } }
 
-          .train { position:absolute; bottom:10px; width:310px; z-index:1; }
+          .train { position:absolute; bottom:10px; z-index:1; }
           .wagon, .cabin, .chimney { border-radius:4px 4px 0 0; border-top:4px solid var(--yellow); }
           .wagon, .motor { border-bottom:2px solid var(--yellow); }
           .wagon, .locomotive { display:inline-block; width:70px; height:55px; background-color: var(--red); position:relative; }
@@ -192,25 +203,22 @@ export function TrainOfThoughts() {
             <div className="cloud"></div>
           </div>
 
-          {/* CSS-built train */}
-          <div className="train" style={{ left: `${trainX}px` }}>
-            <div className="wagon"></div>
-            <div className="wagon"></div>
-            <div className="wagon"></div>
-            <div className="locomotive">
-              <div className="cabin"></div>
-              <div className="motor"></div>
-              <div className="chimney"><div className="smoke"></div></div>
-              <div className="light"></div>
-            </div>
-          </div>
+          {/* Villain train sprite */}
+          <img
+            ref={trainRef}
+            src={villainTrain}
+            alt="villain train"
+            className="train"
+            style={{ left: `${trainX}px`, bottom: '-2px', width: 'min(360px, 36vw)', imageRendering: 'pixelated' }}
+            draggable={false}
+          />
         </section>
 
         {/* Character at the right side, sitting by the track */}
         <div
           ref={charRef}
           className="flex flex-col items-center"
-          style={{ position: 'absolute', bottom: '6px', right: '200px', pointerEvents: 'none', zIndex: 2 }}
+          style={{ position: 'absolute', bottom: '-19px', right: '280px', pointerEvents: 'none', zIndex: 2 }}
         >
           <img
             src={characterImg}

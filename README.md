@@ -10,12 +10,12 @@
 
 > **A retro arcade of thought-controlled minigames — proving neurotechnology is already here, accessible, and ready to hack.**
 
-Brain Arcade is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
+[Brain Arcade](https://brain-arcade.io/) is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
 
 ## License
 
-- **Core (this repo except `/src/games`)**: **AGPL-3.0-or-later**  
-- **Games (everything under `/src/games`)**: **CC BY-SA 4.0** ([details](./GAMES-LICENSING.md))  
+- **Core (this repo except `/src/games`)**: **AGPL-3.0-or-later**
+- **Games (everything under `/src/games`)**: **CC BY-SA 4.0** ([details](./GAMES-LICENSING.md))
 
 Commercial licenses are available for closed-source integrations. See **COMMERCIAL.md**.
 
@@ -49,16 +49,6 @@ npm run dev
 ```
 
 When connecting, choose **"Mock Mode"** to try all games without a Muse device. The mock data is real neural signals, so you'll get authentic behavior.
-
----
-
-## Games Showcase
-
-<p align="center">
-  <img src="./src/assets/sweet_spot_demo.gif" alt="Sweet Spot Game Demo" width="500">
-  <br>
-  <em>Sweet Spot: Float in a relaxation state by finding your cognitive sweet spot</em>
-</p>
 
 ---
 
@@ -132,7 +122,10 @@ import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
   // Choose an axis like 'engagement', 'focus', or 'relaxation'
-  const { value01 } = useJoystick("engagement", { range: 0.4, autoAdjustBaseline: true });
+  const { value01 } = useJoystick("engagement", {
+    range: 0.4,
+    autoAdjustBaseline: true,
+  });
 
   const power = Math.round(value01 * 100); // 0..100
   return <div>ENGINE POWER: {power}%</div>;
@@ -140,6 +133,7 @@ export function MyGame() {
 ```
 
 Notes
+
 - Joysticks auto-normalize against a session baseline and gate on signal quality.
 - You can rely on the built-in calibration flow in the UI, or call `useBaseline().ensureBaseline({ seconds: 30 })` if your game needs to force calibration.
 
@@ -157,6 +151,7 @@ export function MyGame() {
 ```
 
 Common biomarkers
+
 - `frontal-midline-theta` (focus/control)
 - `engagement-index` (beta/(alpha+theta))
 - `relaxation-index` ((alpha+theta)/beta)
@@ -223,7 +218,10 @@ import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
   // Use joystick axes like 'engagement', 'focus', or 'relaxation'
-  const { value01 } = useJoystick("relaxation", { range: 0.4, autoAdjustBaseline: true });
+  const { value01 } = useJoystick("relaxation", {
+    range: 0.4,
+    autoAdjustBaseline: true,
+  });
   return (
     <div>
       <h2>MY BRAIN GAME</h2>
@@ -314,7 +312,10 @@ When you close the browser, all neural data is destroyed. Your thoughts stay you
 #### `useJoystick(axis, options)` — Cognitive Joysticks
 
 ```javascript
-const { value01 } = useJoystick('engagement', { range: 0.4, autoAdjustBaseline: true });
+const { value01 } = useJoystick("engagement", {
+  range: 0.4,
+  autoAdjustBaseline: true,
+});
 ```
 
 - `axis`: one of the documented joystick axes (see below)
@@ -371,6 +372,7 @@ const { value, norm01, baseline } = useBiomarker("frontal-midline-theta", {
 Games should prefer joystick axes as the primary control surface. Biomarkers remain available for Level 2+.
 
 - Biomarkers (BiomarkerContext `getBiomarker(name)`)
+
   - `frontal-midline-theta` — AF7/AF8 theta average (focus)
   - `frontal-alpha-asymmetry` — Alpha L-R difference (valence/approach)
   - `frontal-delta` — AF7/AF8 delta average (drowsiness)
@@ -392,6 +394,7 @@ Games should prefer joystick axes as the primary control surface. Biomarkers rem
   - `frustration` — Composite of theta↑ + beta↑ with right-leaning theta asymmetry
 
 Notes
+
 - All axes gate on frontal signal quality to avoid artifacts.
 - Most axes normalize against the session baseline (30s by default).
 - Games can enable `autoAdjustBaseline` to adapt when users stick at extremes.
@@ -436,5 +439,3 @@ npm run lint
 - [Muse Headband](https://choosemuse.com/)
 
 ---
-
- 
