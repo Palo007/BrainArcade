@@ -17,6 +17,13 @@ export function Diver() {
   const diverRef = useRef(null);
   const imagesRef = useRef({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const floatingTextsRef = useRef([]); // transient text effects like "+1" and warnings
+  const lastTimestampRef = useRef(null);
+  const prevFloorScoreRef = useRef(0);
+  const lowFrustrationTimerRef = useRef(0); // seconds spent below threshold
+  const warnLevelRef = useRef(0); // 0..3 for !, !!, !!!
+  const [drainActive, setDrainActive] = useState(false); // more permissive drain gate
+  const drainActiveRef = useRef(false);
 
   // Baseline and joystick
   const { ensureBaseline, isBaselineReady } = useBaseline();
@@ -29,8 +36,9 @@ export function Diver() {
   const { health, isDead, reset: resetHealth } = useGameHealth({
     initialHealth: 100,
     maxHealth: 100,
-    drainWhen: frustration < 0.2,
-    drainRate: 16.67, // Lose 1 heart (33.33 HP) in 2 seconds
+    // Be more permissive: only drain after grace period handled below
+    drainWhen: drainActive,
+    drainRate: 16.67, // Lose 1 heart (33.33 HP) in 2 seconds once draining
   });
 
   const { score: gameScore, reset: resetScore } = useGameScore({
@@ -107,13 +115,45 @@ export function Diver() {
     const avoidanceRadius = 40;
     const predatorAvoidanceRadius = 150;
 
+    // Build a pixelated retro fish sprite (shared by all fish)
+    const fishSpriteCanvas = (() => {
+      const c = document.createElement('canvas');
+      // base pixel art grid
+      c.width = 8; // pixels
+      c.height = 6; // pixels
+      const ictx = c.getContext('2d');
+      ictx.imageSmoothingEnabled = false;
+      // Colors
+      const red = '#ff3b3b';
+      const dark = '#8b0000';
+      // Helper to plot a pixel
+      const p = (x, y, color) => {
+        ictx.fillStyle = color;
+        ictx.fillRect(x, y, 1, 1);
+      };
+      // Simple fish profile facing right (8x6)
+      // Body
+      const bodyPixels = [
+        [1,2],[2,2],[3,2],[4,2],[5,2],
+        [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+        [1,4],[2,4],[3,4],[4,4],[5,4],
+      ];
+      bodyPixels.forEach(([x,y]) => p(x,y,red));
+      // Tail
+      [[6,2],[7,3],[6,4]].forEach(([x,y]) => p(x,y,red));
+      // Eye (darker pixel)
+      p(2,2,dark);
+      return c;
+    })();
+
     // Fish class (small prey fish)
     class Fish {
       constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.size = 5;
-        this.color = 'rgba(0, 200, 255, 0.9)';
+        this.pixelScale = 4; // bigger than before (8x6)*4 = 32x24
+        this.size = this.pixelScale * 4; // used for separation heuristics if needed
+        this.color = '#ff3b3b';
         this.angle = Math.random() * Math.PI * 2;
         this.speed = fishSpeed;
         this.velocityX = Math.cos(this.angle) * this.speed;
@@ -124,14 +164,13 @@ export function Diver() {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-
-        ctx.beginPath();
-        ctx.moveTo(-this.size, -this.size / 2);
-        ctx.lineTo(this.size, 0);
-        ctx.lineTo(-this.size, this.size / 2);
-        ctx.closePath();
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        // Ensure crisp pixel edges
+        const prevSmoothing = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        const spriteW = 8 * this.pixelScale;
+        const spriteH = 6 * this.pixelScale;
+        ctx.drawImage(fishSpriteCanvas, -spriteW / 2, -spriteH / 2, spriteW, spriteH);
+        ctx.imageSmoothingEnabled = prevSmoothing;
         ctx.restore();
       }
 
@@ -214,7 +253,7 @@ export function Diver() {
       constructor(x, y, images, frustrationRef) {
         this.x = x;
         this.y = y;
-        this.size = 40; // Base size for sprite
+        this.size = 100; // Much bigger sprite
         this.angle = Math.random() * Math.PI * 2;
         this.speed = diverSpeed;
         this.images = images;
@@ -323,8 +362,19 @@ export function Diver() {
       frustrationRef
     );
 
+    // Utilities for transient text effects
+    const pushFloatingText = ({ x, y, text, color = '#FFFFFF', shadow = 'rgba(0,0,0,0.9)',
+      font = "18px 'Press Start 2P', cursive", life = 0.9, vy = -60, vx = 0 }) => {
+      floatingTextsRef.current.push({ x, y, text, color, shadow, font, life, age: 0, vy, vx, opacity: 1 });
+    };
+
     // Animation loop
     const animate = () => {
+      const now = performance.now();
+      if (lastTimestampRef.current == null) lastTimestampRef.current = now;
+      const dt = Math.min(0.05, (now - lastTimestampRef.current) / 1000); // clamp delta to 50ms
+      lastTimestampRef.current = now;
+
       // Draw background
       ctx.drawImage(imagesRef.current.background, 0, 0, canvas.width, canvas.height);
 
@@ -337,6 +387,69 @@ export function Diver() {
       // Update and draw diver
       diverRef.current.chase(fishSchoolRef.current);
       diverRef.current.draw();
+
+      // Update permissive drain logic and warnings
+      const badThreshold = 0.2;
+      const isBad = frustrationRef.current < badThreshold;
+      if (isBad) {
+        lowFrustrationTimerRef.current += dt;
+        const t = lowFrustrationTimerRef.current;
+        // Show stepwise warnings !, !!, !!! before draining
+        const newLevel = t >= 3 ? 3 : t >= 2 ? 2 : t >= 1 ? 1 : 0;
+        if (newLevel > warnLevelRef.current && diverRef.current) {
+          const marks = '!'.repeat(newLevel);
+          pushFloatingText({
+            x: diverRef.current.x,
+            y: diverRef.current.y - 40,
+            text: marks,
+            color: newLevel === 3 ? '#ff3b3b' : '#ffd23f',
+            font: `16px 'Press Start 2P', cursive`,
+            life: 0.8,
+            vy: -40,
+          });
+          warnLevelRef.current = newLevel;
+        }
+        if (t >= 3 && !drainActiveRef.current) {
+          drainActiveRef.current = true;
+          setDrainActive(true);
+        }
+      } else {
+        lowFrustrationTimerRef.current = 0;
+        if (warnLevelRef.current !== 0) warnLevelRef.current = 0;
+        if (drainActiveRef.current) {
+          drainActiveRef.current = false;
+          setDrainActive(false);
+        }
+      }
+
+      // Update and draw floating texts
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const remaining = [];
+      for (const ft of floatingTextsRef.current) {
+        ft.age += dt;
+        if (ft.age < ft.life) {
+          ft.x += (ft.vx || 0) * dt;
+          ft.y += (ft.vy || -60) * dt;
+          ft.opacity = 1 - ft.age / ft.life;
+          ctx.font = ft.font || "18px 'Press Start 2P', cursive";
+          // Shadow
+          ctx.fillStyle = ft.shadow || 'rgba(0,0,0,0.9)';
+          ctx.fillText(ft.text, ft.x + 2, ft.y + 2);
+          // Text
+          ctx.fillStyle = `rgba(${ft.color.startsWith('#') ? parseInt(ft.color.slice(1,3),16)+','+parseInt(ft.color.slice(3,5),16)+','+parseInt(ft.color.slice(5,7),16) : ft.color},${ft.opacity.toFixed(3)})`;
+          // If color was not hex, fallback to global alpha approach
+          if (!ft.color.startsWith('#')) {
+            ctx.globalAlpha = ft.opacity;
+          }
+          ctx.fillText(ft.text, ft.x, ft.y);
+          if (!ft.color.startsWith('#')) ctx.globalAlpha = 1;
+          remaining.push(ft);
+        }
+      }
+      floatingTextsRef.current = remaining;
+      ctx.restore();
 
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -355,8 +468,36 @@ export function Diver() {
         cancelAnimationFrame(animationFrameRef.current);
       }
       window.removeEventListener('resize', handleResize);
+      lastTimestampRef.current = null;
     };
   }, [isBaselineReady, imagesLoaded, isDead]); // Removed frustration to prevent reinitialization
+
+  // Spawn +1 retro text each time the integer score increases
+  useEffect(() => {
+    const floor = Math.floor(gameScore);
+    if (prevFloorScoreRef.current === 0) prevFloorScoreRef.current = Math.floor(gameScore);
+    const diff = floor - prevFloorScoreRef.current;
+    if (diff > 0 && diverRef.current) {
+      for (let i = 0; i < diff; i++) {
+        // Stagger slight vertical offset for bursts
+        const yOffset = -60 - i * 6;
+        floatingTextsRef.current.push({
+          x: diverRef.current.x,
+          y: diverRef.current.y + yOffset,
+          text: '+ 1',
+          color: '#7CFC00', // retro green
+          shadow: 'rgba(0,0,0,0.95)',
+          font: "18px 'Press Start 2P', cursive",
+          life: 0.8,
+          age: 0,
+          vy: -70,
+          vx: 0,
+          opacity: 1,
+        });
+      }
+    }
+    prevFloorScoreRef.current = floor;
+  }, [gameScore]);
 
   // Retry handler
   const handleRetry = () => {
@@ -418,7 +559,7 @@ export function Diver() {
 
         {/* Title & Subtitle */}
         <div className="absolute top-6 left-6 w-[min(480px,60vw)] z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-          <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>DIVER</h2>
+          <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>BAD DIVER</h2>
           <p className="text-xs text-gray-300 mt-2" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.8)' }}>
             Frustration fuels your catch!
           </p>
@@ -431,7 +572,7 @@ export function Diver() {
           scheme="dark"
           align="left"
           primary="Get frustrated to catch more fish!"
-          secondary="Stay calm too long and you'll lose health"
+          secondary="Stay satisfied for too long and you'll lose your catch"
         />
 
         {/* HUD */}

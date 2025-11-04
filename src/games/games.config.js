@@ -58,7 +58,7 @@ export const games = [
   },
   {
     id: "diver",
-    name: "DIVER",
+    name: "BAD DIVER",
     description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
     component: Diver,
   },
