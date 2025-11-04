@@ -23,6 +23,7 @@ import { SweetSpot } from "./sweet-spot/SweetSpot.jsx";
 import { BrainCommandCenter } from "./joystick-visualizer/JoystickVisualizer.jsx";
 import { Sailor } from "./sailor/Sailor.jsx";
 import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
+import { Diver } from "./diver/Diver.jsx";
 
 export const games = [
   {
@@ -54,6 +55,12 @@ export const games = [
     name: "BLINKING CONTEST",
     description: "Keep your eyes open! You have 3 blinks before losing. Try to last as long as possible.",
     component: BlinkingContest,
+  },
+  {
+    id: "diver",
+    name: "DIVER",
+    description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
+    component: Diver,
   },
   // Add more games here!
   // {
