@@ -193,7 +193,7 @@ export function TrainOfThoughts() {
         {/* Title */}
         <div className="absolute top-6 left-6 w-[min(520px,60vw)]">
           <h2 className="text-2xl text-[var(--nes-yellow)]">TRAIN OF THOUGHTS</h2>
-          <p className="text-xs text-gray-300 mt-2">Stay composed to delay the train. Time survived equals score.</p>
+          <p className="text-xs text-gray-100 mt-2">Stay composed to delay the train. Time survived equals score.</p>
         </div>
 
         {/* Stage with clouds and track */}

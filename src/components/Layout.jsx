@@ -218,7 +218,7 @@ export function Layout({ children }) {
             onClick={() => setShowMenu(false)}
           >
             <div
-              className="w-full max-w-4xl mx-auto bg-[var(--nes-dark)] border-4 border-white p-6 max-h-[80%] overflow-y-auto"
+              className="w-full max-w-4xl mx-auto bg-[var(--nes-dark)] border-4 border-white px-6 pb-6 pt-0 max-h-[80%] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <NavBar

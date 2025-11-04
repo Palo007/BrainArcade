@@ -24,9 +24,9 @@ export function NavBar({ onActiveGameClick } = {}) {
   };
 
   return (
-    <nav className="mb-8 pb-4 border-b-4 border-[var(--nes-gray)]">
-      <div className="flex items-center mb-4">
-        <Link to="/" className="text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors">
+    <nav className="mb-8 pb-4">
+      <div className="flex items-center mb-4 sticky top-0 pt-8 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] py-3">
+        <Link to="/" className="ml-3 text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors">
           ← HOME
         </Link>
         <h2 className="text-lg text-[var(--nes-green)] ml-6">| SELECT GAME</h2>
