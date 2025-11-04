@@ -24,6 +24,7 @@ import { BrainCommandCenter } from "./joystick-visualizer/JoystickVisualizer.jsx
 import { Sailor } from "./sailor/Sailor.jsx";
 import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
 import { Diver } from "./diver/Diver.jsx";
+import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
 
 export const games = [
   {
@@ -55,6 +56,12 @@ export const games = [
     name: "BAD DIVER",
     description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
     component: Diver,
+  },
+  {
+    id: "train-of-thoughts",
+    name: "TRAIN OF THOUGHTS",
+    description: "Stay calm to slow down the train. Don't get swept away by your racing thoughts!",
+    component: TrainOfThoughts,
   },
   {
     id: "example-game",
