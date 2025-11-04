@@ -25,20 +25,21 @@ export function Diver() {
     autoAdjustBaseline: true
   });
 
-  // Game mechanics
+  // Game mechanics - health first since score depends on isDead
+  const { health, isDead, reset: resetHealth } = useGameHealth({
+    initialHealth: 100,
+    maxHealth: 100,
+    drainWhen: frustration < 0.2,
+    drainRate: 16.67, // Lose 1 heart (33.33 HP) in 2 seconds
+  });
+
   const { score: gameScore, reset: resetScore } = useGameScore({
     joystickValue: frustration,
     baseRate: 20,
     minThreshold: 0.3,
     maxVelocity: 5,
     velocityBuildRate: 0.15,
-  });
-
-  const { health, isDead, reset: resetHealth } = useGameHealth({
-    initialHealth: 100,
-    maxHealth: 100,
-    drainWhen: frustration < 0.2,
-    drainRate: 16.67, // Lose 1 heart (33.33 HP) in 2 seconds
+    frozen: isDead, // Freeze score when game is over
   });
 
   // Initialize baseline
@@ -81,7 +82,13 @@ export function Diver() {
     };
   }, []);
 
-  // Initialize and animate canvas
+  // Store frustration in a ref to avoid animation reinitialization
+  const frustrationRef = useRef(frustration);
+  useEffect(() => {
+    frustrationRef.current = frustration;
+  }, [frustration]);
+
+  // Initialize and animate canvas (only once when ready)
   useEffect(() => {
     if (!isBaselineReady || !imagesLoaded || isDead) return;
 
@@ -95,7 +102,7 @@ export function Diver() {
     // Animation parameters
     const numFish = 200;
     const fishSpeed = 2;
-    const diverSpeed = 3;
+    const diverSpeed = 2; // Reduced from 3 for smoother movement
     const visionRadius = 70;
     const avoidanceRadius = 40;
     const predatorAvoidanceRadius = 150;
@@ -204,18 +211,21 @@ export function Diver() {
 
     // Diver class (predator with sprite)
     class Diver {
-      constructor(x, y, images, getFrustration) {
+      constructor(x, y, images, frustrationRef) {
         this.x = x;
         this.y = y;
         this.size = 40; // Base size for sprite
         this.angle = Math.random() * Math.PI * 2;
         this.speed = diverSpeed;
         this.images = images;
-        this.getFrustration = getFrustration;
+        this.frustrationRef = frustrationRef;
+        this.targetFish = null; // Track current target
+        this.targetChangeTimer = 0; // Timer to reduce target switching
+        this.targetChangeInterval = 60; // Change target every ~60 frames (1 second at 60fps)
       }
 
       draw() {
-        const frustrationLevel = this.getFrustration();
+        const frustrationLevel = this.frustrationRef.current;
         const currentImage = frustrationLevel > 0.5 ? this.images.happy : this.images.sad;
 
         ctx.save();
@@ -245,24 +255,46 @@ export function Diver() {
       }
 
       chase(fishSchool) {
-        let nearestFish = null;
-        let minDist = Infinity;
+        this.targetChangeTimer++;
 
-        fishSchool.forEach(fish => {
-          let dx = fish.x - this.x;
-          let dy = fish.y - this.y;
-          let dist = Math.sqrt(dx * dx + dy * dy);
+        // Only find a new target if we don't have one, or it's time to change, or target is too far
+        if (!this.targetFish || this.targetChangeTimer >= this.targetChangeInterval) {
+          let nearestFish = null;
+          let minDist = Infinity;
 
-          if (dist < minDist) {
-            minDist = dist;
-            nearestFish = fish;
-          }
-        });
+          fishSchool.forEach(fish => {
+            let dx = fish.x - this.x;
+            let dy = fish.y - this.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (nearestFish) {
-          let dx = nearestFish.x - this.x;
-          let dy = nearestFish.y - this.y;
-          this.angle = Math.atan2(dy, dx);
+            if (dist < minDist) {
+              minDist = dist;
+              nearestFish = fish;
+            }
+          });
+
+          this.targetFish = nearestFish;
+          this.targetChangeTimer = 0;
+        }
+
+        if (this.targetFish) {
+          let dx = this.targetFish.x - this.x;
+          let dy = this.targetFish.y - this.y;
+
+          // Calculate target angle
+          const targetAngle = Math.atan2(dy, dx);
+
+          // Smooth angle interpolation (slower turning)
+          let angleDiff = targetAngle - this.angle;
+
+          // Normalize angle difference to [-PI, PI]
+          while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+          while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+          // Apply smooth turning (0.05 = turn rate)
+          this.angle += angleDiff * 0.05;
+
+          // Move in current direction
           this.x += Math.cos(this.angle) * this.speed;
           this.y += Math.sin(this.angle) * this.speed;
         }
@@ -288,7 +320,7 @@ export function Diver() {
       canvas.width / 2,
       canvas.height / 2,
       imagesRef.current,
-      () => frustration
+      frustrationRef
     );
 
     // Animation loop
@@ -324,7 +356,7 @@ export function Diver() {
       }
       window.removeEventListener('resize', handleResize);
     };
-  }, [isBaselineReady, imagesLoaded, isDead, frustration]);
+  }, [isBaselineReady, imagesLoaded, isDead]); // Removed frustration to prevent reinitialization
 
   // Retry handler
   const handleRetry = () => {
