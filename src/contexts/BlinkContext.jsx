@@ -19,11 +19,13 @@ export function BlinkProvider({ children }) {
 
   const listenersRef = useRef(new Set());
   const lastDetectionRef = useRef(0);
-  const previousValuesRef = useRef({ af7: 0, af8: 0 });
+  // Sliding window buffer for last WINDOW_MS samples
+  const windowBufferRef = useRef([]);
 
-  // Blink detection parameters
-  const BLINK_THRESHOLD = 200; // microvolts
-  const DEBOUNCE_MS = 500; // Prevent multiple detections for same blink
+  // Blink detection parameters (windowed amplitude range)
+  const WINDOW_MS = 400;         // lookback window
+  const RANGE_THRESHOLD_UV = 150; // amplitude change threshold in window
+  const DEBOUNCE_MS = 500;        // avoid double-counting the same blink
 
   /**
    * Register a callback to be notified when a blink is detected
@@ -44,6 +46,7 @@ export function BlinkProvider({ children }) {
     setBlinkCount(0);
     setLastBlinkTime(null);
     lastDetectionRef.current = 0;
+    windowBufferRef.current = [];
   }, []);
 
   /**
@@ -64,30 +67,61 @@ export function BlinkProvider({ children }) {
     if (!isConnected || !rawEEG) return;
 
     const now = Date.now();
+    // Read channel raw values (Muse order: TP9, AF7, AF8, TP10)
+    const tp9 = rawEEG[0] ?? 0; // left ear
+    const af7 = rawEEG[1] ?? 0;
+    const af8 = rawEEG[2] ?? 0;
+    const tp10 = rawEEG[3] ?? 0; // right ear
 
-    // Check debounce period
+    // Append current sample to buffer
+    const buf = windowBufferRef.current;
+    buf.push({ t: now, tp9, af7, af8, tp10 });
+
+    // Drop samples older than WINDOW_MS
+    const cutoff = now - WINDOW_MS;
+    while (buf.length && buf[0].t < cutoff) {
+      buf.shift();
+    }
+
+    // Debounce: avoid multiple counts for the same blink
     if (now - lastDetectionRef.current < DEBOUNCE_MS) {
       return;
     }
 
-    // Get frontal channel values (AF7 = index 1, AF8 = index 2)
-    const af7 = Math.abs(rawEEG[1] || 0);
-    const af8 = Math.abs(rawEEG[2] || 0);
+    // Compute amplitude range in the window for each channel
+    let min9 = Infinity, max9 = -Infinity;
+    let min7 = Infinity, max7 = -Infinity;
+    let min8 = Infinity, max8 = -Infinity;
+    let min10 = Infinity, max10 = -Infinity;
 
-    // Store current values for next comparison
-    previousValuesRef.current = { af7, af8 };
+    for (let i = 0; i < buf.length; i++) {
+      const s = buf[i];
+      if (s.tp9 < min9) min9 = s.tp9; if (s.tp9 > max9) max9 = s.tp9;
+      if (s.af7 < min7) min7 = s.af7; if (s.af7 > max7) max7 = s.af7;
+      if (s.af8 < min8) min8 = s.af8; if (s.af8 > max8) max8 = s.af8;
+      if (s.tp10 < min10) min10 = s.tp10; if (s.tp10 > max10) max10 = s.tp10;
+    }
 
-    // Detect blink: amplitude spike in either frontal channel
-    // Eye blinks create strong artifacts in frontal electrodes
-    const isBlinkDetected = af7 > BLINK_THRESHOLD || af8 > BLINK_THRESHOLD;
+    const range9 = max9 - min9;
+    const range7 = max7 - min7;
+    const range8 = max8 - min8;
+    const range10 = max10 - min10;
 
-    if (isBlinkDetected) {
+    // Detect blink: if any electrode shows > RANGE_THRESHOLD_UV change in last WINDOW_MS
+    if (
+      range7 >= RANGE_THRESHOLD_UV ||
+      range8 >= RANGE_THRESHOLD_UV ||
+      range9 >= RANGE_THRESHOLD_UV ||
+      range10 >= RANGE_THRESHOLD_UV
+    ) {
       lastDetectionRef.current = now;
       setBlinkCount(prev => prev + 1);
       setLastBlinkTime(now);
       notifyListeners(now);
-
-      console.log(`Blink detected! AF7: ${af7.toFixed(1)}µV, AF8: ${af8.toFixed(1)}µV`);
+      // eslint-disable-next-line no-console
+      console.log(
+        `Blink (window rule ${WINDOW_MS}ms/${RANGE_THRESHOLD_UV}µV) TP9Δ=${range9.toFixed(1)} AF7Δ=${range7.toFixed(1)} AF8Δ=${range8.toFixed(1)} TP10Δ=${range10.toFixed(1)} µV`
+      );
     }
   }, [rawEEG, isConnected, notifyListeners]);
 

@@ -180,10 +180,10 @@ export function BlinkingContest() {
         <>
           {/* Title */}
           <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-            <h2 className="text-2xl text-[var(--nes-yellow)]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <h2 className="text-2xl text-[var(--nes-dark)]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
               BLINKING CONTEST
             </h2>
-            <p className="text-xs text-white/80 mt-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>
               Don't blink!
             </p>
           </div>
@@ -206,7 +206,7 @@ export function BlinkingContest() {
 
           {/* HUD - Bottom Right */}
           <div
-            className="absolute bottom-4 right-4 flex gap-6 text-white items-end"
+            className="absolute bottom-8 right-8 flex gap-6 text-[var(--nes-dark)] items-end"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             <div className="text-right">
@@ -217,13 +217,13 @@ export function BlinkingContest() {
             </div>
             <div className="text-right">
               <div className="text-[8px] opacity-80">SCORE</div>
-              <div className="text-xl text-[var(--nes-yellow)]">
+              <div className="text-xl">
                 {Math.round(score).toLocaleString()}
               </div>
             </div>
             <div className="text-right">
               <div className="text-[8px] opacity-80">TIME</div>
-              <div className="text-xl text-white">
+              <div className="text-xl">
                 {timeElapsed.toFixed(1)}s
               </div>
             </div>
