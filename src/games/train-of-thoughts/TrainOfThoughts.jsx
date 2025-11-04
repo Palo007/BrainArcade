@@ -33,6 +33,7 @@ export function TrainOfThoughts() {
 
   const rafRef = useRef(null);
   const lastTsRef = useRef(null);
+  const charRef = useRef(null);
 
   // Character sprite based on stress level
   const characterImg = useMemo(() => {
@@ -52,8 +53,8 @@ export function TrainOfThoughts() {
 
     const TRAIN_WIDTH = 310; // matches CSS
     const CHARACTER_HIT_OFFSET = 100; // px from right where character sits
-    const BASE_SPEED = 90; // px/s minimal speed when fully calm
-    const EXTRA_SPEED = 340; // px/s gained as stress rises to 1
+    const BASE_SPEED = 40; // px/s minimal speed when fully calm (slower)
+    const EXTRA_SPEED = 140; // px/s gained as stress rises to 1 (slower)
 
     const step = (ts) => {
       if (lastTsRef.current == null) lastTsRef.current = ts;
@@ -77,10 +78,11 @@ export function TrainOfThoughts() {
   useEffect(() => {
     if (!roundRunning || showLostLife) return;
     const stage = document.getElementById('train-stage');
-    if (!stage) return;
+    if (!stage || !charRef.current) return;
 
-    const stageWidth = stage.clientWidth;
-    const CHARACTER_X = stageWidth - 120; // character area left edge
+    const stageRect = stage.getBoundingClientRect();
+    const charRect = charRef.current.getBoundingClientRect();
+    const CHARACTER_X = charRect.left - stageRect.left; // character left edge inside stage
     const TRAIN_NOSE_X = trainX + 310; // 310px train width
 
     if (TRAIN_NOSE_X >= CHARACTER_X) {
@@ -204,13 +206,17 @@ export function TrainOfThoughts() {
           </div>
         </section>
 
-        {/* Character at the right side */}
-        <div className="absolute bottom-2 right-6 flex flex-col items-center" style={{ pointerEvents: 'none' }}>
+        {/* Character at the right side, sitting by the track */}
+        <div
+          ref={charRef}
+          className="flex flex-col items-center"
+          style={{ position: 'absolute', bottom: '6px', right: '200px', pointerEvents: 'none', zIndex: 2 }}
+        >
           <img
             src={characterImg}
             alt="character"
             draggable={false}
-            style={{ width: 'min(200px, 20vmin)', height: 'auto', imageRendering: 'pixelated', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))' }}
+            style={{ width: 'min(140px, 14vmin)', height: 'auto', imageRendering: 'pixelated', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))' }}
           />
           <div className="text-[8px] text-gray-400 mt-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>YOU</div>
         </div>
@@ -260,4 +266,3 @@ export function TrainOfThoughts() {
 /* SPDX-License-Identifier: CC-BY-SA-4.0
    Copyright (c) 2025 Itay Inbar and contributors
 */
-
