@@ -374,43 +374,47 @@ export function Diver() {
 
   // Main game UI
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
-      {/* Canvas for animation */}
-      <div className="fixed top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+    <div className="absolute inset-0">
+      {/* Main stage - full screen */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Canvas for animation - positioned absolutely to fill container */}
         <canvas
           ref={canvasRef}
-          style={{ display: 'block', width: '100%', height: '100%' }}
+          className="absolute inset-0 w-full h-full"
+          style={{ display: 'block' }}
         />
-      </div>
 
-      {/* Title & Subtitle */}
-      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-        <h2 className="text-2xl text-white font-bold">DIVER</h2>
-        <p className="text-xs text-gray-300 mt-2">
-          Frustration fuels your catch!
-        </p>
-      </div>
-
-      {/* Game Hint */}
-      <GameHint
-        position="bottom-left"
-        offset={8}
-        scheme="dark"
-        align="left"
-        primary="Get frustrated to catch more fish!"
-        secondary="Stay calm too long and you'll lose health"
-      />
-
-      {/* HUD */}
-      <div className="absolute bottom-8 right-8 flex gap-6 items-end">
-        <div className="text-right">
-          <div className="text-[8px] text-gray-300 opacity-60">HEALTH</div>
-          <PixelHearts health={health} maxHearts={3} size={20} />
+        {/* Title & Subtitle */}
+        <div className="absolute top-6 left-6 w-[min(480px,60vw)] z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>DIVER</h2>
+          <p className="text-xs text-gray-300 mt-2" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.8)' }}>
+            Frustration fuels your catch!
+          </p>
         </div>
-        <div className="text-right">
-          <div className="text-[8px] text-gray-300 opacity-60">FISH COUNT</div>
-          <div className="text-2xl text-white font-bold">
-            {Math.floor(gameScore).toLocaleString()}
+
+        {/* Game Hint */}
+        <GameHint
+          position="bottom-left"
+          offset={8}
+          scheme="dark"
+          align="left"
+          primary="Get frustrated to catch more fish!"
+          secondary="Stay calm too long and you'll lose health"
+        />
+
+        {/* HUD */}
+        <div className="absolute bottom-8 right-8 flex gap-6 items-end z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="text-right">
+            <div className="text-[8px] text-gray-300 opacity-60">HEALTH</div>
+            <div className="mt-2">
+              <PixelHearts health={health} maxHearts={3} size={20} />
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] text-gray-300 opacity-60">FISH COUNT</div>
+            <div className="text-xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
+              {Math.floor(gameScore).toLocaleString()}
+            </div>
           </div>
         </div>
       </div>
