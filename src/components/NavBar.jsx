@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { games } from '../games/games.config';
 import '../styles/retro.css';
@@ -8,6 +9,19 @@ import '../styles/retro.css';
  */
 export function NavBar({ onActiveGameClick } = {}) {
   const location = useLocation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const gamesPerPage = 8;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(games.length / gamesPerPage);
+  const startIndex = (currentPage - 1) * gamesPerPage;
+  const endIndex = startIndex + gamesPerPage;
+  const currentGames = games.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <nav className="mb-8 pb-4 border-b-4 border-[var(--nes-gray)]">
@@ -19,7 +33,7 @@ export function NavBar({ onActiveGameClick } = {}) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {games.map((game) => {
+        {currentGames.map((game) => {
           const isActive = location.pathname === `/game/${game.id}`;
 
           return (
@@ -99,6 +113,60 @@ export function NavBar({ onActiveGameClick } = {}) {
           </div>
         </a>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          {/* Previous Button */}
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`
+              px-4 py-2 border-4 font-bold transition-all
+              ${currentPage === 1
+                ? 'border-gray-600 text-gray-600 cursor-not-allowed'
+                : 'border-[var(--nes-blue)] text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-white'
+              }
+            `}
+          >
+            ◀ PREV
+          </button>
+
+          {/* Page Numbers */}
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                className={`
+                  w-10 h-10 border-4 font-bold transition-all
+                  ${page === currentPage
+                    ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black'
+                    : 'border-[var(--nes-gray)] text-white hover:border-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:bg-opacity-20'
+                  }
+                `}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`
+              px-4 py-2 border-4 font-bold transition-all
+              ${currentPage === totalPages
+                ? 'border-gray-600 text-gray-600 cursor-not-allowed'
+                : 'border-[var(--nes-blue)] text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-white'
+              }
+            `}
+          >
+            NEXT ▶
+          </button>
+        </div>
+      )}
 
       {games.length === 0 && (
         <div className="text-center py-8">
