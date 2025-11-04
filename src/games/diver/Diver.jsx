@@ -275,7 +275,7 @@ export function Diver() {
       draw() {
         const frustrationLevel = this.frustrationRef.current;
         const forcedHappy = this.happyBoostUntilRef && performance.now() < this.happyBoostUntilRef.current;
-        const currentImage = (frustrationLevel > 0.5 || forcedHappy) ? this.images.happy : this.images.sad;
+        const currentImage = (frustrationLevel > 0.45 || forcedHappy) ? this.images.happy : this.images.sad;
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -392,7 +392,7 @@ export function Diver() {
       // Update and draw fish
       // Dynamically adjust radii by frustration: closer on success, further on loss
       const f = Math.min(1, Math.max(0, frustrationRef.current));
-      const success = Math.max(0, Math.min(1, (f - 0.3) / 0.7));
+      const success = Math.max(0, Math.min(1, (f - 0.25) / 0.75));
       const badThreshold = 0.2;
       const isBad = f < badThreshold;
       const lossIntensity = isBad ? Math.max(0, Math.min(1, (badThreshold - f) / badThreshold)) : 0;
@@ -645,17 +645,30 @@ export function Diver() {
         />
 
         {/* HUD */}
-        <div className="absolute bottom-8 right-8 flex gap-6 items-end z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-          <div className="text-right">
-            <div className="text-[8px] text-gray-300 opacity-60">HEALTH</div>
-            <div className="mt-2">
-              <PixelHearts health={health} maxHearts={3} size={20} />
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[8px] text-gray-300 opacity-60">FISH COUNT</div>
-            <div className="text-xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
-              {Math.floor(gameScore).toLocaleString()}
+        <div className="absolute bottom-8 right-8 z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-4 py-3">
+            <div className="flex gap-6 items-end">
+              {/* Frustration */}
+              <div className="text-right">
+                <div className="text-[8px] opacity-70">FRUSTRATION</div>
+                <div className="text-sm text-[var(--nes-yellow)] mt-1">{frustration.toFixed(2)}</div>
+              </div>
+
+              {/* Health */}
+              <div className="text-right">
+                <div className="text-[8px] opacity-70">HEALTH</div>
+                <div className="mt-2">
+                  <PixelHearts health={health} maxHearts={3} size={20} />
+                </div>
+              </div>
+
+              {/* Fish Count */}
+              <div className="text-right">
+                <div className="text-[8px] opacity-70">FISH COUNT</div>
+                <div className="text-xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
+                  {Math.floor(gameScore).toLocaleString()}
+                </div>
+              </div>
             </div>
           </div>
         </div>
