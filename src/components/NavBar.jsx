@@ -41,7 +41,7 @@ export function NavBar({ onActiveGameClick } = {}) {
               key={game.id}
               to={`/game/${game.id}`}
               className={`
-                block p-4 border-4 transition-all
+                block p-4 border-4 transition-all group hover:text-white
                 ${isActive
                   ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] bg-opacity-20'
                   : 'border-[var(--nes-gray)] hover:border-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:bg-opacity-10'
@@ -64,7 +64,7 @@ export function NavBar({ onActiveGameClick } = {}) {
                 {/* Game Info */}
                 <div className="flex-1 text-left">
                   <h3 className="text-sm mb-1 text-white">{game.name}</h3>
-                  <p className="text-[10px] text-gray-400 leading-relaxed">
+                  <p className="text-[10px] text-gray-400 leading-relaxed group-hover:text-white">
                     {game.description}
                   </p>
                 </div>
