@@ -14,7 +14,7 @@ This guide will help you understand how to contribute effectively while respecti
 - We curate what ships in official deployments; there is **no obligation** to deploy any submission. See [DEPLOYMENT.md](./DEPLOYMENT.md).
 - We enforce a strict **Zero Data Collection** policy.
 
-By opening a PR, you agree to the terms in **[CLA.md](./CLA.md)**. See also [LICENSE](./LICENSE) and [LICENSE.games](./LICENSE.games).
+By opening a PR, you agree to the terms in **[CLA.md](./CLA.md)**. See also [LICENSE](./LICENSE).
 
 ---
 
@@ -172,7 +172,7 @@ If your game/feature requires data persistence for legitimate reasons (e.g., gam
 2. **Clone your fork:**
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/brain-arcade.git
+   git clone https://github.com/itayinbarr/brain-arcade.git
    cd brain-arcade
    ```
 
@@ -239,7 +239,10 @@ import { useJoystick } from "../../contexts/JoystickContext.jsx";
 
 export function MyGame() {
   // Use joystick axes like 'engagement', 'focus', or 'relaxation'
-  const { value01 } = useJoystick('engagement', { range: 0.4, autoAdjustBaseline: true });
+  const { value01 } = useJoystick("engagement", {
+    range: 0.4,
+    autoAdjustBaseline: true,
+  });
 
   return (
     <div className="game-container">
@@ -580,16 +583,16 @@ await connectMuse({ mock: true });
 
 ```javascript
 // Level 1: Joystick value (0..1)
-const { value01 } = useJoystick('engagement', { range: 0.4 });
-console.log('Engagement (0-100):', Math.round(value01 * 100));
+const { value01 } = useJoystick("engagement", { range: 0.4 });
+console.log("Engagement (0-100):", Math.round(value01 * 100));
 
 // Level 2: Biomarker value and normalized helper
-const { value, norm01 } = useBiomarker('frontal-midline-theta');
-console.log('FMT value:', value, 'Normalized:', norm01);
+const { value, norm01 } = useBiomarker("frontal-midline-theta");
+console.log("FMT value:", value, "Normalized:", norm01);
 
 // Level 3: Band powers
 const { bandPowers } = useProcessing();
-console.log('Alpha (AF7):', bandPowers?.[1]?.alpha);
+console.log("Alpha (AF7):", bandPowers?.[1]?.alpha);
 ```
 
 **Note:** Console logging is fine for development, but remove or guard it for production.

@@ -23,10 +23,6 @@ Commercial licenses are available for closed-source integrations. See **COMMERCI
 Community games are welcome, but inclusion in the official arcade and hosted deployments
 is curated. Submissions may be accepted, modified, or declined at the maintainer’s discretion.
 
-**Unregistered Mark Notice:**  
-“Brain Arcade” is an unregistered mark used to identify the original project and official deployments.
-Forks and derivatives should use distinct naming and branding.
-
 ## The Vision
 
 This project serves **two audiences simultaneously**:
@@ -48,7 +44,7 @@ npm install
 npm run dev
 ```
 
-When connecting, choose **"Mock Mode"** to try all games without a Muse device. The mock data is real neural signals, so you'll get authentic behavior.
+When connecting, choose **"Explore without a device"** to try all games without a Muse device. The mock data is real neural signals, so you'll get authentic behavior.
 
 ---
 
@@ -89,7 +85,7 @@ Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edg
 ### Browser Requirements
 
 - Chrome, Edge, or Opera (Web Bluetooth support required)
-- Safari and iOS devices are **not supported** (no Web Bluetooth API)
+- Safari is not **not supported** (no Web Bluetooth API)
 
 ### Connecting Your Brain
 
@@ -100,12 +96,11 @@ Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edg
 3. Select your device from the browser's Bluetooth dialog
 4. Start playing!
 
-**Option 2: Mock Mode (No Device)**
+**Option 2: Explore Without a Device (No Device)**
 
-1. Click "Connect Muse"
-2. Select "Mock Mode"
-3. Experience real pre-recorded EEG data
-4. Perfect for development and demos
+1. Click "Explore Without a Device"
+2. Experience real pre-recorded EEG data
+3. Perfect for development and demos
 
 ---
 
@@ -196,65 +191,6 @@ export function MyDSP() {
 4. **BiomarkerContext** → Cognitive markers (derived features)
 
 5. **JoystickContext** → Game-ready 0-1 controls
-
----
-
-## Adding a New Game
-
-Games are **completely modular** — add yours without touching core files:
-
-### 1. Create Your Game Folder
-
-```bash
-mkdir src/games/my-game
-```
-
-### 2. Build Your Game Component
-
-Create `src/games/my-game/MyGame.jsx`:
-
-```jsx
-import { useJoystick } from "../../contexts/JoystickContext.jsx";
-
-export function MyGame() {
-  // Use joystick axes like 'engagement', 'focus', or 'relaxation'
-  const { value01 } = useJoystick("relaxation", {
-    range: 0.4,
-    autoAdjustBaseline: true,
-  });
-  return (
-    <div>
-      <h2>MY BRAIN GAME</h2>
-      <p>Relaxation: {Math.round(value01 * 100)}%</p>
-      {/* Your game logic here */}
-    </div>
-  );
-}
-```
-
-Tip: The app provides a built-in calibration flow. If your game needs to force calibration at start, you may call `useBaseline().ensureBaseline({ seconds: 30 })`.
-
-### 3. Register Your Game
-
-Add to `src/games/games.config.js`:
-
-```javascript
-import { MyGame } from "./my-game/MyGame";
-
-export const games = [
-  // ... existing games
-  {
-    id: "my-game",
-    name: "MY BRAIN GAME",
-    description: "Control the game with your thoughts",
-    component: MyGame,
-  },
-];
-```
-
-**That's it!** Your game appears in the arcade menu automatically.
-
-For detailed contribution guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
@@ -398,34 +334,6 @@ Notes
 - All axes gate on frontal signal quality to avoid artifacts.
 - Most axes normalize against the session baseline (30s by default).
 - Games can enable `autoAdjustBaseline` to adapt when users stick at extremes.
-
----
-
-## Development
-
-```bash
-# Start dev server with hot reload
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
-npm run lint
-```
-
----
-
-## Tech Stack
-
-- **React 19** — UI framework
-- **Vite** — Build tool & dev server
-- **React Router** — Client-side routing
-- **Tailwind CSS v4** — Utility-first styling
-- **web-muse** — Muse EEG device library (bundled)
 
 ---
 
