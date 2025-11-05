@@ -43,7 +43,7 @@ export function MobileBlock() {
         </div>
 
         {/* Center message */}
-        <div className="absolute left-10 top-50">
+        <div className="absolute left-10 right-10 top-50">
           <p
             className="text-md sm:text-lg text-white opacity-90"
             style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
