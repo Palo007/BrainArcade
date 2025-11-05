@@ -1,6 +1,6 @@
 # Contributing to Brain Arcade
 
-Thank you for your interest in contributing to Brain Arcade! This project is built on the principle that **neurotechnology should be accessible to everyone** — from game developers to neuroscience researchers.
+Thank you for your interest in contributing to Brain Arcade! This project is built on the principle that **neurotechnology should be accessible to everyone** - from game developers to neuroscience researchers.
 
 This guide will help you understand how to contribute effectively while respecting the project's architecture and values.
 
@@ -396,10 +396,10 @@ New biomarkers go in `src/contexts/BiomarkerContext.jsx`.
 
 Changes to core processing (contexts, pipelines, optimization) require:
 
-1. **Issue discussion first** — Explain why the change is needed
-2. **Architecture review** — Ensure it fits the modular design
-3. **Performance testing** — Measure impact on processing speed
-4. **Backward compatibility** — Don't break existing games
+1. **Issue discussion first** - Explain why the change is needed
+2. **Architecture review** - Ensure it fits the modular design
+3. **Performance testing** - Measure impact on processing speed
+4. **Backward compatibility** - Don't break existing games
 
 **Examples of core contributions:**
 

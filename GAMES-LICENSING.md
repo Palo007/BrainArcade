@@ -1,4 +1,4 @@
-Brain Arcade — Game Contributions Licensing
+Brain Arcade - Game Contributions Licensing
 
 All game code and game assets contributed under `/src/games` (and its subfolders) are
 licensed under the Creative Commons Attribution-ShareAlike 4.0 International license

@@ -4,9 +4,9 @@
   <img src="./src/assets/startscreeen_gif.gif" alt="Brain Arcade Start Screen" width="600">
 </p>
 
-> **A retro arcade of thought-controlled minigames — proving neurotechnology is already here, accessible, and ready to hack.**
+> **A retro arcade of thought-controlled minigames - proving neurotechnology is already here, accessible, and ready to hack.**
 
-[Brain Arcade](https://brain-arcade.io/) is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore — there's a layer that's **usable, accessible, and waiting for builders**.
+[Brain Arcade](https://brain-arcade.io/) is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore - there's a layer that's **usable, accessible, and waiting for builders**.
 
 ## License
 
@@ -23,9 +23,9 @@ is curated. Submissions may be accepted, modified, or declined at the maintainer
 
 This project serves **two audiences simultaneously**:
 
-1. **Users** 👾 — Experience what's possible with neurotechnology _today_. See that brain-computer interfaces aren't science fiction — they're in your browser.
+1. **Users** 👾 - Experience what's possible with neurotechnology _today_. See that brain-computer interfaces aren't science fiction - they're in your browser.
 
-2. **Builders & Hackers** 🛠️ — Discover that building with neurotechnology doesn't require a PhD. Use pre-processed biomarkers as simple joystick controls (normalized 0-1 values) or dive deeper into signal processing pipelines.
+2. **Builders & Hackers** 🛠️ - Discover that building with neurotechnology doesn't require a PhD. Use pre-processed biomarkers as simple joystick controls (normalized 0-1 values) or dive deeper into signal processing pipelines.
 
 The arcade setting makes it **playful and approachable** while the modular architecture makes it **serious and extensible**. Neurotechnology for everyone.
 
@@ -46,17 +46,17 @@ When connecting, choose **"Explore without a device"** to try all games without 
 
 ## Features
 
-🧠 **Consumer-Grade EEG** — Uses Muse headbands (cheapest consumer EEG available) via Web Bluetooth
+🧠 **Consumer-Grade EEG** - Uses Muse headbands (cheapest consumer EEG available) via Web Bluetooth
 
-🎮 **Plug-and-Play Games** — Add new games without touching core files
+🎮 **Plug-and-Play Games** - Add new games without touching core files
 
-🕹️ **Four Contribution Levels** — From joystick-only games to raw EEG pipelines
+🕹️ **Four Contribution Levels** - From joystick-only games to raw EEG pipelines
 
-🔒 **Zero Data Collection** — Local-only processing, no neural data is ever saved or transmitted
+🔒 **Zero Data Collection** - Local-only processing, no neural data is ever saved or transmitted
 
-🧪 **Mock Mode** — Develop and play with real pre-recorded EEG data (no device required)
+🧪 **Mock Mode** - Develop and play with real pre-recorded EEG data (no device required)
 
-🕹️ **Retro Aesthetic** — NES-style UI with 8-bit vibes
+🕹️ **Retro Aesthetic** - NES-style UI with 8-bit vibes
 
 ---
 
@@ -102,11 +102,11 @@ Open `http://localhost:5173/` in a Web Bluetooth-compatible browser (Chrome, Edg
 
 ## Contribution Levels
 
-Brain Arcade is designed for **modularity and scalability**. Contribute at any of four levels — pick what matches your skills and needs:
+Brain Arcade is designed for **modularity and scalability**. Contribute at any of four levels - pick what matches your skills and needs:
 
 ### Level 1: Joystick-Only Games (No Neuroscience)
 
-Use pre-built **cognitive joysticks** — simple 0–1 values (map to 0–100%) that represent states like focus, engagement, or relaxation. You do not need to touch biomarkers or signal processing.
+Use pre-built **cognitive joysticks** - simple 0–1 values (map to 0–100%) that represent states like focus, engagement, or relaxation. You do not need to touch biomarkers or signal processing.
 
 ```jsx
 import { useJoystick } from "../../contexts/JoystickContext.jsx";
@@ -241,7 +241,7 @@ When you close the browser, all neural data is destroyed. Your thoughts stay you
 
 ### Hooks
 
-#### `useJoystick(axis, options)` — Cognitive Joysticks
+#### `useJoystick(axis, options)` - Cognitive Joysticks
 
 ```javascript
 const { value01 } = useJoystick("engagement", {
@@ -255,7 +255,7 @@ const { value01 } = useJoystick("engagement", {
 - `range` (optional): sensitivity around baseline (default ~0.4)
 - `autoAdjustBaseline` (optional): gently shifts center if user sits at extremes
 
-#### `useEEG()` — Raw EEG Data
+#### `useEEG()` - Raw EEG Data
 
 ```javascript
 const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
@@ -267,7 +267,7 @@ const { rawEEG, isConnected, isMock, connectMuse, disconnectEEG } = useEEG();
 - `connectMuse(options)`: Connect to device (`{ mock: true }` for mock mode)
 - `disconnectEEG()`: Disconnect device
 
-#### `useProcessing()` — Band Powers
+#### `useProcessing()` - Band Powers
 
 ```javascript
 const { bandPowers, psd } = useProcessing();
@@ -276,7 +276,7 @@ const { bandPowers, psd } = useProcessing();
 - `bandPowers`: `Array(4)` of per-channel objects: `bandPowers[ch].alpha|beta|theta|delta|gamma`
 - `psd`: Power spectral density (Welch method, 2s window, 1s overlap)
 
-#### `useBaseline()` — Calibration
+#### `useBaseline()` - Calibration
 
 ```javascript
 const { ensureBaseline, isBaselineReady, baseline } = useBaseline();
@@ -286,7 +286,7 @@ const { ensureBaseline, isBaselineReady, baseline } = useBaseline();
 - `isBaselineReady`: Boolean indicating baseline captured
 - `baseline`: Baseline band power values
 
-#### `useBiomarker(name, options)` — Cognitive Markers
+#### `useBiomarker(name, options)` - Cognitive Markers
 
 ```javascript
 const { value, norm01, baseline } = useBiomarker("frontal-midline-theta", {
@@ -305,25 +305,25 @@ Games should prefer joystick axes as the primary control surface. Biomarkers rem
 
 - Biomarkers (BiomarkerContext `getBiomarker(name)`)
 
-  - `frontal-midline-theta` — AF7/AF8 theta average (focus)
-  - `frontal-alpha-asymmetry` — Alpha L-R difference (valence/approach)
-  - `frontal-delta` — AF7/AF8 delta average (drowsiness)
-  - `beta-alpha-ratio` — Beta/Alpha (frontal; stress proxy)
-  - `theta-alpha-ratio` — Theta/Alpha (frontal; workload)
-  - `theta-beta-ratio` — Theta/Beta (frontal; engagement inverse / fatigue)
-  - `engagement-index` — Beta/(Alpha+Theta) (frontal; attention)
-  - `relaxation-index` — (Alpha+Theta)/Beta (frontal; calm state)
+  - `frontal-midline-theta` - AF7/AF8 theta average (focus)
+  - `frontal-alpha-asymmetry` - Alpha L-R difference (valence/approach)
+  - `frontal-delta` - AF7/AF8 delta average (drowsiness)
+  - `beta-alpha-ratio` - Beta/Alpha (frontal; stress proxy)
+  - `theta-alpha-ratio` - Theta/Alpha (frontal; workload)
+  - `theta-beta-ratio` - Theta/Beta (frontal; engagement inverse / fatigue)
+  - `engagement-index` - Beta/(Alpha+Theta) (frontal; attention)
+  - `relaxation-index` - (Alpha+Theta)/Beta (frontal; calm state)
 
 - Joystick axes (JoystickContext `useJoystick(axis)` → `{ value01 }`)
-  - `focus` — From `frontal-midline-theta` vs baseline
-  - `alertness` — Inverse of `frontal-delta` increase (0=drowsy → 1=alert)
-  - `drowsiness` — `frontal-delta` increase vs baseline
-  - `stress` — `beta-alpha-ratio` (higher ⇒ more stressed)
-  - `workload` — `theta-alpha-ratio` (higher ⇒ more load)
-  - `engagement` — `engagement-index` (beta/(alpha+theta))
-  - `relaxation` — `relaxation-index` ((alpha+theta)/beta)
-  - `flow` — Composite of engagement, moderate beta, low delta, non-excessive theta
-  - `frustration` — Composite of theta↑ + beta↑ with right-leaning theta asymmetry
+  - `focus` - From `frontal-midline-theta` vs baseline
+  - `alertness` - Inverse of `frontal-delta` increase (0=drowsy → 1=alert)
+  - `drowsiness` - `frontal-delta` increase vs baseline
+  - `stress` - `beta-alpha-ratio` (higher ⇒ more stressed)
+  - `workload` - `theta-alpha-ratio` (higher ⇒ more load)
+  - `engagement` - `engagement-index` (beta/(alpha+theta))
+  - `relaxation` - `relaxation-index` ((alpha+theta)/beta)
+  - `flow` - Composite of engagement, moderate beta, low delta, non-excessive theta
+  - `frustration` - Composite of theta↑ + beta↑ with right-leaning theta asymmetry
 
 Notes
 

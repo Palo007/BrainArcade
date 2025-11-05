@@ -68,7 +68,7 @@ export function Credits() {
               <span className="text-[var(--nes-green)]">Interaxon</span>.
             </p>
             <p className="opacity-80">
-              A collaborative, open‑source effort — showcasing that usable neurotechnology already exists today.
+              A collaborative, open‑source effort - showcasing that usable neurotechnology already exists today.
             </p>
 
             {/* Why Muse section */}
@@ -88,7 +88,7 @@ export function Credits() {
               LICENSE & PRIVACY
             </h3>
             <p className="text-[10px] sm:text-xs">
-              Brain Arcade — Open-source core (AGPL-3.0-or-later). Games under CC BY-SA 4.0.
+              Brain Arcade - Open-source core (AGPL-3.0-or-later). Games under CC BY-SA 4.0.
               No data is saved or transmitted. See
               {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Privacy</a>,
               {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">License</a>,
