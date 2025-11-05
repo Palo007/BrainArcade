@@ -1,9 +1,5 @@
 # Brain Arcade 🧠🕹️
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](./LICENSE)
-[![Games: CC BY-SA 4.0](https://img.shields.io/badge/Games-CC_BY--SA_4.0-lightgrey.svg)](./GAMES-LICENSING.md)
-[![Contributing](https://img.shields.io/badge/Contributing-CLA-green.svg)](./CLA.md)
-
 <p align="center">
   <img src="./src/assets/startscreeen_gif.gif" alt="Brain Arcade Start Screen" width="600">
 </p>
