@@ -19,16 +19,17 @@ export function StartScreen() {
   const [showingRecheck, setShowingRecheck] = useState(false);
   const [showLoadingQC, setShowLoadingQC] = useState(false);
   const [hasEnteredStartPhase, setHasEnteredStartPhase] = useState(false);
-  const [time, setTime] = useState('00:00');
+  const [time, setTime] = useState('00:00:00');
   const titleRef = useRef(null);
 
   // Update time display
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
-      setTime(`${minutes}:${seconds}`);
+      setTime(`${hours}:${minutes}:${seconds}`);
     };
 
     updateTime();
