@@ -8,17 +8,6 @@
 
 [Brain Arcade](https://brain-arcade.io/) is an open-source platform that connects consumer-grade EEG devices to playable minigames in your browser. Built with the cheapest available headset (Muse), this project demonstrates that neurotechnology isn't just deep-tech anymore - there's a layer that's **usable, accessible, and waiting for builders**.
 
-## License
-
-- **Core (this repo except `/src/games`)**: **AGPL-3.0-or-later**
-- **Games (everything under `/src/games`)**: **CC BY-SA 4.0** ([details](./GAMES-LICENSING.md))
-
-Commercial licenses are available for closed-source integrations. See **COMMERCIAL.md**.
-
-**Curation & Deployment Policy:**  
-Community games are welcome, but inclusion in the official arcade and hosted deployments
-is curated. Submissions may be accepted, modified, or declined at the maintainer’s discretion.
-
 ## The Vision
 
 This project serves **two audiences simultaneously**:
