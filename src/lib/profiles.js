@@ -55,9 +55,11 @@ export function getActiveProfileId() {
 export function createProfile(name) {
   const state = loadProfiles();
   const c = { id: newId(), name: cleanName(name) || `Player ${state.list.length + 1}`, createdAt: new Date().toISOString() };
+  const changed = state.activeId !== c.id;
   state.list.push(c);
   state.activeId = c.id;
   save(state);
+  if (changed && typeof window !== 'undefined') window.dispatchEvent(new Event(PROFILE_CHANGED_EVENT));
   return state;
 }
 

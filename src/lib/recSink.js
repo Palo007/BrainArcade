@@ -61,6 +61,11 @@ export async function createSink(name) {
   const dir = await opfsDir();
   if (dir) {
     try {
+      // Starting a new recording: keep only the newest earlier file (the one offered for recovery), delete older leftovers
+      const old = [];
+      for await (const [n, h] of dir.entries()) if (h.kind === 'file' && n !== name && !active.has(n)) old.push(n);
+      old.sort();
+      for (const n of old.slice(0, -1)) await dir.removeEntry(n).catch(() => {});
       const handle = await dir.getFileHandle(name, { create: true });
       let writable = await handle.createWritable();
       let chain = Promise.resolve();

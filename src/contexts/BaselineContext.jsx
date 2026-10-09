@@ -4,6 +4,7 @@ import { useProcessing } from './ProcessingContext.jsx';
 import { useQuality } from './QualityContext.jsx';
 import { calibrate, computePaf, personalBands, loadCalibration, saveCalibration } from '../lib/paf.js';
 import { PROFILE_CHANGED_EVENT } from '../lib/profiles.js';
+import { setActiveCalibration, setDemoMode } from '../lib/sessionStore.js';
 import { playChime, primeAudio } from '../lib/chime.js';
 
 const BaselineContext = createContext(null);
@@ -21,6 +22,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [visible, setVisible] = useState(false);
   const resolverRef = useRef(null);
+  const cancelRef = useRef(null);
   // Two-phase calibration: 'closed' (eyes closed, PAF) -> 'open' (eyes open, baseline + reactivity).
   // 'rest' = legacy single resting phase (no PAF, standard bands).
   const [phase, setPhase] = useState('idle');
@@ -57,6 +59,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
   // Another child took over: drop the previous child's baseline and personal bands
   useEffect(() => {
     const onProfile = () => {
+      cancelRef.current?.(); // a calibration in progress belongs to the previous child
       setBaseline(null);
       setCalibration(null);
       setBands(null);
@@ -109,6 +112,29 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     setSecondsElapsed(0);
     setPhase('idle');
   }, [inProgress, setBands]);
+
+  cancelRef.current = cancel;
+
+  // Demo (mock) mode: nothing is written to history or calibration storage
+  useEffect(() => { setDemoMode(isMock); return () => setDemoMode(false); }, [isMock]);
+
+  // Publish the calibration the game actually uses so session records are stamped with it (not with whatever is stored)
+  useEffect(() => {
+    setActiveCalibration(calibration?.found && Number.isFinite(calibration.paf)
+      ? { paf: calibration.paf, alphaReactivity: calibration.reactivity ?? null, bandsSource: 'personal', date: calibration.date }
+      : { paf: null, alphaReactivity: null, bandsSource: 'standard' });
+  }, [calibration]);
+
+  // Keep the screen awake during calibration (eyes-closed phase has no touch input); ignore if unsupported
+  useEffect(() => {
+    if (!inProgress || typeof navigator === 'undefined' || !('wakeLock' in navigator)) return;
+    let lock = null;
+    let stopped = false;
+    navigator.wakeLock.request('screen').then((l) => {
+      if (stopped) l.release().catch(() => {}); else lock = l;
+    }).catch(() => {});
+    return () => { stopped = true; lock?.release().catch(() => {}); };
+  }, [inProgress]);
 
   // Accumulate baseline using periodic bandPowers snapshots (every ~250ms)
   const accumRef = useRef(null);
@@ -167,13 +193,14 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
             const o = rawRef.current.open;
             cal = calibrate({ TP9: c[0], AF7: c[1], AF8: c[2], TP10: c[3] }, { TP9: o[0], AF7: o[1], AF8: o[2], TP10: o[3] });
             cal.quick = false;
-            if (Number.isFinite(cal.paf)) {
+            cal.date = new Date().toISOString();
+            if (Number.isFinite(cal.paf) && !isMock) { // demo data must not overwrite a real calibration
               const saved = {
                 paf: cal.paf,
                 alphaReactivity: cal.reactivity,
                 bands: { theta: cal.bands.theta, alpha: cal.bands.alpha },
                 posterior: cal.source === 'posterior',
-                date: new Date().toISOString(),
+                date: cal.date,
                 device: deviceKey,
               };
               saveCalibration(saved);
@@ -181,7 +208,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
             }
           } else if (savedCalibration) {
             cal = { found: true, paf: savedCalibration.paf, reactivity: savedCalibration.alphaReactivity ?? null,
-              fitWarning: false, bands: personalBands(savedCalibration.paf), quick: true };
+              fitWarning: false, bands: personalBands(savedCalibration.paf), quick: true, date: savedCalibration.date };
           }
         }
         setCalibration(cal);
@@ -212,7 +239,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [inProgress, secondsRequested, phase, muse, setBands, savedCalibration, deviceKey]);
+  }, [inProgress, secondsRequested, phase, muse, setBands, savedCalibration, deviceKey, isMock]);
 
   const ensureBaseline = useCallback((options = {}) => {
     const seconds = options.seconds || defaultSeconds;

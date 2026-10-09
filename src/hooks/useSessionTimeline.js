@@ -23,17 +23,19 @@ export function useSessionTimelineCollector() {
     fnirs: eeg?.muse?.fnirs || null,
     badSignal: !quality || !quality.ready || quality.anyBad || quality.adjusting,
     baselineReady: !!baseline?.isBaselineReady,
+    calibrating: !!baseline?.inProgress,
   };
 
   useEffect(() => {
     sessionTimeline.clear();
     lastBands.current = null;
     const id = setInterval(() => {
-      const { bandPowers, joysticks: js, fnirs, badSignal, baselineReady } = latest.current;
+      const { bandPowers, joysticks: js, fnirs, badSignal, baselineReady, calibrating } = latest.current;
       // Skip the second when the signal is bad (also covers the frontal pause) or no fresh band powers arrived.
       const fresh = bandPowers !== lastBands.current;
       lastBands.current = bandPowers;
-      if (badSignal || !fresh) return;
+      // Eyes-closed / calibration seconds are not play: keep them out of the parent report.
+      if (calibrating || badSignal || !fresh) return;
       let focus = null;
       if (baselineReady) {
         try { focus = js?.value01?.('focus') ?? null; } catch { focus = null; }

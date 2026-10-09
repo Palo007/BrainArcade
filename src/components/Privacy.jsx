@@ -55,9 +55,19 @@ export function Privacy() {
               at any time to verify how it works.
             </p>
             <p>
-              We do not collect, store, or transmit any personal data or usage
-              analytics. No information is saved on our servers or written to
-              persistent storage by this app.
+              We do not collect or transmit any personal data or usage
+              analytics. Nothing leaves your device.
+            </p>
+            <p>
+              Stored on your device only: child nicknames, session summaries
+              and per-child calibration (localStorage), and, if you switch it
+              on, a raw EEG/fNIRS recording (browser private file storage)
+              until you save or delete it. Downloads, shares and CSV export
+              happen only when you ask.
+            </p>
+            <p>
+              Delete it any time: Clear history per child, delete a profile,
+              delete a recording, or clear this site's data in your browser.
             </p>
             <p>
               All processing happens locally on your device solely to enable

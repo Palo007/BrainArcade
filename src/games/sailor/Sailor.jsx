@@ -22,7 +22,7 @@ export function Sailor() {
     range: 0.4,
     autoAdjustBaseline: true
   });
-  const { value: engagementValue } = useBiomarker('engagement-index');
+  useBiomarker('engagement-index');
 
   // Game state
   const [sailorX, setSailorX] = useState(15); // Start at 15% from left
@@ -62,7 +62,7 @@ export function Sailor() {
   }, [health]);
 
   // Scoring system - accumulates when in good range
-  const { score: gameScore, velocity, reset: resetScore } = useGameScore({
+  const { score: gameScore, reset: resetScore } = useGameScore({
     joystickValue: value01,
     baseRate: 10,
     minThreshold: LOW_THRESHOLD,

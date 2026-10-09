@@ -35,7 +35,7 @@ t('default profile created silently', () => {
 });
 
 t('recordSession stamps childId, date and calibration', () => {
-  mem.set(store.PAF_KEY, JSON.stringify({ paf: 10.2, alphaReactivity: 0.4 }));
+  store.setActiveCalibration({ paf: 10.2, alphaReactivity: 0.4, bandsSource: 'personal' });
   const id = store.recordSession('glow-orb', { score: 70, fnirsUsed: true, qualityPct: 91, bogus: undefined });
   const r = store.loadSessions().find((s) => s.id === id);
   assert.equal(r.childId, prof.loadProfiles().activeId);
@@ -48,9 +48,16 @@ t('recordSession stamps childId, date and calibration', () => {
 
 t('recordSession works without calibration', () => {
   mem.delete(store.PAF_KEY);
+  store.setActiveCalibration({ paf: null, alphaReactivity: null, bandsSource: 'standard' });
   const id = store.recordSession('sailor', { score: 5 });
   const r = store.loadSessions().find((s) => s.id === id);
   assert.ok(!('paf' in r));
+});
+
+t('demo mode writes nothing', () => {
+  store.setDemoMode(true);
+  assert.equal(store.recordSession('sailor', { score: 5 }), null);
+  store.setDemoMode(false);
 });
 
 t('profiles: create, switch, rename, delete', () => {
@@ -136,12 +143,14 @@ t('calibration is per child and stamped only for the same child', () => {
   paf.saveCalibration({ paf: 10.1, alphaReactivity: 0.3 });
   const b = prof.createProfile('Bo').activeId;
   assert.equal(paf.loadCalibration(), null, 'child B has no calibration');
+  store.setActiveCalibration({ paf: null, alphaReactivity: null, bandsSource: 'standard' });
   const idB = store.recordSession('glow-orb', { score: 1 });
   const rB = store.loadSessions().find((s) => s.id === idB);
   assert.equal(rB.childId, b);
   assert.ok(!('paf' in rB), 'A calibration not stamped on B');
   paf.saveCalibration({ paf: 9.2 });
   prof.switchProfile(a);
+  store.setActiveCalibration({ paf: 10.1, alphaReactivity: 0.3, bandsSource: 'personal', date: new Date().toISOString() });
   assert.equal(paf.loadCalibration().paf, 10.1);
   const idA = store.recordSession('glow-orb', { score: 2 });
   const rA = store.loadSessions().find((s) => s.id === idA);

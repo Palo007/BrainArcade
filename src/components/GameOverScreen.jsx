@@ -5,7 +5,7 @@ import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { useJoystick } from '../contexts/JoystickContext.jsx';
-import { recordSession } from '../lib/sessionStore.js';
+import { recordSession, isDemoMode } from '../lib/sessionStore.js';
 import '../styles/retro.css';
 
 /**
@@ -78,7 +78,7 @@ export function GameOverScreen({
       playedSec: secs,
       outcome: outcome || undefined,
     });
-    if (!id) setSaveFailed(true);
+    if (!id && !isDemoMode()) setSaveFailed(true);
   }, [gameName, finalScore, quality10s, playedSec, outcome]);
 
   // Monitor joystick values during readiness check
@@ -237,6 +237,9 @@ export function GameOverScreen({
           </div>
         </div>
 
+        {isDemoMode() && (
+          <div className="text-center text-[8px] opacity-70 mb-3">Demo mode — not saved</div>
+        )}
         {saveFailed && (
           <div className="text-center text-[8px] text-red-400 mb-3">History full — not saved</div>
         )}

@@ -1,8 +1,8 @@
 # Privacy Policy
 
-## Zero Data Collection
+## Nothing Leaves Your Device
 
-**Brain Arcade collects ZERO data. Period.**
+**Brain Arcade sends no data anywhere. We collect nothing.** Some things are kept on your own device so the app can work (see "What is stored on this device" below), and you can delete all of it.
 
 This document explains our privacy policy, data handling practices, and the technical guarantees we provide to protect your neural data.
 
@@ -13,12 +13,12 @@ This document explains our privacy policy, data handling practices, and the tech
 Your thoughts are **deeply personal**. We believe neural data deserves the highest level of privacy protection. That's why Brain Arcade is built with a **zero data collection** architecture:
 
 - ✅ **All processing happens locally** in your browser
-- ✅ **No data is ever saved** to disk
+- ✅ **Nothing is stored on our side**; the only copies live on your device (see below)
 - ✅ **No data is ever transmitted** to servers
 - ✅ **No analytics or tracking** of neural signals
 - ✅ **No third-party data sharing**
 
-When you close the browser, all neural data is destroyed. Your thoughts stay yours.
+Live neural signals are destroyed when you disconnect or close the page, unless you switch on recording. Your thoughts stay yours.
 
 ---
 
@@ -49,14 +49,16 @@ Brain Arcade processes the following data **exclusively in your browser's memory
 
 Brain Arcade can save a session as a Mind Monitor compatible CSV file (raw EEG, band powers, fNIRS optics, blinks, signal quality, game start/end markers). This is **OFF by default** and starts only when you switch on "Record this session".
 
-- The file is written only on the device you are using (browser private storage, in chunks), never sent anywhere.
-- When you stop, you choose to save it, share it yourself, or delete it. Unsaved recordings are deleted the next time a recording starts.
-- Nothing from a recording is uploaded; the "zero data collection" rule applies unchanged.
+- The file is written only on the device you are using (browser private storage / OPFS, in chunks), never sent anywhere. It stays there until you save it, share it or delete it.
+- When you stop, you choose to save it, share it yourself, or delete it. If one is left unsaved, the app offers it back next time; starting a new recording deletes older leftover files except that one.
+- Nothing from a recording is uploaded.
 - Treat a saved file like any other personal neural data: it is yours to keep or delete.
 
-### Non-Neural Data
+### What is stored on this device
 
-The **only** persistent data is:
+Everything below lives only in your browser on this device. You can delete it (see "How to delete" at the end of this section):
+
+- **Opt-in recording** (OPFS, see above) and files you download or share yourself (recordings, CSV export)
 
 - **Game scores** (optional, stored in browser LocalStorage)
   - No neural data attached
@@ -70,6 +72,7 @@ The **only** persistent data is:
   - Nothing is sent anywhere; the data never leaves this device unless you export it
   - Export and import are user-triggered: the Training Journal's "Export CSV" downloads a file you keep, "Import CSV" reads a file you choose
   - "Clear history" in the Training Journal deletes only the selected child's sessions (other children are untouched); clearing site data removes everything
+  - How to delete: "Clear history" in the Training Journal (one child's sessions), delete a profile (nickname, and by default sessions and calibration), delete or discard a recording in the recording panel, or clear this site's data in your browser settings (removes everything). Demo (mock) mode saves nothing.
   - Deleting a profile removes the nickname. By default it also removes that child's sessions and stored calibration. If you untick "also delete their sessions", the sessions stay in storage (hidden, still included in a full CSV export) and are never reassigned to another child
 
 ---
@@ -78,7 +81,7 @@ The **only** persistent data is:
 
 ### Architecture
 
-Brain Arcade's architecture **prevents data collection by design**:
+Brain Arcade's architecture **prevents data collection by design** (data stays on your device):
 
 ```
 ┌─────────────────────────────────────┐
@@ -94,7 +97,7 @@ Brain Arcade's architecture **prevents data collection by design**:
 │         ↓                           │
 │  Game Components (Render Only)      │
 │                                     │
-│  ❌ No Disk Storage                 │
+│  💾 Local storage only (your device)│
 │  ❌ No Network Requests             │
 │  ❌ No External Services            │
 └─────────────────────────────────────┘
@@ -111,16 +114,16 @@ Brain Arcade **does not make any network requests** after the initial page load:
 
 You can verify this by opening your browser's Network tab (F12 → Network) while using the app.
 
-### No Persistent Storage
+### Local Storage Only
 
-Neural data is **never written to disk**:
+Live neural signals are not written to disk unless you opt in. What is stored on the device:
 
-- ❌ No `localStorage.setItem()` for neural data
-- ❌ No `indexedDB` writes
-- ❌ No file downloads
-- ❌ No cookies containing biomarker values
+- `localStorage`: child nicknames, per-session summaries (no raw signals), per-child calibration, game scores
+- OPFS (browser private file storage): the opt-in raw EEG/fNIRS recording (Mind Monitor CSV), until you save or delete it
+- Files you trigger yourself: downloads, shares and the CSV export
+- ❌ No cookies containing biomarker values, nothing sent to a server
 
-The only persistent data is **anonymized game scores** (if you choose to save them).
+Delete it with "Clear history" per child, deleting a profile, deleting a recording, or clearing site data.
 
 ### Open Source Verification
 
@@ -160,7 +163,7 @@ While connected:
 
 During baseline calibration:
 
-- 30 seconds of data is **temporarily stored** in React context
+- 30 seconds of data is **temporarily stored** in React context; the resulting calibration (peak alpha frequency etc.) is saved per child in `localStorage`
 - Used to compute normalization parameters
 - **Cleared immediately** on disconnect
 
@@ -226,7 +229,7 @@ If you're contributing to Brain Arcade, **you must respect the zero data collect
 
 ### ❌ Prohibited
 
-- Saving neural data to `localStorage`, `indexedDB`, files
+- Saving raw neural data anywhere without the user's explicit opt-in (the recording feature)
 - Transmitting neural data via `fetch()`, `XMLHttpRequest`, WebSockets
 - Logging biomarker values to console in production
 - Using third-party analytics that capture neural signals

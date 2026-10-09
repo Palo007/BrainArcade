@@ -1,6 +1,5 @@
 // Training session history in localStorage (shared by all games and the Training Journal).
 import { loadProfiles, mergeProfiles, switchProfile } from './profiles.js';
-import { loadCalibration } from './paf.js';
 
 export const SESSIONS_KEY = 'brainarcade.sessions';
 export const MAX_SESSIONS = 500;
@@ -118,14 +117,21 @@ const finite = (v) => (v !== null && v !== undefined && v !== '' && Number.isFin
 
 // One-line recorder for any game: stamps date, child and the active child's calibration. Returns the record id (null if not saved).
 // fields: {durationSec, playedSec, score, points, meanFocus, timeAbovePct, qualityPct, fnirsUsed, ...}
+// BaselineContext publishes the calibration the game actually uses ({paf|null, alphaReactivity, bandsSource, date}) and the demo flag.
+let activeCal = null;
+let demoMode = false;
+export function setActiveCalibration(cal) { activeCal = cal || null; }
+export function setDemoMode(on) { demoMode = !!on; }
+export function isDemoMode() { return demoMode; }
+
 export function recordSession(game, fields = {}) {
-  const cal = loadCalibration();
+  if (demoMode) return null; // mock/demo data is never written to the history
   const record = { date: new Date().toISOString(), game, childId: loadProfiles().activeId, ...fields };
-  // Only stamp a calibration that belongs to this very child.
-  const mine = cal && cal.childId === record.childId ? cal : null;
-  if (record.paf === undefined) record.paf = finite(mine?.paf);
-  if (record.alphaReactivity === undefined) record.alphaReactivity = finite(mine?.alphaReactivity);
-  if (record.calibDate === undefined && mine?.date) record.calibDate = String(mine.date);
+  // Stamp what the game really used: the active calibration if personal bands were in effect, otherwise nothing (standard bands).
+  const used = activeCal && activeCal.bandsSource === 'personal' ? activeCal : null;
+  if (record.paf === undefined) record.paf = finite(used?.paf);
+  if (record.alphaReactivity === undefined) record.alphaReactivity = finite(used?.alphaReactivity);
+  if (record.calibDate === undefined && used?.date) record.calibDate = String(used.date);
   for (const k of Object.keys(record)) if (record[k] === undefined) delete record[k];
   return appendSession(record);
 }

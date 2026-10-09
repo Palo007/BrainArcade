@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useRecording } from '../contexts/RecordingContext.jsx';
 import '../styles/retro.css';
@@ -20,6 +20,7 @@ export function RecordingControl() {
   } = useRecording();
   const { pathname } = useLocation();
   const prevGame = useRef(null);
+  const [expanded, setExpanded] = useState(false); // landscape phones only: idle widget starts collapsed
 
   useEffect(() => {
     const m = pathname.match(/^\/game\/([^/]+)/);
@@ -50,10 +51,10 @@ export function RecordingControl() {
 
   if (status === 'recording') {
     return (
-      <div className={box} style={font} role="status">
+      <div className={`${box} short-land:p-1 short-land:text-[7px]`} style={font} role="status">
         <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse mr-1" aria-hidden="true" />
-        REC {fmtTime(stats.seconds)} · {fmtSize(stats.bytes)}
-        <button type="button" className={btn} onClick={() => stop()}>STOP</button>
+        REC {fmtTime(stats.seconds)}<span className="short-land:hidden"> · {fmtSize(stats.bytes)}</span>
+        <button type="button" className={`${btn} short-land:py-0.5 short-land:mt-0 short-land:ml-1`} onClick={() => stop()}>STOP</button>
         {warning && <div className="mt-1 text-yellow-300">{warning}</div>}
       </div>
     );
@@ -74,16 +75,32 @@ export function RecordingControl() {
       </div>
     );
   }
+  const collapsed = !expanded && !error; // only takes effect under short-land: (see classes below)
   return (
-    <div className={box} style={font}>
+    <div className={collapsed ? `${box} short-land:p-0 short-land:border-0 short-land:bg-transparent` : box} style={font}>
+      {collapsed && (
+        <button
+          type="button"
+          className="hidden short-land:inline-block border-2 border-white bg-black/80 px-2 py-1 text-[7px]"
+          aria-expanded="false"
+          onClick={() => setExpanded(true)}
+        >
+          <span className={armed ? 'text-red-500' : 'text-white/60'} aria-hidden="true">●</span> REC{armed ? ' ARMED' : ''}
+        </button>
+      )}
+      <div className={collapsed ? 'short-land:hidden' : ''}>
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={armed} onChange={(e) => setArmed(e.target.checked)} />
         <span>RECORD THIS SESSION</span>
+        {expanded && (
+          <button type="button" className="hidden short-land:inline-block ml-1 border border-white px-1" aria-label="Collapse" onClick={() => setExpanded(false)}>X</button>
+        )}
       </label>
-      <div className="opacity-60 mt-1">
+      <div className="opacity-60 mt-1 short-land:hidden">
         {armed ? 'Starts when the headband is connected. Saved only on this device.' : 'Off. Saves a CSV on this device only.'}
       </div>
       {error && <div className="mt-1 text-red-400">{error}</div>}
+      </div>
     </div>
   );
 }

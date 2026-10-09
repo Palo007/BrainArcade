@@ -54,7 +54,7 @@ export function BlinkingContest() {
 
   // Blink detection
   const { resetBlinks } = useBlinkDetector(
-    useCallback((timestamp) => {
+    useCallback(() => {
       if (!gameStarted || isDead) return;
 
       // Record blink timestamp

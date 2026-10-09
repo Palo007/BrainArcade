@@ -18,7 +18,12 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(req)
       .then((res) => {
-        if (res.status === 200 && res.type === 'basic') {
+        // Deep link on a static host (e.g. GitHub Pages 404): serve the cached app shell instead
+        if (res.status === 404 && req.mode === 'navigate') {
+          return caches.match(SCOPE + 'index.html').then((hit) => hit || res);
+        }
+        const big = Number(res.headers.get('content-length')) > 1024 * 1024 || /\.csv(\?|$)/i.test(req.url);
+        if (res.status === 200 && res.type === 'basic' && !big) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         }
