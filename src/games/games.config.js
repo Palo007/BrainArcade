@@ -15,6 +15,10 @@
  *   name: string         - Display name
  *   description: string  - Short description (1-2 sentences)
  *   component: Component - Your game's React component
+ *   category: string     - Menu section id (see `categories` below)
+ *   thumb?: string       - Imported image for the menu card background
+ *   sprite?: string      - Imported image drawn on top of the card background
+ *   badge?: string       - Short label on the card (e.g. required hardware)
  * }
  */
 
@@ -28,60 +32,103 @@ import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
 import { GlowOrb } from "./glow-orb/GlowOrb.jsx";
 import { FocusBall } from "./focus-ball/FocusBall.jsx";
 
+// Menu card art: `thumb` = background image, `sprite` = optional character drawn on top
+import commandCenterThumb from "./joystick-visualizer/assets/brain_command_center.png";
+import glowOrbThumb from "./glow-orb/assets/thumb.svg";
+import focusBallThumb from "./focus-ball/assets/thumb.svg";
+import sweetSpotSprite from "./sweet-spot/assets/chill.png";
+import sailorThumb from "./sailor/assets/scene.png";
+import blinkThumb from "./blinking-contest/assets/thumb.svg";
+import diverThumb from "./diver/assets/background-sea.png";
+import diverSprite from "./diver/assets/diver-happy.png";
+import trainThumb from "./train-of-thoughts/assets/city-background.png";
+import trainSprite from "./train-of-thoughts/assets/train1.png";
+import visualizerThumb from "./example-game/assets/thumb.svg";
+
+// Menu sections, in display order
+export const categories = [
+  { id: "fnirs", name: "fNIRS TRAINING", color: "var(--nes-yellow)" },
+  { id: "calm", name: "CALM & FOCUS", color: "var(--nes-blue)" },
+  { id: "challenge", name: "CHALLENGES", color: "var(--nes-red)" },
+  { id: "tools", name: "BRAIN TOOLS", color: "var(--nes-green)" },
+];
+
 export const games = [
   {
     id: "brain-command-center",
     name: "BRAIN COMMAND CENTER",
     description: "Monitor all of your cognitive traits in real time",
     component: BrainCommandCenter,
+    category: "tools",
+    thumb: commandCenterThumb,
   },
   {
     id: "glow-orb",
     name: "GLOW ORB",
     description: "Think hard to make the orb fly! Uses the fNIRS light sensors of the Muse S Athena.",
     component: GlowOrb,
+    category: "fnirs",
+    thumb: glowOrbThumb,
+    badge: "ATHENA",
   },
   {
     id: "focus-ball",
     name: "FOCUS BALL",
     description: "Keep the ball above the line with steady focus. Mendi-style training with a session report. Needs Muse S Athena (fNIRS).",
     component: FocusBall,
+    category: "fnirs",
+    thumb: focusBallThumb,
+    badge: "ATHENA",
   },
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
     description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren't relaxed.",
     component: SweetSpot,
+    category: "calm",
+    sprite: sweetSpotSprite,
   },
   {
     id: "sailor",
     name: "SEA OF THOUGHTS",
     description: "Navigate the ocean of your mind and recollect your lost train of thought by staying engaged",
     component: Sailor,
+    category: "calm",
+    thumb: sailorThumb,
   },
   {
     id: "blinking-contest",
     name: "BLINKING CONTEST",
     description: "Keep your eyes open! You have 3 blinks before losing. Try to last as long as possible.",
     component: BlinkingContest,
+    category: "challenge",
+    thumb: blinkThumb,
   },
   {
     id: "diver",
     name: "BAD DIVER",
     description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
     component: Diver,
+    category: "challenge",
+    thumb: diverThumb,
+    sprite: diverSprite,
   },
   {
     id: "train-of-thoughts",
     name: "TRAIN OF THOUGHTS",
     description: "Stay calm to slow down the train. Don't get swept away by your racing thoughts!",
     component: TrainOfThoughts,
+    category: "calm",
+    thumb: trainThumb,
+    sprite: trainSprite,
   },
   {
     id: "example-game",
     name: "BRAINWAVE VISUALIZER",
     description: "See your brainwaves in real-time with EEG visualization",
     component: ExampleGame,
+    category: "tools",
+    thumb: visualizerThumb,
   },
   // Add more games here!
   // {

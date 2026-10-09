@@ -1,171 +1,198 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { games } from '../games/games.config';
+import { games, categories } from '../games/games.config';
 import '../styles/retro.css';
 
+const ALL = 'all';
+
 /**
- * NavBar - Navigation menu for all registered games
- * Automatically displays games from games.config.js
+ * GameCard - Picture card for one game (art on top, name + description below)
+ */
+function GameCard({ game, isActive, onClick }) {
+  return (
+    <Link
+      to={`/game/${game.id}`}
+      onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
+      className={`
+        group flex flex-col border-4 bg-black/30 transition-all
+        hover:-translate-y-1 focus-visible:-translate-y-1 outline-none
+        ${isActive
+          ? 'border-[var(--nes-yellow)]'
+          : 'border-[var(--nes-gray)] hover:border-[var(--nes-blue)] focus-visible:border-[var(--nes-blue)]'
+        }
+      `}
+    >
+      {/* Art */}
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#10102a]">
+        {game.thumb && (
+          <img
+            src={game.thumb}
+            alt=""
+            loading="lazy"
+            draggable="false"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        )}
+        {!game.thumb && (
+          <div className="absolute inset-0 bg-gradient-to-b from-[#40C0FF] to-[#2b52ff]" />
+        )}
+        {game.sprite && (
+          <img
+            src={game.sprite}
+            alt=""
+            loading="lazy"
+            draggable="false"
+            className="absolute left-1/2 bottom-0 -translate-x-1/2 h-[80%] w-auto object-contain drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]"
+          />
+        )}
+
+        {/* Badge (e.g. required hardware) */}
+        {game.badge && (
+          <span className="absolute top-1.5 right-1.5 text-[7px] sm:text-[8px] px-1.5 py-1 bg-black/80 text-[var(--nes-yellow)] border border-[var(--nes-yellow)] leading-none">
+            {game.badge}
+          </span>
+        )}
+
+        {/* Play overlay */}
+        <div
+          className={`
+            absolute inset-0 flex items-center justify-center bg-black/50 transition-opacity
+            ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'}
+          `}
+        >
+          <span className="text-[10px] sm:text-xs px-3 py-2 bg-[var(--nes-yellow)] text-black">
+            {isActive ? '◆ PLAYING' : '▶ PLAY'}
+          </span>
+        </div>
+      </div>
+
+      {/* Text */}
+      <div className="p-2 sm:p-3 text-left flex-1">
+        <h3 className="text-[9px] sm:text-xs leading-snug text-white mb-1">{game.name}</h3>
+        <p className="hidden sm:block text-[9px] text-gray-400 leading-relaxed group-hover:text-gray-200 line-clamp-3">
+          {game.description}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+/**
+ * NavBar - Game selection menu
+ * Automatically displays games from games.config.js, grouped by category
  */
 export function NavBar({ onActiveGameClick } = {}) {
   const location = useLocation();
-  const [currentPage, setCurrentPage] = useState(1);
-  const gamesPerPage = 8;
+  const [filter, setFilter] = useState(ALL);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(games.length / gamesPerPage);
-  const startIndex = (currentPage - 1) * gamesPerPage;
-  const endIndex = startIndex + gamesPerPage;
-  const currentGames = games.slice(startIndex, endIndex);
+  const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]));
+  const usedCategories = categories.filter((c) => games.some((g) => g.category === c.id));
+  const visible = filter === ALL ? games : games.filter((g) => g.category === filter);
 
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleClick = (game, isActive) => (e) => {
+    // If a handler is provided, use modal flow instead of direct nav
+    if (onActiveGameClick) {
+      e.preventDefault();
+      onActiveGameClick(game);
+      return;
+    }
+    // If already on this game, prevent redundant navigation
+    if (isActive) {
+      e.preventDefault();
+    }
   };
+
+  const chips = [{ id: ALL, name: 'ALL', color: 'var(--nes-yellow)' }, ...usedCategories];
 
   return (
     <nav className="mb-8 pb-4">
-      <div className="flex items-center mb-4 sticky top-0 pt-8 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] py-3">
-        <Link to="/" className="ml-3 text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors">
-          ← HOME
-        </Link>
-        <h2 className="text-lg text-[var(--nes-green)] ml-6">| SELECT GAME</h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {currentGames.map((game) => {
-          const isActive = location.pathname === `/game/${game.id}`;
-
-          return (
-            <Link
-              key={game.id}
-              to={`/game/${game.id}`}
-              className={`
-                block p-4 border-4 transition-all group hover:text-white
-                ${isActive
-                  ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] bg-opacity-20'
-                  : 'border-[var(--nes-gray)] hover:border-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:bg-opacity-10'
-                }
-              `}
-              onClick={(e) => {
-                // If a handler is provided, use modal flow instead of direct nav
-                if (onActiveGameClick) {
-                  e.preventDefault();
-                  onActiveGameClick(game);
-                  return;
-                }
-                // If already on this game, prevent redundant navigation
-                if (isActive) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <div className="flex items-center gap-4">
-                {/* Game Info */}
-                <div className="flex-1 text-left">
-                  <h3 className="text-sm mb-1 text-white">{game.name}</h3>
-                  <p className="text-[10px] text-gray-400 leading-relaxed group-hover:text-white">
-                    {game.description}
-                  </p>
-                </div>
-
-                {/* Play Arrow */}
-                <div className="text-[var(--nes-yellow)] text-xl">
-                  {isActive ? '◆' : '▶'}
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-
-        {/* Coming Soon Block */}
-        <div className="block p-4 border-4 border-[var(--nes-gray)] bg-gray-800 bg-opacity-40">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 text-left">
-              <h3 className="text-sm mb-1 text-gray-300">MORE GAMES COMING SOON</h3>
-              <p className="text-[10px] text-gray-500 leading-relaxed">
-                Stay tuned for more brain-controlled minigames
-              </p>
-            </div>
-            <div className="text-gray-600 text-xl">
-              ⋯
-            </div>
-          </div>
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] pt-4 sm:pt-6 pb-3 -mx-1 px-1">
+        <div className="flex items-center gap-3 sm:gap-6 mb-3">
+          <Link
+            to="/"
+            className="text-sm sm:text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2"
+          >
+            ← HOME
+          </Link>
+          <h2 className="text-xs sm:text-lg text-[var(--nes-green)]">SELECT GAME</h2>
+          <span className="ml-auto hidden sm:inline text-[10px] text-gray-500">{visible.length} GAMES</span>
         </div>
 
-        {/* Contribute Block */}
-        <a
-          href="https://github.com/itayinbarr/brain-arcade"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block p-4 border-4 border-[var(--nes-gray)] bg-gray-800 bg-opacity-40 hover:border-[var(--nes-green)] hover:bg-opacity-60 transition-all"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex-1 text-left">
-              <h3 className="text-sm mb-1 text-[var(--nes-green)]">CONTRIBUTE YOUR GAME</h3>
-              <p className="text-[10px] text-gray-400 leading-relaxed">
-                Build your own minigame and submit to GitHub
-              </p>
-            </div>
-            <div className="text-[var(--nes-green)] text-xl">
-              +
-            </div>
-          </div>
-        </a>
-      </div>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          {/* Previous Button */}
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className={`
-              px-4 py-2 border-4 font-bold transition-all
-              ${currentPage === 1
-                ? 'border-gray-600 text-gray-600 cursor-not-allowed'
-                : 'border-[var(--nes-blue)] text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-white'
-              }
-            `}
-          >
-            ◀ PREV
-          </button>
-
-          {/* Page Numbers */}
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        {/* Category filter (scrolls sideways on phones) */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Game categories">
+          {chips.map((c) => {
+            const selected = filter === c.id;
+            return (
               <button
-                key={page}
-                onClick={() => goToPage(page)}
-                className={`
-                  w-10 h-10 border-4 font-bold transition-all
-                  ${page === currentPage
-                    ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black'
-                    : 'border-[var(--nes-gray)] text-white hover:border-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:bg-opacity-20'
-                  }
-                `}
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setFilter(c.id)}
+                className="shrink-0 border-2 px-3 py-2 text-[8px] sm:text-[10px] whitespace-nowrap transition-colors"
+                style={{
+                  borderColor: c.color,
+                  backgroundColor: selected ? c.color : 'transparent',
+                  color: selected ? '#000' : c.color,
+                }}
               >
-                {page}
+                {c.name}
               </button>
-            ))}
-          </div>
-
-          {/* Next Button */}
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className={`
-              px-4 py-2 border-4 font-bold transition-all
-              ${currentPage === totalPages
-                ? 'border-gray-600 text-gray-600 cursor-not-allowed'
-                : 'border-[var(--nes-blue)] text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-white'
-              }
-            `}
-          >
-            NEXT ▶
-          </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Sections */}
+      {(filter === ALL ? usedCategories : usedCategories.filter((c) => c.id === filter)).map((cat) => {
+        const list = visible.filter((g) => g.category === cat.id);
+        if (list.length === 0) return null;
+        return (
+          <section key={cat.id} className="mt-5">
+            {filter === ALL && (
+              <h3 className="text-[10px] sm:text-xs mb-3 flex items-center gap-2" style={{ color: cat.color }}>
+                <span className="inline-block w-2 h-2" style={{ backgroundColor: cat.color }} />
+                {cat.name}
+              </h3>
+            )}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {list.map((game) => {
+                const isActive = location.pathname === `/game/${game.id}`;
+                return (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    isActive={isActive}
+                    onClick={handleClick(game, isActive)}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+
+      {/* Games with no (or unknown) category */}
+      {filter === ALL && games.some((g) => !categoryById[g.category]) && (
+        <section className="mt-5">
+          <h3 className="text-[10px] sm:text-xs mb-3 text-gray-300">OTHER</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {games.filter((g) => !categoryById[g.category]).map((game) => {
+              const isActive = location.pathname === `/game/${game.id}`;
+              return (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isActive={isActive}
+                  onClick={handleClick(game, isActive)}
+                />
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {games.length === 0 && (
@@ -179,6 +206,3 @@ export function NavBar({ onActiveGameClick } = {}) {
     </nav>
   );
 }
-/* SPDX-License-Identifier: AGPL-3.0-or-later
-   Copyright (c) 2025 Itay Inbar
-*/

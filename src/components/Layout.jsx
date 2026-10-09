@@ -125,7 +125,7 @@ export function Layout({ children }) {
       <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
         {isConnected && !isFullScreen && (
-          <div className="absolute top-10 right-10 z-50 flex items-center gap-4">
+          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 z-50 flex items-center gap-2 sm:gap-4">
             {/* Pause button (only on game pages) */}
             {isGamePage && isConnected && (
               <button
@@ -183,9 +183,9 @@ export function Layout({ children }) {
         {isFullScreen ? (
           <>{children}</>
         ) : (
-          <div className="w-full h-full px-4 py-8">
+          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8">
             <div className="w-full h-full">
-              <div className="text-left p-6 space-y-6 h-full">
+              <div className="text-left p-2 sm:p-6 space-y-6 h-full">
                 {/* Global not-connected guard for game pages */}
                 {isGamePage && !isConnected ? (
                   <div className="text-center py-12">
@@ -218,7 +218,7 @@ export function Layout({ children }) {
             onClick={() => setShowMenu(false)}
           >
             <div
-              className="w-full max-w-4xl mx-auto bg-[var(--nes-dark)] border-4 border-white px-6 pb-6 pt-0 max-h-[80%] overflow-y-auto"
+              className="w-[94%] sm:w-full max-w-4xl mx-auto bg-[var(--nes-dark)] border-4 border-white px-3 sm:px-6 pb-4 sm:pb-6 pt-0 max-h-[90%] sm:max-h-[80%] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <NavBar

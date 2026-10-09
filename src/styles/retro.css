@@ -236,6 +236,12 @@
   overflow: hidden; /* clip content and effects to rounded inner edge */
 }
 
+/* Phones: thin bezel so the content gets the screen width */
+@media (max-width: 640px) {
+  .arcade-frame { padding: 6px; }
+  .arcade-window { border-radius: 18px; }
+}
+
 /* Ensure full-screen effects are constrained within the arcade content area */
 .arcade-window .scanlines-vhs,
 .arcade-window .noise,
@@ -340,3 +346,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later
    Copyright (c) 2025 Itay Inbar
 */
+
+/* Sideways-scrolling rows (e.g. game menu filters) without a visible scrollbar */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
