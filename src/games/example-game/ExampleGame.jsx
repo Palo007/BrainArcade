@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useEEG } from '../../contexts/MuseContext';
 import '../../styles/retro.css';
+import { FnirsPanel } from '../../components/FnirsPanel.jsx';
 
 /**
  * ExampleGame - Demo game showing how to access Muse EEG data
@@ -110,6 +111,7 @@ export function ExampleGame() {
         </div>
       </div>
 
+      <FnirsPanel />
     </div>
   );
 }

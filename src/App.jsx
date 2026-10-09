@@ -83,7 +83,19 @@ function App() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  if (!isDesktop) {
+  // `?mobile=1` lets phones in (Athena pairing works on Android Chrome); remembered per browser
+  const allowMobile = (() => {
+    try {
+      if (new URLSearchParams(window.location.search).get('mobile') === '1') {
+        localStorage.setItem('allowMobile', '1');
+      }
+      return localStorage.getItem('allowMobile') === '1';
+    } catch {
+      return new URLSearchParams(window.location.search).get('mobile') === '1';
+    }
+  })();
+
+  if (!isDesktop && !allowMobile) {
     return <MobileBlock />;
   }
 

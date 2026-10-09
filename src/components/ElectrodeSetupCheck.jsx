@@ -3,7 +3,7 @@ import { useQuality, CHANNEL_INFO } from '../contexts/QualityContext.jsx';
 import '../styles/retro.css';
 
 export function ElectrodeSetupCheck({ onReady, showValues = true }) {
-  const { currentAbs, perChannelBad, adjusting, ready } = useQuality();
+  const { channelRms, perChannelBad, adjusting, ready } = useQuality();
   const [shownReady, setShownReady] = useState(false);
 
   useEffect(() => {
@@ -44,7 +44,8 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
           1, 2, 0, 3,
         ].map((idx) => {
           const info = CHANNEL_INFO[idx];
-          const abs = Math.round(Math.abs(currentAbs[idx] || 0));
+          // 1 s RMS in µV: steadier than the single latest sample, and 0 shows a flat (dead) channel
+          const abs = Math.round(channelRms[idx] || 0);
           const bad = perChannelBad[idx];
           return (
             <div key={info.id} className={`flex items-center justify-between border px-2 py-1 text-[10px] ${bad ? 'border-[var(--nes-red)]' : 'border-[var(--nes-green)]'}`}>

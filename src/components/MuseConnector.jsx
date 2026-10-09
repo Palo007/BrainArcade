@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useEEG } from '../contexts/MuseContext';
 import '../styles/retro.css';
 import { RetroModal } from './RetroModal';
+import { relayAvailable } from '../lib/phoneRelay.js';
 
 /**
  * MuseConnector - Button to connect to Muse device
@@ -14,12 +15,12 @@ export function MuseConnector({ onConnected }) {
   const [showMockInfo, setShowMockInfo] = useState(false);
   const [mockError, setMockError] = useState(null);
 
-  const handleConnect = async () => {
+  const handleConnect = async (options = {}) => {
     setIsConnecting(true);
     setError(null);
 
     try {
-      await connectMuse();
+      await connectMuse(options);
       if (onConnected) {
         onConnected();
       }
@@ -64,13 +65,33 @@ export function MuseConnector({ onConnected }) {
     <div className="text-left">
       <div className="flex items-center gap-4 flex-wrap">
         <button
-          onClick={handleConnect}
+          onClick={() => handleConnect({ athena: true, preset: 'p1034' })}
           disabled={isConnecting}
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
-          {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE'}
+          {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (ATHENA)'}
         </button>
+
+        <button
+          onClick={() => handleConnect()}
+          disabled={isConnecting}
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+          style={{ fontFamily: "'Press Start 2P', cursive" }}
+        >
+          {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (CLASSIC)'}
+        </button>
+
+        {relayAvailable && (
+          <button
+            onClick={() => handleConnect({ relay: true })}
+            disabled={isConnecting}
+            className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            {isConnecting ? 'WAITING FOR PHONE…' : 'CONNECT VIA PHONE'}
+          </button>
+        )}
 
         <button
           onClick={handleMockConnect}

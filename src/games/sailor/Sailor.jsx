@@ -17,7 +17,8 @@ import '../../styles/retro.css';
 
 export function Sailor() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
-  const { value01 } = useJoystick('engagement', {
+  // EEG engagement blended with fNIRS oxygenation on Muse S Athena (EEG only on classic Muse)
+  const { value01 } = useJoystick('focus-plus', {
     range: 0.4,
     autoAdjustBaseline: true
   });

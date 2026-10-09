@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect } from 'react';
 import { useBiomarkers } from './BiomarkerContext.jsx';
 import { useQuality } from './QualityContext.jsx';
+import { useEEG } from './MuseContext.jsx';
 
 const JoystickContext = createContext(null);
 
@@ -74,11 +75,29 @@ export const JOYSTICK_AXES = {
     requiresBaseline: true,
     description: 'Frustration via theta+beta pattern and asymmetry'
   },
+  // fNIRS axes (Muse S Athena optics, see lib/fnirs.js)
+  oxygenation: {
+    biomarker: 'fnirs-oxygenation',
+    requiresBaseline: false,
+    requiresFnirs: true,
+    description: 'Forehead oxygenation (ΔHbO − ΔHbR), slow: 3-6 s lag'
+  },
+  'focus-plus': {
+    biomarker: 'engagement-index',
+    requiresBaseline: true,
+    description: 'Engagement (EEG, fast) blended with fNIRS oxygenation (slow); EEG only without optics'
+  },
 };
+
+const FNIRS_START_SCALE = 0.35; // µM of oxygenation index that maps to 0 or 1 (grows with upswings)
+const FOCUS_PLUS_FNIRS_WEIGHT = 0.4;
 
 export function JoystickProvider({ children }) {
   const { getBiomarker } = useBiomarkers();
   const { hasRecentExtreme, adjusting } = useQuality();
+  const { muse } = useEEG();
+  const fnirs = muse?.fnirs || null;
+  const fnirsScaleRef = useRef(FNIRS_START_SCALE);
   const lastStableRef = useRef({}); // per-axis last stable output
 
   // Auto-baseline adjustment state
@@ -166,6 +185,18 @@ export function JoystickProvider({ children }) {
       }
 
       const adaptiveOffset = adaptiveOffsets[axis] || 0;
+
+      // fNIRS oxygenation as 0..1 (0.5 = baseline), or null when not available / not trustworthy
+      const oxygenation01 = () => {
+        const idx = fnirs?.index();
+        if (!idx?.ready) {
+          fnirsScaleRef.current = FNIRS_START_SCALE; // new baseline → start scaling again
+          return null;
+        }
+        if (idx.bad) return null;
+        fnirsScaleRef.current = Math.max(fnirsScaleRef.current, idx.oxy * 0.9);
+        return clamp01(0.5 + 0.5 * (idx.oxy / fnirsScaleRef.current));
+      };
 
       switch (axis) {
         case 'focus':
@@ -259,11 +290,23 @@ export function JoystickProvider({ children }) {
           const frustration = clamp01(0.6 * thInc + 0.4 * beInc) * (0.7 + 0.3 * rightDominance01);
           return updateStable(frustration);
         }
+        case 'oxygenation': {
+          const v = oxygenation01();
+          return v == null ? useStable() : updateStable(v);
+        }
+        case 'focus-plus': {
+          if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
+          const { value, baseline } = getBiomarker('engagement-index');
+          const eeg = normalizeRatio(value, baseline, { ...options, range: options.range ?? 0.6, adaptiveOffset });
+          const oxy = oxygenation01();
+          const w = options.fnirsWeight ?? FOCUS_PLUS_FNIRS_WEIGHT;
+          return updateStable(oxy == null ? eeg : (1 - w) * eeg + w * oxy);
+        }
         default:
           return useStable();
       }
     },
-  }), [getBiomarker, hasRecentExtreme, adjusting, adaptiveOffsets]);
+  }), [getBiomarker, hasRecentExtreme, adjusting, adaptiveOffsets, fnirs]);
 
   return (
     <JoystickContext.Provider value={get}>{children}</JoystickContext.Provider>

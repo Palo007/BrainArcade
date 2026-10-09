@@ -1,11 +1,40 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useBlinkDetector } from '../../contexts/BlinkContext.jsx';
+import { useBlinkDetector, useBlink } from '../../contexts/BlinkContext.jsx';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
 import { RetroModal } from '../../components/RetroModal.jsx';
 import '../../styles/retro.css';
 import './eye-animations.css';
+
+// Live blink-detector numbers for tuning. Open any page once with ?debug=1 (remembered; ?debug=0 turns it off).
+function blinkDebugEnabled() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('debug');
+    if (q != null) localStorage.setItem('blinkDebug', q === '0' ? '0' : '1');
+    return localStorage.getItem('blinkDebug') === '1';
+  } catch {
+    return false;
+  }
+}
+const SHOW_BLINK_DEBUG = typeof window !== 'undefined' && blinkDebugEnabled();
+
+function BlinkDebug() {
+  const { debugRef } = useBlink();
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    const id = setInterval(() => setD({ ...debugRef.current }), 100);
+    return () => clearInterval(id);
+  }, [debugRef]);
+  if (!d) return null;
+  const r = (x) => Math.round(x);
+  return (
+    <div className="absolute bottom-1 left-1 z-50 bg-black/70 text-white font-mono text-[11px] px-2 py-1">
+      ears {r(d.earRange)} (peak {r(d.peak)}) / limit {r(d.threshold)} (quiet {r(d.quiet)}) · forehead {r(d.frontalRange)}
+      · blinks {d.blinks} · rejected {d.rejected}{d.reason ? ` (${d.reason})` : ''}
+    </div>
+  );
+}
 
 export function BlinkingContest() {
   // Game state
@@ -158,6 +187,7 @@ export function BlinkingContest() {
 
   return (
     <div className="absolute inset-0" style={{ backgroundColor: '#EA9AB2' }}>
+      {SHOW_BLINK_DEBUG && <BlinkDebug />}
       {/* Welcome Modal */}
       {showWelcome && (
         <RetroModal

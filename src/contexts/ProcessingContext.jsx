@@ -11,7 +11,9 @@ const LEFT_CHANNELS = [0, 1];
 const RIGHT_CHANNELS = [2, 3];
 
 export function ProcessingProvider({ children }) {
-  const { rawEEG, isConnected } = useEEG();
+  const { subscribeEEG, isConnected, profile } = useEEG();
+  const smoothing = profile.bandSmoothing;
+  const smoothedRef = useRef(null); // EMA of band powers (athena: calms jumpy ratios)
   const buffersRef = useRef([[], [], [], []]);
   const maxBufferSamples = SAMPLE_RATE * 8; // keep last 8 seconds
 
@@ -23,21 +25,25 @@ export function ProcessingProvider({ children }) {
   useEffect(() => {
     if (!isConnected) {
       buffersRef.current = [[], [], [], []];
+      smoothedRef.current = null;
       setPsd([null, null, null, null]);
       setBandPowers([null, null, null, null]);
       setFreqRes(null);
     }
   }, [isConnected]);
 
-  // Push incoming samples into buffers
+  // Push every incoming sample into buffers
   useEffect(() => {
-    if (!isConnected || !rawEEG) return;
-    const bufs = buffersRef.current;
-    for (let ch = 0; ch < 4; ch++) {
-      bufs[ch].push(rawEEG[ch] || 0);
-      if (bufs[ch].length > maxBufferSamples) bufs[ch].splice(0, bufs[ch].length - maxBufferSamples);
-    }
-  }, [rawEEG, isConnected]);
+    if (!isConnected) return;
+    return subscribeEEG((sample) => {
+      const bufs = buffersRef.current;
+      for (let ch = 0; ch < 4; ch++) {
+        bufs[ch].push(sample[ch] || 0);
+        // Trim in 1 s chunks, not one element per sample (2048-element shift x 4 ch x 256 Hz)
+        if (bufs[ch].length > maxBufferSamples + SAMPLE_RATE) bufs[ch].splice(0, bufs[ch].length - maxBufferSamples);
+      }
+    });
+  }, [subscribeEEG, isConnected, maxBufferSamples]);
 
   // Periodically compute PSD and band powers from recent buffer content
   useEffect(() => {
@@ -55,6 +61,18 @@ export function ProcessingProvider({ children }) {
         localFreqRes = freqRes;
         nextBands[ch] = bandPowersFromPSD(psd, freqRes, BANDS);
       }
+      // EMA per channel and band; skipped until the 2 s window is full (all-zero PSD)
+      const filled = bufs[0].length >= SAMPLE_RATE * 2;
+      if (smoothing < 1 && filled) {
+        const prev = smoothedRef.current;
+        smoothedRef.current = nextBands.map((bp, ch) => {
+          if (!prev) return bp;
+          const out = {};
+          for (const k of Object.keys(bp)) out[k] = prev[ch][k] + smoothing * (bp[k] - prev[ch][k]);
+          return out;
+        });
+        nextBands.splice(0, 4, ...smoothedRef.current);
+      }
       setPsd(nextPSD);
       setBandPowers(nextBands);
       setFreqRes(localFreqRes);
@@ -64,7 +82,7 @@ export function ProcessingProvider({ children }) {
     return () => {
       if (handle) clearTimeout(handle);
     };
-  }, [isConnected]);
+  }, [isConnected, smoothing]);
 
   const value = useMemo(() => ({
     channelLabels: CHANNEL_LABELS,

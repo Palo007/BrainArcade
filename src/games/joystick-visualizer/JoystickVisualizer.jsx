@@ -4,6 +4,8 @@ import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { JOYSTICK_AXES } from '../../contexts/JoystickContext.jsx';
 import '../../styles/retro.css';
 import brainCommandCenterImg from './assets/brain_command_center.png';
+import { FnirsPanel } from '../../components/FnirsPanel.jsx';
+import { useFnirs } from '../../hooks/useFnirs.js';
 
 function AxisTile({ axis }) {
   const { value01 } = useJoystick(axis, {
@@ -28,11 +30,14 @@ function AxisTile({ axis }) {
 
 export function BrainCommandCenter() {
   const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { supported: fnirsSupported } = useFnirs();
 
   // Build axis list from JOYSTICK_AXES, skipping obvious aliases
   const axes = useMemo(() => {
-    return Object.keys(JOYSTICK_AXES).filter((k) => k !== 'focused-attention');
-  }, []);
+    return Object.keys(JOYSTICK_AXES).filter(
+      (k) => k !== 'focused-attention' && (fnirsSupported || !JOYSTICK_AXES[k].requiresFnirs)
+    );
+  }, [fnirsSupported]);
 
   const anyNeedsBaseline = axes.some((a) => JOYSTICK_AXES[a]?.requiresBaseline);
 
@@ -84,6 +89,7 @@ export function BrainCommandCenter() {
                 <AxisTile key={axis} axis={axis} />
               ))}
             </div>
+            <FnirsPanel className="mt-3" />
           </div>
         </div>
       </div>

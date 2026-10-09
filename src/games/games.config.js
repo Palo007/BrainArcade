@@ -25,6 +25,8 @@ import { Sailor } from "./sailor/Sailor.jsx";
 import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
 import { Diver } from "./diver/Diver.jsx";
 import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
+import { GlowOrb } from "./glow-orb/GlowOrb.jsx";
+import { FocusBall } from "./focus-ball/FocusBall.jsx";
 
 export const games = [
   {
@@ -32,6 +34,18 @@ export const games = [
     name: "BRAIN COMMAND CENTER",
     description: "Monitor all of your cognitive traits in real time",
     component: BrainCommandCenter,
+  },
+  {
+    id: "glow-orb",
+    name: "GLOW ORB",
+    description: "Think hard to make the orb fly! Uses the fNIRS light sensors of the Muse S Athena.",
+    component: GlowOrb,
+  },
+  {
+    id: "focus-ball",
+    name: "FOCUS BALL",
+    description: "Keep the ball above the line with steady focus. Mendi-style training with a session report. Needs Muse S Athena (fNIRS).",
+    component: FocusBall,
   },
   {
     id: "sweet-spot",

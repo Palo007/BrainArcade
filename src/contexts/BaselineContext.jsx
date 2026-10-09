@@ -8,7 +8,7 @@ const BaselineContext = createContext(null);
 export const useBaseline = () => useContext(BaselineContext);
 
 export function BaselineProvider({ children, defaultSeconds = 30 }) {
-  const { isConnected } = useEEG();
+  const { isConnected, muse } = useEEG();
   const { bandPowers } = useProcessing();
   const { hasRecentExtreme } = useQuality();
 
@@ -34,7 +34,8 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     setSecondsRequested(seconds || defaultSeconds);
     setSecondsElapsed(0);
     setInProgress(true);
-  }, [inProgress, defaultSeconds]);
+    muse?.fnirs?.resetBaseline(); // fNIRS gets a fresh 10 s baseline during the EEG rest period
+  }, [inProgress, defaultSeconds, muse]);
 
   const cancel = useCallback(() => {
     if (!inProgress) return;

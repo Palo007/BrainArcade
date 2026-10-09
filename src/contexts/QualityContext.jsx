@@ -14,25 +14,28 @@ export const CHANNEL_INFO = [
   { id: 'TP10', side: 'right', area: 'ear', label: 'Right ear' },
 ];
 
-const THRESH_SPIKE = 300; // amplitude threshold for quality (abs value)
-const THRESH_HUGE = 600; // indicates sudden adjustment
+// Amplitude thresholds and the flat-line limit come from the device profile (lib/deviceProfile.js)
 const BAD_WINDOW_MS = 3000; // readiness window; per-second eval is separate
 const ADJUSTING_HOLD_MS = 2000; // show "evaluating setup..."
 // Time-based quality: require >=99% of samples below threshold in last 1s
 const SECOND_MS = 1000;
-const MAX_BAD_RATIO_1S = 0.01; // 1%
+const MAX_BAD_RATIO_1S = 0.01; // readiness: share of bad 200 ms ticks allowed in the last 5 s
+const RMS_WINDOW = SAMPLE_RATE; // samples (1 s) for the per-channel RMS / flat-line check
 
 export function QualityProvider({ children }) {
-  const { rawEEG, isConnected } = useEEG();
+  const { subscribeEEG, isConnected, profile } = useEEG();
+  const { spikeUv, hugeUv, maxBadRatio, flatRmsUv } = profile.quality;
   const [now, setNow] = useState(Date.now());
 
   // Per-channel timestamps of above-threshold samples (ms) and global sample times
   const aboveTimesRef = useRef([[], [], [], []]);
   const sampleTimesRef = useRef([]);
   const lastValRef = useRef([0, 0, 0, 0]);
+  const recentRef = useRef([[], [], [], []]); // last RMS_WINDOW samples per channel
   const [currentAbs, setCurrentAbs] = useState([0, 0, 0, 0]);
   const [adjustingUntil, setAdjustingUntil] = useState(0);
   const zerosSinceRef = useRef(null);
+  const lastSampleAtRef = useRef(null); // no samples at all for 6 s also counts as lost
   const [lostZero6s, setLostZero6s] = useState(false);
 
   // Heartbeat to advance time and prune
@@ -47,6 +50,7 @@ export function QualityProvider({ children }) {
     if (!isConnected) {
       aboveTimesRef.current = [[], [], [], []];
       sampleTimesRef.current = [];
+      recentRef.current = [[], [], [], []];
       setCurrentAbs([0, 0, 0, 0]);
       setAdjustingUntil(0);
       zerosSinceRef.current = null;
@@ -54,30 +58,36 @@ export function QualityProvider({ children }) {
     }
   }, [isConnected]);
 
-  // Track spikes and adjustments from rawEEG stream
+  // Track spikes and adjustments - every sample (MuseContext delivers them in 20 ms batches)
   useEffect(() => {
-    if (!isConnected || !rawEEG) return;
-    const absVals = rawEEG.map((v) => Math.abs(v || 0));
+    if (!isConnected) return;
+    lastSampleAtRef.current = Date.now();
+    return subscribeEEG((sample) => {
+    const absVals = sample.map((v) => Math.abs(v || 0));
     setCurrentAbs(absVals);
     const t = Date.now();
+    lastSampleAtRef.current = t;
     // Track sustained zeros across all channels
     const allZero = absVals.every((v) => v === 0);
     if (allZero) {
       if (zerosSinceRef.current == null) zerosSinceRef.current = t;
     } else {
       zerosSinceRef.current = null;
-      if (lostZero6s) setLostZero6s(false);
+      setLostZero6s((v) => (v ? false : v));
     }
     // Record sample time per raw tick
     sampleTimesRef.current.push(t);
     for (let ch = 0; ch < 4; ch++) {
       const v = absVals[ch];
       const prev = Math.abs(lastValRef.current[ch] || 0);
-      if (v > THRESH_SPIKE) {
+      if (v > spikeUv) {
         aboveTimesRef.current[ch].push(t);
       }
+      const recent = recentRef.current[ch];
+      recent.push(sample[ch] || 0);
+      if (recent.length > RMS_WINDOW) recent.shift();
       // Adjustment detection: huge value or large jump
-      if (v > THRESH_HUGE || Math.abs(v - prev) > THRESH_HUGE / 1.5) {
+      if (v > hugeUv || Math.abs(v - prev) > hugeUv / 1.5) {
         setAdjustingUntil(t + ADJUSTING_HOLD_MS);
       }
       lastValRef.current[ch] = absVals[ch];
@@ -89,17 +99,30 @@ export function QualityProvider({ children }) {
       const arr = aboveTimesRef.current[ch];
       while (arr.length && arr[0] < keepSince) arr.shift();
     }
-  }, [rawEEG, isConnected]);
+    });
+  }, [subscribeEEG, isConnected, spikeUv, hugeUv]);
 
   // Detect sustained zeros condition over 6s
   useEffect(() => {
     if (!isConnected) return;
-    if (zerosSinceRef.current != null && now - zerosSinceRef.current >= 6000) {
+    const zeros = zerosSinceRef.current != null && now - zerosSinceRef.current >= 6000;
+    const silent = lastSampleAtRef.current != null && now - lastSampleAtRef.current >= 6000;
+    if (zeros || silent) {
       if (!lostZero6s) setLostZero6s(true);
     }
   }, [now, isConnected, lostZero6s]);
 
-  // Compute quality per channel using time-based rule: in last 1s, >=99% of samples must be below threshold to be good
+  // Per-channel RMS over the last 1 s (mean removed). Shown in the electrode check, used for flat-line detection.
+  const channelRms = useMemo(() => recentRef.current.map((arr) => {
+    if (arr.length === 0) return 0;
+    let sum = 0, sq = 0;
+    for (const x of arr) { sum += x; sq += x * x; }
+    const mean = sum / arr.length;
+    return Math.sqrt(Math.max(0, sq / arr.length - mean * mean));
+  }), [now]);
+
+  // Compute quality per channel using time-based rule: in last 1s, too many samples above the spike threshold = bad.
+  // Athena: a flat channel is also bad (railed/open input looks flat after the adapter's high-pass).
   const perChannelBad = useMemo(() => {
     const t = now;
     const total1s = sampleTimesRef.current.filter((x) => x >= t - SECOND_MS).length;
@@ -107,9 +130,10 @@ export function QualityProvider({ children }) {
       if (total1s === 0) return false;
       const above1s = aboveTimesRef.current[ch].filter((x) => x >= t - SECOND_MS).length;
       const ratioAbove = above1s / total1s;
-      return ratioAbove > MAX_BAD_RATIO_1S;
+      const flat = flatRmsUv > 0 && recentRef.current[ch].length >= RMS_WINDOW / 2 && channelRms[ch] < flatRmsUv;
+      return ratioAbove > maxBadRatio || flat;
     });
-  }, [now]);
+  }, [now, channelRms, maxBadRatio, flatRmsUv]);
 
   // Convenience flags
   const frontalBad = perChannelBad[1] || perChannelBad[2];
@@ -144,7 +168,7 @@ export function QualityProvider({ children }) {
     if (total === 0) return false;
     const above = aboveTimesRef.current[ch].filter((x) => x >= t - windowMs).length;
     const ratioAbove = above / total;
-    return ratioAbove > MAX_BAD_RATIO_1S || (now < adjustingUntil);
+    return ratioAbove > maxBadRatio || (now < adjustingUntil);
   };
 
   // 10s quality history (sampled ~5Hz via heartbeat)
@@ -196,8 +220,9 @@ export function QualityProvider({ children }) {
 
   const value = useMemo(() => ({
     sampleRate: SAMPLE_RATE,
-    threshold: THRESH_SPIKE,
+    threshold: spikeUv,
     currentAbs,
+    channelRms,
     perChannelBad,
     anyBad,
     frontalBad,
@@ -209,7 +234,7 @@ export function QualityProvider({ children }) {
     quality15s,
     recheck15sBad: (quality15s.badRatio >= 0.5),
     lostZero6s,
-  }), [currentAbs, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s, lostZero6s]);
+  }), [spikeUv, currentAbs, channelRms, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s, lostZero6s]);
 
   return <QualityContext.Provider value={value}>{children}</QualityContext.Provider>;
 }
