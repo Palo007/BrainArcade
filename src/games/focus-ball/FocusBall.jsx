@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
-import { appendSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
+import { recordSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
 import { SessionReport } from '../../components/SessionReport.jsx';
 import '../../styles/retro.css';
 
@@ -487,7 +487,7 @@ export function FocusBall() {
         saveBest(metrics.score);
         setBest(metrics.score);
       }
-      const id = appendSession({ date: new Date().toISOString(), game: 'focus-ball', durationSec: mins * 60, playedSec: Math.round(s.elapsed), cue: usedCue, points, ...metrics, ...(isCheckIn ? { checkIn: true } : {}) });
+      const id = recordSession('focus-ball', { durationSec: mins * 60, playedSec: Math.round(s.elapsed), cue: usedCue, points, ...metrics, ...(isCheckIn ? { checkIn: true } : {}) });
       setReport({ metrics, points, isNewBest, samples: s.samples, id });
       setPhase('report');
     };

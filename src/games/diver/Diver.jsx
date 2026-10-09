@@ -12,6 +12,7 @@ import backgroundSeaImg from './assets/background-sea.png';
 
 export function Diver() {
   const canvasRef = useRef(null);
+  const roundStartRef = useRef(Date.now()); // for history: seconds played this round
   const animationFrameRef = useRef(null);
   const fishSchoolRef = useRef([]);
   const diverRef = useRef(null);
@@ -96,6 +97,10 @@ export function Diver() {
   useEffect(() => {
     frustrationRef.current = frustration;
   }, [frustration]);
+
+  useEffect(() => {
+    if (isBaselineReady && imagesLoaded) roundStartRef.current = Date.now();
+  }, [isBaselineReady, imagesLoaded]);
 
   // Initialize and animate canvas (only once when ready)
   useEffect(() => {
@@ -572,6 +577,7 @@ export function Diver() {
   const handleRetry = () => {
     resetScore();
     resetHealth();
+    roundStartRef.current = Date.now();
   };
 
   // Show waiting screen during baseline
@@ -609,6 +615,7 @@ export function Diver() {
         joystickAxis="frustration"
         joystickOptions={{ range: 0.6, autoAdjustBaseline: true }}
         onRetry={handleRetry}
+        playedSec={Math.round((Date.now() - roundStartRef.current) / 1000)}
         customMessage="You stayed too calm for too long!"
       />
     );

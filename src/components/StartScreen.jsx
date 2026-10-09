@@ -113,10 +113,10 @@ export function StartScreen() {
       {/* Main Content */}
       <div className="relative z-10 w-full h-full flex flex-col">
         {/* Top Left - Title */}
-        <div className="absolute left-20 top-20">
+        <div className="absolute left-20 top-20 short-land:left-4 short-land:top-3">
           <h1
             ref={titleRef}
-            className="text-4xl sm:text-5xl font-bold rgb-text type-effect text-white"
+            className="text-4xl sm:text-5xl short-land:text-xl font-bold rgb-text type-effect text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             BRAIN ARCADE
@@ -124,9 +124,9 @@ export function StartScreen() {
         </div>
 
         {/* Top Right - Time */}
-        <div className="absolute right-20 top-20">
+        <div className="absolute right-20 top-20 short-land:right-4 short-land:top-3">
           <div
-            className="text-2xl sm:text-3xl rgb-text-fast text-white"
+            className="text-2xl sm:text-3xl short-land:text-sm rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             {time}
@@ -134,7 +134,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Left - Status */}
-        <div className="absolute left-20 bottom-20">
+        <div className="absolute left-20 bottom-20 short-land:hidden">
           <div
             className="text-sm sm:text-base rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -144,7 +144,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Right - About + GitHub + Privacy */}
-        <div className="absolute right-20 bottom-20 flex flex-col items-end space-y-2">
+        <div className="absolute right-20 bottom-20 short-land:right-4 short-land:bottom-3 flex flex-col items-end space-y-2 short-land:space-y-1">
           <button
             onClick={() => navigate('/about')}
             className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
@@ -174,13 +174,13 @@ export function StartScreen() {
         </div>
 
         {/* Center - Main UI */}
-        <div className="absolute left-20 top-50">
+        <div className="absolute left-20 top-50 short-land:left-4 short-land:top-14">
           {!isConnected ? (
             <>
               {/* Subtitle */}
               <div className="mb-12-center">
                 <p
-                  className="text-xl text-white rgb-text uppercase"
+                  className="text-xl short-land:text-[10px] text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   Use your thoughts as a joystick
@@ -188,14 +188,14 @@ export function StartScreen() {
               </div>
 
               {/* Connection UI */}
-              <div className="w-full max-w-md mt-24">
+              <div className="w-full max-w-md mt-24 short-land:mt-2">
                 <MuseConnector onConnected={() => {}} />
               </div>
 
               {/* Instructions */}
-              <div className="mt-8">
+              <div className="mt-8 short-land:mt-2">
                 <p
-                  className="text-md text-white opacity-60"
+                  className="text-md short-land:text-[8px] text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
                   CONNECT YOUR MUSE DEVICE 
@@ -219,9 +219,9 @@ export function StartScreen() {
                 </div>
               ) : hasEnteredStartPhase || (ready && !showLoadingQC && passedSetup && !showingRecheck) ? (
                 <div className="text-center">
-                  <div className="mb-8">
+                  <div className="mb-8 short-land:mb-1">
                     <div
-                      className="text-6xl sm:text-8xl rgb-text text-white mb-8 blink"
+                      className="text-6xl sm:text-8xl short-land:text-4xl rgb-text text-white mb-8 short-land:mb-2 blink"
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
                       ▶
@@ -230,14 +230,14 @@ export function StartScreen() {
 
                   <button
                     onClick={handleStart}
-                    className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12"
+                    className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12 short-land:mt-2"
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
                   >
                     START
                   </button>
 
                   <p
-                    className="text-xs text-white opacity-60 mt-8 blink"
+                    className="text-xs text-white opacity-60 mt-8 short-land:mt-2 blink"
                     style={{ fontFamily: "'Press Start 2P', cursive" }}
                   >
                     PRESS START

@@ -80,6 +80,10 @@ export class MuseAthenaDevice {
     this._gaps = 0;
     this._maxGap = 0;
     this._battery = null;
+    this._recTap = null; // optional recorder hooks { battery(pct), accGyro({acc, gyro}) }, see RecordingContext
+    this._accSub = null; // accGyro subscription, only alive while recTap is set
+    this._attached = null;
+    this._lastGood = new Float64Array(CHANNELS);
     this._wakeLock = null;
     this._timers = [];
     if (typeof window !== 'undefined') window.__athena = this;
@@ -107,6 +111,22 @@ export class MuseAthenaDevice {
         filtered: sum(this._out[ch]),
       })),
     };
+  }
+
+  get recTap() { return this._recTap; }
+  set recTap(v) {
+    this._recTap = v || null;
+    this._syncAccSub();
+  }
+
+  // Acc/gyro are only parsed/forwarded while a recording needs them
+  _syncAccSub() {
+    if (!this._recTap) {
+      this._accSub?.unsubscribe();
+      this._accSub = null;
+    } else if (!this._accSub && this._attached) {
+      this._accSub = this._attached.accGyroReadings.subscribe((r) => this._recTap?.accGyro?.(r));
+    }
   }
 
   _push(ch, rawV) {
@@ -167,6 +187,9 @@ export class MuseAthenaDevice {
   // Wire a (new) MuseAthenaClient to our buffers, relay and link-loss handler
   _attach(client) {
     this._subs.forEach((s) => s.unsubscribe());
+    this._accSub?.unsubscribe();
+    this._accSub = null;
+    this._attached = client;
     this._subs = [
       client.eegReadings.subscribe((reading) => {
         const ch = reading.electrode;
@@ -182,15 +205,21 @@ export class MuseAthenaDevice {
           this._lastEeg = now;
           this._samples += reading.samples.length;
         }
+        // Non-finite sample: push the last good value (or 0) so every channel keeps the same sample count
+        const lg = this._lastGood;
         for (const v of reading.samples) {
-          if (Number.isFinite(v)) this._relay.push(ch, this._push(ch, v));
+          if (Number.isFinite(v)) lg[ch] = v;
+          this._relay.push(ch, this._push(ch, lg[ch]));
         }
       }),
       client.opticalReadings.subscribe((reading) => {
         this.fnirs.push(reading.samples);
         this._relay.pushOptics(reading.samples);
       }),
-      client.batteryData.subscribe((b) => (this._battery = b)),
+      client.batteryData.subscribe((b) => {
+        this._battery = b;
+        this.recTap?.battery?.(b?.values?.[0]);
+      }),
       client.connectionStatus.subscribe((connected) => {
         if (connected || this._closing || this._reconnecting) return;
         if (this.state === 2) {
@@ -199,6 +228,7 @@ export class MuseAthenaDevice {
         }
       }),
     ];
+    this._syncAccSub();
   }
 
   async _startStream(gatt) {
@@ -318,6 +348,9 @@ export class MuseAthenaDevice {
     this._relay?.stop();
     this._subs.forEach((s) => s.unsubscribe());
     this._subs = [];
+    this._accSub?.unsubscribe();
+    this._accSub = null;
+    this._attached = null;
     this._timers.forEach(clearInterval);
     this._timers = [];
     if (this._onVisible) document.removeEventListener('visibilitychange', this._onVisible);

@@ -2,17 +2,18 @@
   "name": "Brain Arcade",
   "short_name": "Brain Arcade",
   "description": "A retro arcade of thought-controlled minigames. Connect a Muse EEG and play in your browser — or try mock mode. 100% local processing, no data collection.",
-  "start_url": "/",
-  "display": "standalone",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
   "background_color": "#181818",
   "theme_color": "#181818",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
-

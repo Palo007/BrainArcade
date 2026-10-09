@@ -26,6 +26,7 @@ export function SweetSpot() {
   // Smoothed height 0..1
   const [height, setHeight] = useState(0.5);
   const rafRef = useRef(null);
+  const roundStartRef = useRef(Date.now()); // for history: seconds played this round
 
   // Calculate score from height
   const score = Math.round(height * 100);
@@ -67,6 +68,10 @@ export function SweetSpot() {
   }, [ensureBaseline]);
 
   useEffect(() => {
+    if (isBaselineReady) roundStartRef.current = Date.now();
+  }, [isBaselineReady]);
+
+  useEffect(() => {
     // Extra smooth easing to joystick value
     const step = () => {
       setHeight((h) => h * 0.92 + value01 * 0.08);
@@ -83,6 +88,7 @@ export function SweetSpot() {
       resetHealth();
       resetScore();
       setHeight(0.5);
+      roundStartRef.current = Date.now();
     };
     return (
       <GameOverScreen
@@ -95,6 +101,7 @@ export function SweetSpot() {
           autoAdjustBaseline: true,
         }}
         onRetry={handleRetry}
+        playedSec={Math.round((Date.now() - roundStartRef.current) / 1000)}
       />
     );
   }

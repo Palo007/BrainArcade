@@ -7,6 +7,8 @@ import { BaselineProvider } from './contexts/BaselineContext.jsx';
 import { BiomarkerProvider } from './contexts/BiomarkerContext.jsx';
 import { JoystickProvider } from './contexts/JoystickContext.jsx';
 import { BlinkProvider } from './contexts/BlinkContext.jsx';
+import { RecordingProvider } from './contexts/RecordingContext.jsx';
+import { RecordingControl } from './components/RecordingControl.jsx';
 import { Layout } from './components/Layout';
 import { StartScreen } from './components/StartScreen';
 import { NavBar } from './components/NavBar';
@@ -18,6 +20,7 @@ import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
 import { LostBrainModal } from './components/LostBrainModal.jsx';
 import { MobileBlock } from './components/MobileBlock.jsx';
+import { GameTimelineCollector } from './components/GameTimelineCollector.jsx';
 
 /**
  * GamesPage - Main games listing and selection page
@@ -61,6 +64,7 @@ function GamePage() {
       <div className="mt-0">
         {/* Key by game id to force remount on game change */}
         <GameComponent key={game.id} />
+        <GameTimelineCollector key={`tl-${game.id}`} />
       </div>
     </div>
   );
@@ -84,7 +88,19 @@ function App() {
   }, []);
 
   // `?mobile=1` lets phones in (Athena pairing works on Android Chrome); remembered per browser
-  const allowMobile = (() => {
+  // Installed app / Android TWA (Bubblewrap) is let in automatically
+  const isInstalledApp = (() => {
+    try {
+      return (
+        document.referrer.startsWith('android-app://') ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: standalone)').matches
+      );
+    } catch {
+      return false;
+    }
+  })();
+  const allowMobile = isInstalledApp || (() => {
     try {
       if (new URLSearchParams(window.location.search).get('mobile') === '1') {
         localStorage.setItem('allowMobile', '1');
@@ -107,7 +123,8 @@ function App() {
           <BiomarkerProvider>
             <JoystickProvider>
               <BlinkProvider>
-                <Router>
+                <RecordingProvider>
+                <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
                   <Layout>
                     <Routes>
               {/* Home / Start Screen */}
@@ -132,8 +149,11 @@ function App() {
                   <BaselineModal />
                   {/* Global lost-brain modal */}
                   <LostBrainModal />
+                  {/* Opt-in session recording (Mind Monitor CSV) */}
+                  <RecordingControl />
                   </Layout>
                 </Router>
+                </RecordingProvider>
               </BlinkProvider>
             </JoystickProvider>
           </BiomarkerProvider>

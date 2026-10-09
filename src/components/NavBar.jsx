@@ -114,16 +114,16 @@ export function NavBar({ onActiveGameClick } = {}) {
   return (
     <nav className="mb-8 pb-4">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] pt-4 sm:pt-6 pb-3 -mx-1 px-1">
-        <div className="flex items-center gap-3 sm:gap-6 mb-3">
+      <div className="sticky top-0 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] pt-4 sm:pt-6 short-land:pt-1 pb-3 short-land:pb-1 -mx-1 px-1">
+        <div className="flex items-center gap-3 sm:gap-6 mb-3 short-land:mb-1 short-land:pr-44">
           <Link
             to="/"
-            className="text-sm sm:text-xl text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2"
+            className="text-sm sm:text-xl short-land:text-xs text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2 short-land:py-0"
           >
             ← HOME
           </Link>
-          <h2 className="text-xs sm:text-lg text-[var(--nes-green)]">SELECT GAME</h2>
-          <span className="ml-auto hidden sm:inline text-[10px] text-gray-500">{visible.length} GAMES</span>
+          <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">SELECT GAME</h2>
+          <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
         </div>
 
         {/* Category filter (scrolls sideways on phones) */}
@@ -137,7 +137,7 @@ export function NavBar({ onActiveGameClick } = {}) {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setFilter(c.id)}
-                className="shrink-0 border-2 px-3 py-2 text-[8px] sm:text-[10px] whitespace-nowrap transition-colors"
+                className="shrink-0 border-2 px-3 py-2 short-land:py-1 text-[8px] sm:text-[10px] whitespace-nowrap transition-colors"
                 style={{
                   borderColor: c.color,
                   backgroundColor: selected ? c.color : 'transparent',
@@ -156,7 +156,7 @@ export function NavBar({ onActiveGameClick } = {}) {
         const list = visible.filter((g) => g.category === cat.id);
         if (list.length === 0) return null;
         return (
-          <section key={cat.id} className="mt-5">
+          <section key={cat.id} className="mt-5 short-land:mt-2">
             {filter === ALL && (
               <h3 className="text-[10px] sm:text-xs mb-3 flex items-center gap-2" style={{ color: cat.color }}>
                 <span className="inline-block w-2 h-2" style={{ backgroundColor: cat.color }} />

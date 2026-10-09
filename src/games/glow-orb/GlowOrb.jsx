@@ -4,6 +4,7 @@
 // Think hard → more fresh-oxygen blood in the forehead → the orb flies up.
 import React, { useEffect, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
+import { recordSession } from '../../lib/sessionStore.js';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: "'Press Start 2P', cursive" };
@@ -337,10 +338,14 @@ export function GlowOrb() {
     };
   }, []);
 
-  // Save best score at the end
+  // Save best score at the end (history row is written once per round)
+  const recordedRef = useRef(false);
+  useEffect(() => { if (phase !== 'done') recordedRef.current = false; }, [phase]);
   useEffect(() => {
     if (phase !== 'done') return;
     const score = Math.round(stateRef.current?.score || 0);
+    if (!recordedRef.current) recordSession('glow-orb', { score, durationSec: ROUND_S, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available });
+    recordedRef.current = true;
     if (score > best) {
       setBest(score);
       saveBest(score);

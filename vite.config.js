@@ -15,5 +15,7 @@ const athenaRelay = () => ({
 
 // https://vite.dev/config/
 export default defineConfig({
+  // VITE_BASE=/BrainArcade/ for GitHub Pages / Android TWA builds; default '/' keeps dev and `npm run arcade` unchanged
+  base: process.env.VITE_BASE || '/',
   plugins: [react(), athenaRelay()],
 })

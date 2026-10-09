@@ -127,13 +127,13 @@ export function Layout({ children }) {
       <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
         {isConnected && !isFullScreen && (
-          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 z-50 flex items-center gap-2 sm:gap-4">
+          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex items-center gap-2 sm:gap-4">
             {/* Pause button (only on game pages) */}
             {isGamePage && isConnected && (
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 aria-label="Pause / Menu"
-                className="bg-[var(--nes-dark)] border-4 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
+                className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 short-land:py-0.5 hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 ❚❚
@@ -143,7 +143,7 @@ export function Layout({ children }) {
             {/* Muse Connected Icon */}
             {isConnected && (
               <button
-                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 px-3 py-2 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
+                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 short-land:py-0.5 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
                 onClick={() => setShowMusePopup(true)}
                 title={`Muse status — ${quality10s?.label || 'Good'} • ${Math.round((quality10s?.stablePct || 1) * 100)}% stable${isMock ? ' • MOCK' : ''}`}
                 style={{ borderColor: `var(${quality10s?.var || '--nes-green'})` }}
@@ -185,9 +185,9 @@ export function Layout({ children }) {
         {isFullScreen ? (
           <>{children}</>
         ) : (
-          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8 overflow-y-auto overscroll-contain">
+          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8 short-land:py-1 overflow-y-auto overscroll-contain">
             <div className="w-full h-full">
-              <div className="text-left p-2 sm:p-6 space-y-6 h-full">
+              <div className="text-left p-2 sm:p-6 short-land:p-1 space-y-6 h-full">
                 {/* Global not-connected guard for game pages */}
                 {isGamePage && !isPage && !isConnected ? (
                   <div className="text-center py-12">

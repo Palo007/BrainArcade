@@ -63,11 +63,11 @@ export function MuseConnector({ onConnected }) {
 
   return (
     <div className="text-left">
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-4 short-land:gap-x-3 short-land:gap-y-0 flex-wrap">
         <button
           onClick={() => handleConnect({ athena: true, preset: 'p1034' })}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (ATHENA)'}
@@ -76,7 +76,7 @@ export function MuseConnector({ onConnected }) {
         <button
           onClick={() => handleConnect()}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (CLASSIC)'}
@@ -86,7 +86,7 @@ export function MuseConnector({ onConnected }) {
           <button
             onClick={() => handleConnect({ relay: true })}
             disabled={isConnecting}
-            className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+            className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             {isConnecting ? 'WAITING FOR PHONE…' : 'CONNECT VIA PHONE'}
@@ -96,7 +96,7 @@ export function MuseConnector({ onConnected }) {
         <button
           onClick={handleMockConnect}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base px-8 py-4 mb-4"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT A DEVICE'}

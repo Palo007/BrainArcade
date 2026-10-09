@@ -24,12 +24,12 @@ export function Credits() {
       {/* Content */}
       <div className="relative z-10 w-full h-full">
         {/* Left Third - Credits Panel */}
-        <div className="absolute left-20 top-20 w-2/5 max-w-2xl">
+        <div className="absolute left-20 top-20 w-2/5 max-w-2xl short-land:left-4 short-land:top-3 short-land:bottom-3 short-land:max-w-none short-land:w-3/5 short-land:overflow-y-auto">
           {/* Back Button */}
-          <div className="mb-4">
+          <div className="mb-4 short-land:mb-2">
             <button
               onClick={() => navigate(-1)}
-              className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 hover:bg-[var(--nes-blue)] hover:text-black"
+              className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 short-land:py-1 short-land:text-[10px] hover:bg-[var(--nes-blue)] hover:text-black"
               style={{ fontFamily: "'Press Start 2P', cursive" }}
               aria-label="Back"
             >
@@ -39,7 +39,7 @@ export function Credits() {
 
           {/* Title */}
           <h2
-            className="text-2xl sm:text-3xl rgb-text text-white mb-4"
+            className="text-2xl sm:text-3xl short-land:text-base rgb-text text-white mb-4 short-land:mb-2"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             ABOUT

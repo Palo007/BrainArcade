@@ -180,6 +180,7 @@ export function BlinkingContest() {
         finalScore={Math.round(score)}
         gameName="blinking-contest"
         onRetry={handleRetry}
+        playedSec={Math.round(timeElapsed)}
         customMessage="You blinked 3 times!"
       />
     );

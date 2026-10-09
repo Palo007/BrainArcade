@@ -2,6 +2,7 @@
 // Reusable end-of-session screen: Focus Score, stars, three bars, insight.
 import React, { useState } from 'react';
 import { updateSession } from '../lib/sessionStore.js';
+import { ParentReport } from './ParentReport.jsx';
 import '../styles/retro.css';
 
 const FONT = { fontFamily: "'Press Start 2P', cursive" };
@@ -180,6 +181,10 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
             EXIT
           </button>
         )}
+      </div>
+
+      <div className="mt-5">
+        <ParentReport sessionId={sessionId} seconds={samples?.length ? samples[samples.length - 1].t : 0} />
       </div>
     </div>
   );

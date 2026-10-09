@@ -122,6 +122,7 @@ export function TrainOfThoughts() {
         joystickAxis="stress"
         joystickOptions={{ range: 0.4, baselineCenter: 1.0, autoAdjustBaseline: true }}
         onRetry={handleRetry}
+        playedSec={Math.round(scoreMs / 1000)}
       />
     );
   }

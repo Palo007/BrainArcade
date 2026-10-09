@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { attachRelay, createLogger } from './relay-hub.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = path.resolve(process.env.ARCADE_DIST || path.join(ROOT, 'dist'));
 const PORT = Number(process.env.ARCADE_PORT || 5180);
 const ADB = process.env.ADB || 'adb';
 const ADB_POLL_MS = 5000;

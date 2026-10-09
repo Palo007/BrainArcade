@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useEEG } from './MuseContext.jsx';
 import { SAMPLE_RATE, computeWelchPSD, bandPowersFromPSD, BANDS } from '../lib/signal.js';
 
@@ -16,6 +16,9 @@ export function ProcessingProvider({ children }) {
   const smoothedRef = useRef(null); // EMA of band powers (athena: calms jumpy ratios)
   const buffersRef = useRef([[], [], [], []]);
   const maxBufferSamples = SAMPLE_RATE * 8; // keep last 8 seconds
+  const bandsRef = useRef(BANDS); // personal bands (PAF calibration) or the standard ones
+  const [bands, setBandsState] = useState(BANDS);
+  const setBands = useCallback((b) => { bandsRef.current = b || BANDS; smoothedRef.current = null; setBandsState(b || BANDS); }, []);
 
   const [psd, setPsd] = useState([null, null, null, null]);
   const [freqRes, setFreqRes] = useState(null);
@@ -26,11 +29,12 @@ export function ProcessingProvider({ children }) {
     if (!isConnected) {
       buffersRef.current = [[], [], [], []];
       smoothedRef.current = null;
+      setBands(null);
       setPsd([null, null, null, null]);
       setBandPowers([null, null, null, null]);
       setFreqRes(null);
     }
-  }, [isConnected]);
+  }, [isConnected, setBands]);
 
   // Push every incoming sample into buffers
   useEffect(() => {
@@ -59,7 +63,7 @@ export function ProcessingProvider({ children }) {
         const { psd, freqRes } = computeWelchPSD(arr, SAMPLE_RATE, 2, 1);
         nextPSD[ch] = psd;
         localFreqRes = freqRes;
-        nextBands[ch] = bandPowersFromPSD(psd, freqRes, BANDS);
+        nextBands[ch] = bandPowersFromPSD(psd, freqRes, bandsRef.current);
       }
       // EMA per channel and band; skipped until the 2 s window is full (all-zero PSD)
       const filled = bufs[0].length >= SAMPLE_RATE * 2;
@@ -92,7 +96,9 @@ export function ProcessingProvider({ children }) {
     psd,
     freqRes,
     bandPowers, // [{alpha, beta, ...} per channel]
-  }), [psd, freqRes, bandPowers]);
+    bands, // band edges in use (personal after PAF calibration)
+    setBands,
+  }), [psd, freqRes, bandPowers, bands, setBands]);
 
   return (
     <ProcessingContext.Provider value={value}>{children}</ProcessingContext.Provider>

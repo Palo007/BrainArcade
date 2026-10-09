@@ -45,6 +45,15 @@ Brain Arcade processes the following data **exclusively in your browser's memory
    - Stored only during session
    - Cleared on device disconnect
 
+### Optional Session Recording (opt-in, local only)
+
+Brain Arcade can save a session as a Mind Monitor compatible CSV file (raw EEG, band powers, fNIRS optics, blinks, signal quality, game start/end markers). This is **OFF by default** and starts only when you switch on "Record this session".
+
+- The file is written only on the device you are using (browser private storage, in chunks), never sent anywhere.
+- When you stop, you choose to save it, share it yourself, or delete it. Unsaved recordings are deleted the next time a recording starts.
+- Nothing from a recording is uploaded; the "zero data collection" rule applies unchanged.
+- Treat a saved file like any other personal neural data: it is yours to keep or delete.
+
 ### Non-Neural Data
 
 The **only** persistent data is:
@@ -53,6 +62,15 @@ The **only** persistent data is:
   - No neural data attached
   - Anonymized (no personal info)
   - Can be cleared at any time
+- **Session history and child nicknames** (stored in browser LocalStorage on this device only)
+  - One summary row per session. Every stored field: id, date, childId (which nickname it belongs to), game, durationSec, playedSec, okSec (seconds with good signal), outcome (win/lose where a game has one), cue, points, score, stars, energy, flow, flowSec, increase, avgRecoverySec, timeAbovePct (time in focus), meanFocus, paf (peak alpha frequency), alphaReactivity, calibDate (when the calibration used was made), qualityPct (signal quality), fnirsUsed, checkIn, feeling (1-5 mood tap), insight (short text summary)
+  - Calibration (peak alpha frequency, alpha reactivity, personal bands, date, device type) is stored per child under the child's id, so one child's calibration is never applied to another
+  - Summaries only: no raw EEG, no signal samples
+  - Profiles are a nickname only (no real name, age, or contact details is requested)
+  - Nothing is sent anywhere; the data never leaves this device unless you export it
+  - Export and import are user-triggered: the Training Journal's "Export CSV" downloads a file you keep, "Import CSV" reads a file you choose
+  - "Clear history" in the Training Journal deletes only the selected child's sessions (other children are untouched); clearing site data removes everything
+  - Deleting a profile removes the nickname. By default it also removes that child's sessions and stored calibration. If you untick "also delete their sessions", the sessions stay in storage (hidden, still included in a full CSV export) and are never reassigned to another child
 
 ---
 

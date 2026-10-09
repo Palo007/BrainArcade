@@ -242,6 +242,12 @@
   .arcade-window { border-radius: 18px; }
 }
 
+/* Landscape phones: thin bezel (56px each side leaves almost no height) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .arcade-frame { padding: 6px; }
+  .arcade-window { border-radius: 18px; }
+}
+
 /* Ensure full-screen effects are constrained within the arcade content area */
 .arcade-window .scanlines-vhs,
 .arcade-window .noise,

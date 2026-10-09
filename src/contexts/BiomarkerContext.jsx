@@ -8,7 +8,7 @@ const BiomarkerContext = createContext(null);
 export const useBiomarkers = () => useContext(BiomarkerContext);
 
 export function BiomarkerProvider({ children }) {
-  const { bandPowers, leftChannels, rightChannels } = useProcessing();
+  const { bandPowers, leftChannels, rightChannels, bands } = useProcessing();
   const { baseline } = useBaseline();
 
   const compute = useMemo(() => {
@@ -208,9 +208,9 @@ export function BiomarkerProvider({ children }) {
   };
 
   const value = useMemo(() => ({
-    bands: BANDS,
+    bands: bands || BANDS, // personal alpha/theta once PAF is calibrated, else 8-13 / 4-8 Hz
     getBiomarker,
-  }), [getBiomarker]);
+  }), [getBiomarker, bands]);
 
   return (
     <BiomarkerContext.Provider value={value}>{children}</BiomarkerContext.Provider>

@@ -29,6 +29,7 @@ export function Sailor() {
   const [hasWon, setHasWon] = useState(false); // Reached barrel
   const animationFrameRef = useRef(null);
   const lastTimeRef = useRef(Date.now());
+  const roundStartRef = useRef(Date.now()); // for history: seconds played this round
 
   const BARREL_X = 75; // Barrel fixed position (75% from left)
 
@@ -77,6 +78,10 @@ export function Sailor() {
   useEffect(() => {
     ensureBaseline({ seconds: 30 });
   }, [ensureBaseline]);
+
+  useEffect(() => {
+    if (isBaselineReady) roundStartRef.current = Date.now();
+  }, [isBaselineReady]);
 
   // Game loop
   useEffect(() => {
@@ -157,6 +162,7 @@ export function Sailor() {
       setSailorX(15);
       setHasWon(false);
       lastTimeRef.current = Date.now();
+      roundStartRef.current = Date.now();
     };
 
     const message = hasWon
@@ -170,6 +176,8 @@ export function Sailor() {
         joystickAxis="engagement"
         joystickOptions={{ range: 0.4 }}
         onRetry={handleRetry}
+        playedSec={Math.round((Date.now() - roundStartRef.current) / 1000)}
+        outcome={hasWon ? 'win' : 'lose'}
         customMessage={message}
       />
     );

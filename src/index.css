@@ -1,4 +1,7 @@
 @import "tailwindcss";
+
+/* Landscape phone (short viewport) variant: short-land:* */
+@custom-variant short-land (@media (orientation: landscape) and (max-height: 500px));
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {

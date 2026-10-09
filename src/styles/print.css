@@ -1,0 +1,43 @@
+/* Parent report: always a light "paper" panel; prints clean on A4 (only the report is shown). */
+.parent-report {
+  background: #fff;
+  color: #222;
+  border: 2px solid #222;
+  padding: 12px;
+  text-align: left;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.parent-report h3 { font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
+.parent-report h3:first-child { margin-top: 0; }
+
+@media print {
+  @page { size: A4; margin: 15mm; }
+}
+
+@media print {
+  /* Reset wrappers only: ancestors of the report keep no clipping/fixed heights; report descendants are untouched. */
+  body.printing-report, body.printing-report #root, body.printing-report #root div:has(.parent-report) {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    background: #fff !important;
+  }
+  /* Hide everything but the report: siblings of the report and of its ancestors leave the layout. */
+  body.printing-report #root div:has(.parent-report) > :not(:has(.parent-report)):not(.parent-report),
+  body.printing-report #root > :not(:has(.parent-report)):not(.parent-report),
+  body.printing-report nav, body.printing-report header, body.printing-report footer {
+    display: none !important;
+  }
+  body.printing-report .parent-report {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    border: 0;
+    padding: 0;
+  }
+  body.printing-report .parent-report .no-print { display: none !important; }
+  body.printing-report .parent-report canvas,
+  body.printing-report .parent-report figure { break-inside: avoid; }
+  body.printing-report .parent-report canvas { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.printing-report .parent-report * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

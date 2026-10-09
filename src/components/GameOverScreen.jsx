@@ -5,6 +5,7 @@ import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { useJoystick } from '../contexts/JoystickContext.jsx';
+import { recordSession } from '../lib/sessionStore.js';
 import '../styles/retro.css';
 
 /**
@@ -34,9 +35,11 @@ export function GameOverScreen({
   onRetry,
   readinessDuration = 5,
   lowThreshold = 0.1,
+  playedSec,
+  outcome,
 }) {
   const navigate = useNavigate();
-  const { ready: qualityReady } = useQuality();
+  const { ready: qualityReady, quality10s } = useQuality();
   const { resetBaseline, ensureBaseline } = useBaseline();
   const { value01 } = useJoystick(joystickAxis, joystickOptions);
 
@@ -60,6 +63,23 @@ export function GameOverScreen({
       localStorage.setItem(highscoreKey, finalScore.toString());
     }
   }, [isNewHighscore, finalScore, highscoreKey]);
+
+  // Session history: one summary row per game over (shared by every game using this screen)
+  const recordedRef = useRef(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  useEffect(() => {
+    if (recordedRef.current) return;
+    recordedRef.current = true;
+    const secs = Number.isFinite(playedSec) && playedSec > 0 ? Math.round(playedSec) : undefined;
+    const id = recordSession(gameName, {
+      score: Math.round(finalScore),
+      qualityPct: quality10s ? Math.round(quality10s.stablePct * 100) : undefined,
+      durationSec: secs,
+      playedSec: secs,
+      outcome: outcome || undefined,
+    });
+    if (!id) setSaveFailed(true);
+  }, [gameName, finalScore, quality10s, playedSec, outcome]);
 
   // Monitor joystick values during readiness check
   useEffect(() => {
@@ -216,6 +236,10 @@ export function GameOverScreen({
             {Math.max(finalScore, currentHighscore).toLocaleString()}
           </div>
         </div>
+
+        {saveFailed && (
+          <div className="text-center text-[8px] text-red-400 mb-3">History full — not saved</div>
+        )}
 
         {/* Readiness check UI */}
         {checkingReadiness && (
