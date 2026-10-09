@@ -20,16 +20,24 @@ function pickInsight({ score, energy, flow, increase, flowSec }) {
   return parts.join(' ');
 }
 
+const DROP_MARGIN = 0.03; // a drop only counts below goal - margin (hysteresis against jitter near the goal)
+const DROP_MIN_SEC = 1; // ...and only when it lasts at least this long (ok time)
+
 export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 } = {}) {
-  const list = (Array.isArray(samples) ? samples : []).slice().sort((a, b) => a.t - b.t);
+  const dur = Math.max(1, Number(durationSec) || 0);
+  const list = (Array.isArray(samples) ? samples : [])
+    .filter((s) => s && Number.isFinite(s.t) && Number.isFinite(s.v))
+    .sort((a, b) => a.t - b.t);
 
   let okTime = 0;
   let aboveTime = 0;
   let vWeighted = 0;
   let run = 0;
   let flowSec = 0;
-  let belowStart = null; // ok-time accumulated in the current below-goal period
+  let belowTime = 0; // ok-time since the current drop began
+  let dropAcc = 0; // continuous ok-time below goal - margin (not yet a counted drop)
   let inBelow = false;
+  let everAbove = false;
   let seenOk = false;
   const recoveries = [];
   let periods = 0;
@@ -43,32 +51,37 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
     okTime += w;
     vWeighted += s.v * w;
     if (above) {
+      everAbove = true;
       aboveTime += w;
       run += w;
       if (run > flowSec) flowSec = run;
+      dropAcc = 0;
       if (inBelow) {
-        recoveries.push(belowStart);
+        recoveries.push(belowTime);
         inBelow = false;
       }
     } else {
       run = 0;
-      if (!inBelow) {
-        inBelow = true;
-        belowStart = 0;
-        periods++;
-      }
-      belowStart += w;
+      if (inBelow) belowTime += w;
+      else if (everAbove && s.v < goal - DROP_MARGIN) {
+        dropAcc += w;
+        if (dropAcc >= DROP_MIN_SEC) {
+          inBelow = true;
+          belowTime = dropAcc;
+          periods++;
+        }
+      } else dropAcc = 0;
     }
     seenOk = true;
   }
 
   const timeAbovePct = okTime > 0 ? (aboveTime / okTime) * 100 : 0;
   const energy = okTime > 0 ? (vWeighted / okTime) * 100 : 0;
-  const flow = Math.min(100, (flowSec / (0.5 * durationSec)) * 100);
+  const flow = Math.min(100, (flowSec / (0.5 * dur)) * 100);
 
   let avgRecoverySec = null;
   let increase;
-  if (!seenOk) increase = 0;
+  if (!seenOk || !everAbove) increase = 0;
   else if (periods === 0) increase = 100;
   else if (recoveries.length === 0) increase = 0;
   else {
@@ -76,9 +89,10 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
     increase = clamp(100 * (1 - (avgRecoverySec - 5) / 55), 0, 100);
   }
 
-  const score = Math.round(0.4 * timeAbovePct + 0.2 * energy + 0.2 * flow + 0.2 * increase);
+  const finite = (x) => (Number.isFinite(x) ? x : 0);
+  const score = Math.round(finite(0.4 * timeAbovePct + 0.2 * energy + 0.2 * flow + 0.2 * increase));
   const stars = score >= 75 ? 3 : score >= 55 ? 2 : score >= 30 ? 1 : 0;
   const insight = pickInsight({ score, energy, flow, increase, flowSec });
 
-  return { score, stars, energy, flow, flowSec, increase, avgRecoverySec, timeAbovePct, insight };
+  return { score, stars, energy, flow, flowSec, increase, avgRecoverySec, timeAbovePct, okSec: okTime, insight };
 }

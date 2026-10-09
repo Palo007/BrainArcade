@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // FOCUS BALL — Mendi-style fNIRS neurofeedback game with a shared Session Report.
 // Ball height follows the forehead oxygenation index (dHbO - dHbR) from the Muse S Athena.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
+import { appendSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
 import { SessionReport } from '../../components/SessionReport.jsx';
 import '../../styles/retro.css';
 
@@ -12,8 +13,6 @@ const GOAL = 0.62;
 const REST = 0.3;
 const START_SCALE = 0.35; // µM of oxygenation index that moves the ball from rest to the top
 const BEST_KEY = 'brainarcade.focusBall.best';
-const SESSIONS_KEY = 'brainarcade.sessions';
-const MAX_SESSIONS = 200;
 const LENGTHS = [2, 3, 5, 10];
 const CUES = ['Count back by 3s', 'Stay calm and focused'];
 const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
@@ -37,27 +36,12 @@ const saveBest = (v) => {
     // ignore (private mode)
   }
 };
-const appendSession = (rec) => {
-  try {
-    let list = [];
-    try {
-      const parsed = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
-      if (Array.isArray(parsed)) list = parsed;
-    } catch {
-      list = [];
-    }
-    list.push(rec);
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(list.slice(-MAX_SESSIONS)));
-  } catch {
-    // ignore (private mode)
-  }
-};
-
 // Soft drone that rises with the ball + chimes when the streak multiplier grows
 function createAudio() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;
   const ctx = new Ctx();
+  let suspendTimer = 0;
   const master = ctx.createGain();
   master.gain.value = 0;
   const filter = ctx.createBiquadFilter();
@@ -82,6 +66,20 @@ function createAudio() {
       filter.frequency.setTargetAtTime(400 + height * 2400, t, 0.3);
       master.gain.setTargetAtTime(muted ? 0 : 0.05 + height * 0.07, t, 0.3);
     },
+    tick(muted) {
+      if (muted) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 440;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.3);
+    },
     chime(muted, step = 0) {
       if (muted) return;
       const t = ctx.currentTime;
@@ -98,83 +96,285 @@ function createAudio() {
         o.stop(t + i * 0.09 + 1.3);
       });
     },
+    resume() {
+      clearTimeout(suspendTimer);
+      ctx.resume().catch(() => {});
+    },
+    suspend() {
+      clearTimeout(suspendTimer);
+      suspendTimer = setTimeout(() => ctx.suspend().catch(() => {}), 400); // let the drone fade out first
+    },
     close() {
+      clearTimeout(suspendTimer);
       ctx.close().catch(() => {});
     },
   };
 }
 
-const ballScreenY = (lift, h) => h * (0.86 - lift * 0.76);
+const SCROLL_PX_S = 60; // world scroll speed (css px/s)
+const TERRAIN = [58, 66, 80];
+const STAR_LIFE = 6; // seconds a spawned star stays visible
+const BRAIN = ['01100110', '11011011', '11111111', '11011011', '11111111', '01111110', '00011000'];
+const STAR_GLYPH = ['00100', '01110', '11111', '01110', '01010'];
+const CLOUD = [[2, 0, 3, 1], [1, 1, 5, 1], [0, 2, 8, 2]];
 
-function makeScene(w, h) {
+// v (0..1) -> screen y: v=0 near bottom (85%), v=1 near top (15%)
+const ballScreenY = (lift, h) => h * (0.85 - lift * 0.55); // top stays at 30% so the ball never hides under the HUD
+
+function offscreen(size) {
+  const o = document.createElement('canvas');
+  o.width = Math.max(1, Math.ceil(size));
+  o.height = o.width;
+  return o;
+}
+
+// Pre-rendered glows (rebuilt on resize); drawn scaled instead of creating gradients every frame.
+function buildFx(w, h, dpr) {
+  const r = 15 * dpr;
+  const rb = r * 3.4;
+  const halo = (col) => {
+    const o = offscreen(2 * rb);
+    const g = o.getContext('2d');
+    const cx = o.width / 2;
+    const gr = g.createRadialGradient(cx, cx, r * 0.4, cx, cx, cx);
+    gr.addColorStop(0, col);
+    gr.addColorStop(1, 'rgba(210,235,255,0)');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, o.width, o.height);
+    return o;
+  };
+  const refBr = 0.2 * Math.min(w, h);
+  const glow = offscreen(2 * refBr * 1.8);
+  const gg = glow.getContext('2d');
+  const gc = glow.width / 2;
+  const gr = gg.createRadialGradient(gc, gc, refBr * 0.5, gc, gc, refBr * 1.8);
+  gr.addColorStop(0, 'rgba(160,220,255,0.35)');
+  gr.addColorStop(1, 'rgba(160,220,255,0)');
+  gg.fillStyle = gr;
+  gg.fillRect(0, 0, glow.width, glow.height);
+  return { haloOn: halo('rgba(210,235,255,0.5)'), haloOff: halo('rgba(150,150,170,0.35)'), glow, refBr };
+}
+
+// Cached colour strings (no per-frame string building)
+const SKY = Array.from({ length: 8 }, (_, k) => rgb(mix([43, 58, 77], [61, 74, 92], k / 7)));
+const TERRAIN_FILL = rgb(TERRAIN);
+const STAR_ALPHA = Array.from({ length: 16 }, (_, i) => `rgba(255,255,255,${(0.15 + (0.65 * i) / 15).toFixed(3)})`);
+const TRAIL_ALPHA = Array.from({ length: 20 }, (_, i) => `rgba(255,255,255,${(i / 19).toFixed(3)})`);
+const GOLD_ALPHA = Array.from({ length: 20 }, (_, i) => `rgba(255,216,74,${(i / 19).toFixed(3)})`);
+const plateauCache = new Map();
+function plateauStyle(v) {
+  const q = Math.round(clamp(v, 0, 1) * 32);
+  let e = plateauCache.get(q);
+  if (!e) {
+    const vq = q / 32;
+    e = {
+      bands: Array.from({ length: 4 }, (_, k) => rgb(plateauColor(vq, (k + 0.5) / 4))),
+      top: rgb(mix(plateauColor(vq, 0), [255, 255, 255], 0.35)),
+    };
+    plateauCache.set(q, e);
+  }
+  return e;
+}
+
+function makeScene(w, h, dpr) {
   const rand = (a, b) => a + Math.random() * (b - a);
-  return { stars: Array.from({ length: 80 }, () => ({ x: rand(0, w), y: rand(0, h * 0.75), r: rand(0.5, 1.8), p: rand(0, 6.28) })) };
+  return {
+    dpr,
+    fx: buildFx(w, h, dpr),
+    stars: Array.from({ length: 60 }, () => ({ x: Math.floor(rand(0, w)), y: Math.floor(rand(0, h * 0.6)), big: Math.random() < 0.2, p: rand(0, 6.28) })),
+    clouds: [
+      { x: rand(0, w), y: h * 0.14, u: 7, v: 6 },
+      { x: rand(0, w), y: h * 0.3, u: 5, v: 4 },
+      { x: rand(0, w), y: h * 0.22, u: 9, v: 3 },
+    ],
+  };
+}
+
+// Chunky filled disc built from square blocks (pixel look)
+function pixelDisc(c, cx, cy, r, px) {
+  for (let j = -r; j <= r; j += px) {
+    const hw = Math.floor(Math.sqrt(Math.max(0, r * r - j * j)) / px) * px;
+    c.fillRect(Math.round(cx - hw), Math.round(cy + j - px / 2), Math.round(2 * hw), px);
+  }
+}
+
+function drawBitmap(c, rows, x, y, px) {
+  rows.forEach((row, j) => {
+    for (let i = 0; i < row.length; i += 1) if (row[i] === '1') c.fillRect(Math.round(x + i * px), Math.round(y + j * px), px, px);
+  });
+}
+
+// Eased ball height at world x (hist is ordered by x)
+function surfaceY(hist, wx) {
+  const last = hist.length - 1;
+  if (wx >= hist[last].x) return hist[last].y;
+  if (wx <= hist[0].x) return hist[0].y;
+  let lo = 0;
+  let hi = last;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (hist[mid].x <= wx) lo = mid;
+    else hi = mid;
+  }
+  return hist[lo].y;
+}
+
+// Plateau colour: cool teal/green when low, warm yellow-green/orange/red when high
+const COOL = [[43, 179, 192], [143, 227, 160]];
+const WARM = [[200, 216, 106], [242, 163, 58], [224, 87, 79]];
+function plateauColor(v, f) {
+  const cool = mix(COOL[0], COOL[1], f);
+  const warm = f < 0.5 ? mix(WARM[0], WARM[1], f * 2) : mix(WARM[1], WARM[2], (f - 0.5) * 2);
+  return mix(cool, warm, clamp((v - 0.35) / 0.4, 0, 1));
 }
 
 function draw(c, scene, s, t) {
   const { width: w, height: h } = c.canvas;
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = scene.dpr;
+  c.imageSmoothingEnabled = false;
+  const step = 4 * dpr;
   const lift = s.ballY;
+  const worldX = s.worldX || 0;
+  const hist = s.hist || [{ x: 0, y: lift }];
+  const bx = Math.round(w / 2);
+  const by = Math.round(ballScreenY(lift, h));
 
-  // Background: night -> sunrise with height
-  const sky = c.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, rgb(mix([8, 10, 40], [70, 110, 210], lift)));
-  sky.addColorStop(1, rgb(mix([30, 20, 70], [255, 170, 120], lift)));
-  c.fillStyle = sky;
-  c.fillRect(0, 0, w, h);
+  // Sky (calm, banded): dark slate-blue
+  const bands = 8;
+  for (let k = 0; k < bands; k += 1) {
+    c.fillStyle = SKY[k];
+    c.fillRect(0, Math.floor((k * h) / bands), w, Math.ceil(h / bands) + 1);
+  }
   scene.stars.forEach((st) => {
-    c.fillStyle = `rgba(255,255,255,${(0.4 + 0.6 * Math.sin(t * 2 + st.p) ** 2) * (1 - lift * 0.9)})`;
-    c.beginPath();
-    c.arc(st.x, st.y, st.r * dpr, 0, 6.28);
-    c.fill();
+    c.fillStyle = STAR_ALPHA[Math.round(Math.sin(t * 1.5 + st.p) ** 2 * 15)];
+    const z = (st.big ? 3 : 2) * dpr;
+    c.fillRect(st.x, st.y, z, z);
+  });
+  // Faint moon, partly off the right edge
+  c.fillStyle = 'rgba(225,230,200,0.2)';
+  pixelDisc(c, w - 8 * dpr, h * 0.2, 40 * dpr, 4 * dpr);
+  c.fillStyle = 'rgba(120,130,110,0.18)';
+  c.fillRect(w - 40 * dpr, h * 0.2 - 12 * dpr, 8 * dpr, 8 * dpr);
+  c.fillRect(w - 28 * dpr, h * 0.2 + 8 * dpr, 4 * dpr, 4 * dpr);
+
+  // Clouds (drift slowly)
+  scene.clouds.forEach((cl) => {
+    const u = cl.u * dpr;
+    const span = w + 16 * u;
+    const x = ((((cl.x + t * cl.v * dpr - worldX * 0.1 * dpr) % span) + span) % span) - 8 * u;
+    c.fillStyle = 'rgba(150,165,190,0.28)';
+    CLOUD.forEach(([dx, dy, cw, ch]) => c.fillRect(Math.round(x + dx * u), Math.round(cl.y + dy * u), cw * u, ch * u));
   });
 
-  // Goal line
-  const goalY = ballScreenY(GOAL, h);
-  c.setLineDash([10 * dpr, 10 * dpr]);
-  c.strokeStyle = s.above ? 'rgba(255,230,120,0.95)' : 'rgba(255,255,255,0.45)';
-  c.lineWidth = 2 * dpr;
-  c.beginPath();
-  c.moveTo(0, goalY);
-  c.lineTo(w, goalY);
-  c.stroke();
-  c.setLineDash([]);
+  // Far parallax hills (0.3x scroll)
+  const hs = 6 * dpr;
+  const off = ((worldX * 0.3) % 6) * dpr;
+  c.fillStyle = 'rgb(33,44,61)';
+  for (let x = -off; x < w; x += hs) {
+    const wx = Math.floor((x / dpr + worldX * 0.3) / 6) * 6;
+    const y = Math.round((h * 0.6 + Math.sin(wx * 0.004) * h * 0.06 + Math.sin(wx * 0.011 + 1) * h * 0.03) / hs) * hs;
+    c.fillRect(Math.round(x), y, hs + 1, h - y);
+  }
 
-  // Ball
-  const bx = w / 2;
-  const by = ballScreenY(lift, h);
-  const r = (28 + lift * 12) * dpr;
+  // Past: terrain from history + fading white trail
+  let prevY = null;
+  for (let wc = Math.floor(worldX / 4) * 4; ; wc -= 4) {
+    const sx = Math.round(bx - (worldX - wc) * dpr);
+    if (sx < -step) break;
+    const y = Math.round(ballScreenY(surfaceY(hist, wc), h) / step) * step;
+    c.fillStyle = TERRAIN_FILL;
+    c.fillRect(sx, y, step + 1, h - y);
+    const a = clamp(1 - (bx - sx) / bx, 0.05, 1);
+    c.fillStyle = TRAIL_ALPHA[Math.round(a * 19)];
+    const top = prevY === null ? y : Math.min(y, prevY);
+    const bot = prevY === null ? y : Math.max(y, prevY);
+    c.fillRect(sx, top, step + 1, bot - top + 2 * dpr);
+    prevY = y;
+  }
+
+  // Present: plateau (flat top at ball height, steep stepped slope down-left), banded gradient
+  const slopeX = bx - Math.round((0.04 * w) / step) * step;
+  c.save();
+  c.beginPath();
+  c.moveTo(bx, by);
+  c.lineTo(w, by);
+  c.lineTo(w, h);
+  c.lineTo(slopeX, h);
+  for (let xi = slopeX; xi < bx; xi += step) {
+    const ey = Math.round((by + ((h - by) * (bx - (xi + step))) / (bx - slopeX)) / step) * step;
+    c.lineTo(xi, ey);
+    c.lineTo(xi + step, ey);
+  }
+  c.closePath();
+  c.clip();
+  const nb = 4;
+  const bh = (h - by) / nb;
+  const pl = plateauStyle(lift);
+  for (let k = 0; k < nb; k += 1) {
+    c.fillStyle = pl.bands[k];
+    c.fillRect(slopeX - 1, Math.round(by + k * bh), w - slopeX + 2, Math.ceil(bh) + 1);
+  }
+  c.fillStyle = pl.top;
+  c.fillRect(slopeX - 1, by, w - slopeX + 2, Math.round(3 * dpr));
+  c.restore();
+
+  // Goal line (faint)
+  c.fillStyle = 'rgba(255,255,255,0.22)';
+  c.fillRect(0, Math.round(ballScreenY(GOAL, h)), w, Math.max(1, Math.round(1.5 * dpr)));
+
+  // Stars earned (attached to world x, sitting on the terrain surface)
+  (s.stars || []).forEach((st) => {
+    const age = s.elapsed - st.born;
+    const sx = bx - (worldX - st.wx) * dpr;
+    const spx = 5 * dpr;
+    const sy = ballScreenY(surfaceY(hist, st.wx), h) - 5 * spx - 4 * dpr - Math.sin(t * 4 + st.wx) * dpr;
+    c.fillStyle = GOLD_ALPHA[Math.round(clamp(1 - age / STAR_LIFE, 0, 1) * 19)];
+    drawBitmap(c, STAR_GLYPH, sx - 2.5 * spx, sy, spx);
+  });
+
   const pulse = 1 + Math.sin(t * 3) * 0.05;
-  const core = s.paused ? [140, 140, 160] : mix([90, 200, 255], [255, 220, 90], lift);
-  c.globalCompositeOperation = 'lighter';
-  const halo = c.createRadialGradient(bx, by, r * 0.3, bx, by, r * 3.2 * pulse);
-  halo.addColorStop(0, rgb(core, 0.5));
-  halo.addColorStop(1, rgb(core, 0));
-  c.fillStyle = halo;
-  c.beginPath();
-  c.arc(bx, by, r * 3.2 * pulse, 0, 6.28);
-  c.fill();
-  c.globalCompositeOperation = 'source-over';
-  const body = c.createRadialGradient(bx - r * 0.35, by - r * 0.35, r * 0.1, bx, by, r * pulse);
-  body.addColorStop(0, 'rgba(255,255,255,1)');
-  body.addColorStop(0.35, rgb(core, 1));
-  body.addColorStop(1, rgb(mix(core, [40, 40, 90], 0.5), 1));
-  c.fillStyle = body;
-  c.beginPath();
-  c.arc(bx, by, r * pulse, 0, 6.28);
-  c.fill();
+  if (s.breath !== undefined && s.breath >= 0) {
+    // Calibration: breathing pixel circle
+    const m = Math.min(w, h);
+    const br = lerp(0.1, 0.2, s.breath) * m;
+    const cy = h * 0.4;
+    c.globalCompositeOperation = 'lighter';
+    const gsz = scene.fx.glow.width * (br / scene.fx.refBr);
+    c.drawImage(scene.fx.glow, bx - gsz / 2, cy - gsz / 2, gsz, gsz);
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = 'rgb(120,170,210)';
+    pixelDisc(c, bx, cy, br + 9 * dpr, 6 * dpr);
+    c.fillStyle = 'rgb(235,245,255)';
+    pixelDisc(c, bx, cy, br, 6 * dpr);
+    return;
+  }
 
-  // Ground
-  c.fillStyle = rgb(mix([14, 16, 40], [50, 90, 70], lift));
-  c.fillRect(0, h * 0.92, w, h * 0.08);
+  // Ball: white glowing pixel orb, chunky outline, brain glyph
+  const r = 15 * dpr;
+  const px = 3 * dpr;
+  c.globalCompositeOperation = 'lighter';
+  const halo = s.paused ? scene.fx.haloOff : scene.fx.haloOn;
+  const hsz = halo.width * pulse;
+  c.drawImage(halo, bx - hsz / 2, by - hsz / 2, hsz, hsz);
+  c.globalCompositeOperation = 'source-over';
+  c.fillStyle = s.paused ? 'rgb(110,115,130)' : 'rgb(110,150,205)';
+  pixelDisc(c, bx, by, r + px, px);
+  c.fillStyle = s.paused ? 'rgb(190,192,200)' : 'rgb(255,255,255)';
+  pixelDisc(c, bx, by, r, px);
+  c.fillStyle = 'rgb(120,140,190)';
+  drawBitmap(c, BRAIN, bx - 8 * dpr, by - 7 * dpr, 2 * dpr);
 }
 
 export function FocusBall() {
   const { supported, data, resetBaseline } = useFnirs();
-  const [phase, setPhase] = useState('intro'); // intro | calibrate | play | report
+  const [phase, setPhase] = useState('intro'); // intro | calibrate | countdown | play | report
   const [cue, setCue] = useState(CUES[0]);
+  const [session, setSession] = useState(null); // settings of the running session (check-in overrides never touch the menu settings)
   const [minutes, setMinutes] = useState(3);
-  const [hud, setHud] = useState({ points: 0, timeLeft: 180, mult: 1, paused: false });
+  const [hud, setHud] = useState({ points: 0, timeLeft: 180, mult: 1, paused: false, progress: 0, activity: 0, goalSec: 0, hint: 'still' });
+  const [count, setCount] = useState(3);
+  const [breathLabel, setBreathLabel] = useState('BREATHE IN');
+  const calStartRef = useRef(0);
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(readBest);
   const [report, setReport] = useState(null);
@@ -185,29 +385,56 @@ export function FocusBall() {
   const phaseRef = useRef(phase);
   const audioRef = useRef(null);
   const stateRef = useRef(null);
-  const settingsRef = useRef({ cue, minutes });
+  const checkInDue = useMemo(() => phase === 'intro' && isCheckInDue(loadSessions()), [phase]);
+  const sessionRef = useRef({ cue, minutes, checkIn: false });
   const sawResetRef = useRef(false);
 
   dataRef.current = data;
   mutedRef.current = muted;
   phaseRef.current = phase;
-  settingsRef.current = { cue, minutes };
 
   // Calibration done -> play. Wait for a fresh not-ready snapshot (old ones still say "ready").
   useEffect(() => {
     if (phase !== 'calibrate' || !data) return;
     if (!data.baselineReady) sawResetRef.current = true;
     else if (sawResetRef.current) {
-      const durationSec = settingsRef.current.minutes * 60;
+      const durationSec = sessionRef.current.minutes * 60;
       stateRef.current = {
         ballY: REST, scale: START_SCALE, points: 0, streakSec: 0, mult: 1, elapsed: 0, durationSec,
-        above: false, paused: false, samples: [], sampleAcc: 0, chimeStep: 0, ptsAcc: 0,
+        above: false, paused: false, done: false, samples: [], sampleAcc: 0, chimeStep: 0, ptsAcc: 0,
+        worldX: 0, hist: [{ x: -2000, y: REST }, { x: 0, y: REST }], stars: [], aboveSec: 0, starAcc: 1.5, goalSec: 0, activity: 0,
       };
-      setHud({ points: 0, timeLeft: durationSec, mult: 1, paused: false });
-      audioRef.current?.chime(mutedRef.current, 0);
-      setPhase('play');
+      setHud({ points: 0, timeLeft: durationSec, mult: 1, paused: false, progress: 0, activity: 0, goalSec: 0, hint: 'still' });
+      setCount(3);
+      setPhase('countdown');
     }
   }, [phase, data]);
+
+  // Calibration: breathing label (4 s in / 4 s out)
+  useEffect(() => {
+    if (phase !== 'calibrate') return undefined;
+    const id = setInterval(() => setBreathLabel(((performance.now() - calStartRef.current) / 1000) % 8 < 4 ? 'BREATHE IN' : 'BREATHE OUT'), 250);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // 3-2-1 countdown (1 s each, soft tick) before the world starts scrolling
+  useEffect(() => {
+    if (phase !== 'countdown') return undefined;
+    let n = 3;
+    audioRef.current?.tick(mutedRef.current);
+    const id = setInterval(() => {
+      n -= 1;
+      if (n <= 0) {
+        clearInterval(id);
+        audioRef.current?.chime(mutedRef.current, 0);
+        setPhase('play');
+        return;
+      }
+      setCount(n);
+      audioRef.current?.tick(mutedRef.current);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
 
   // Game loop (timer) + drawing (rAF)
   useEffect(() => {
@@ -216,22 +443,43 @@ export function FocusBall() {
     const c = canvas.getContext('2d');
     let scene = null;
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = canvas.clientWidth * dpr;
       canvas.height = canvas.clientHeight * dpr;
-      scene = makeScene(canvas.width, canvas.height);
+      scene = makeScene(canvas.width, canvas.height, dpr);
     };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
+    // Re-run resize when the device pixel ratio changes (zoom, moving between monitors)
+    let mq = null;
+    const onDprChange = () => {
+      resize();
+      bindDpr();
+    };
+    const bindDpr = () => {
+      mq?.removeEventListener('change', onDprChange);
+      mq = window.matchMedia ? window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`) : null;
+      mq?.addEventListener('change', onDprChange);
+    };
+    bindDpr();
 
     const idle = { ballY: REST, above: false, paused: false };
     let lastTick = performance.now();
     let hudTick = 0;
     const finish = (s) => {
+      if (s.done) return;
+      s.done = true;
       audioRef.current?.set(0, true);
-      const { cue: usedCue, minutes: mins } = settingsRef.current;
+      audioRef.current?.suspend();
+      const { cue: usedCue, minutes: mins, checkIn: isCheckIn } = sessionRef.current;
       const metrics = computeSessionMetrics(s.samples, { goal: GOAL, durationSec: s.durationSec });
+      if (metrics.okSec < 0.3 * s.durationSec) {
+        // Too little usable signal: nothing saved, no score, not counted toward best
+        setReport({ insufficient: true });
+        setPhase('report');
+        return;
+      }
       const points = Math.round(s.points);
       const prevBest = readBest();
       const isNewBest = metrics.score > prevBest;
@@ -239,8 +487,8 @@ export function FocusBall() {
         saveBest(metrics.score);
         setBest(metrics.score);
       }
-      appendSession({ date: new Date().toISOString(), game: 'focus-ball', durationSec: mins * 60, cue: usedCue, points, ...metrics });
-      setReport({ metrics, points, isNewBest });
+      const id = appendSession({ date: new Date().toISOString(), game: 'focus-ball', durationSec: mins * 60, playedSec: Math.round(s.elapsed), cue: usedCue, points, ...metrics, ...(isCheckIn ? { checkIn: true } : {}) });
+      setReport({ metrics, points, isNewBest, samples: s.samples, id });
       setPhase('report');
     };
     const tick = () => {
@@ -248,21 +496,54 @@ export function FocusBall() {
       const dt = Math.min(0.2, (now - lastTick) / 1000);
       lastTick = now;
       const s = stateRef.current;
-      if (phaseRef.current !== 'play' || !s) {
+      if (phaseRef.current !== 'play' || !s || s.done) {
         idle.ballY = REST + Math.sin(now / 1250) * 0.03;
+        if (phaseRef.current === 'calibrate') {
+          const cyc = ((now - calStartRef.current) / 1000) % 8; // 4 s in, 4 s out
+          const p = cyc < 4 ? cyc / 4 : 1 - (cyc - 4) / 4;
+          idle.breath = p * p * (3 - 2 * p);
+        } else idle.breath = -1;
         return;
       }
       const d = dataRef.current;
       const q = [d?.left?.quality, d?.right?.quality];
-      s.paused = q.some((x) => x === 'motion' || x === 'no-light' || x === 'saturated');
-      const oxy = d?.oxy ?? 0;
+      const lost = !d || !d.available || !d.baselineReady || q.includes('no-light');
+      s.paused = lost || q.some((x) => x === 'motion' || x === 'saturated');
+      s.hint = lost ? 'headband' : 'still';
+      const oxy = Number.isFinite(d?.oxy) ? d.oxy : 0;
       if (!s.paused) s.scale = Math.max(s.scale, oxy * 0.9); // grows on upswings only, never shrinks
       const target = s.paused ? s.ballY : clamp(REST + 0.7 * (oxy / s.scale), 0.03, 0.97);
       s.ballY = lerp(s.ballY, target, 1 - Math.exp(-dt * 1.2)); // ~1 s easing
       s.above = !s.paused && s.ballY >= GOAL;
+      // Scaled game value (oxygenation index relative to the player's own range), not a medical measurement.
+      if (!s.paused) s.activity = (oxy / s.scale) * 100;
+
+      // Side-scrolling world: constant scroll, paused while signal quality is bad
+      if (!s.paused) {
+        s.worldX += SCROLL_PX_S * dt;
+        s.hist.push({ x: s.worldX, y: s.ballY });
+      } else s.hist[s.hist.length - 1].y = s.ballY;
+      const keep = (canvasRef.current?.clientWidth || 1600) / 2 + 100;
+      while (s.hist.length > 2 && s.worldX - s.hist[1].x > keep) s.hist.shift();
 
       if (!s.paused) {
         s.elapsed += dt;
+        if (s.above) {
+          s.goalSec += dt;
+          s.aboveSec += dt;
+          if (s.aboveSec > 1) {
+            s.starAcc += dt;
+            if (s.starAcc >= 1.5) {
+              s.starAcc = 0;
+              s.stars.push({ wx: s.worldX - 28, born: s.elapsed });
+              audioRef.current?.chime(mutedRef.current, ++s.chimeStep);
+            }
+          }
+        } else {
+          s.aboveSec = 0;
+          s.starAcc = 1.5;
+        }
+        if (s.stars.length) s.stars = s.stars.filter((st) => s.elapsed - st.born < STAR_LIFE);
         if (s.above) {
           s.streakSec += dt;
           const mult = Math.min(5, 1 + Math.floor(s.streakSec / 10));
@@ -286,7 +567,17 @@ export function FocusBall() {
       audioRef.current?.set(s.ballY, mutedRef.current || s.paused);
       if ((hudTick += dt) > 0.25) {
         hudTick = 0;
-        setHud({ points: s.points, timeLeft: Math.max(0, Math.ceil(s.durationSec - s.elapsed)), mult: s.mult, paused: s.paused });
+        const next = {
+          points: Math.round(s.points),
+          timeLeft: Math.max(0, Math.ceil(s.durationSec - s.elapsed)),
+          mult: s.mult,
+          paused: s.paused,
+          progress: Math.round(clamp(s.elapsed / s.durationSec, 0, 1) * 100) / 100,
+          activity: Math.round(s.activity * 10) / 10,
+          goalSec: Math.floor(s.goalSec),
+          hint: s.hint,
+        };
+        setHud((prev) => (Object.keys(next).every((k) => prev[k] === next[k]) ? prev : next));
       }
       if (s.elapsed >= s.durationSec) finish(s);
     };
@@ -294,8 +585,8 @@ export function FocusBall() {
 
     let raf;
     const frame = (now) => {
-      const s = phaseRef.current === 'play' && stateRef.current ? stateRef.current : idle;
-      draw(c, scene, s, now / 1000);
+      const live = (phaseRef.current === 'play' || phaseRef.current === 'countdown') && stateRef.current;
+      draw(c, scene, live ? stateRef.current : idle, now / 1000);
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -303,17 +594,39 @@ export function FocusBall() {
       clearInterval(timer);
       cancelAnimationFrame(raf);
       ro.disconnect();
+      mq?.removeEventListener('change', onDprChange);
     };
   }, []);
+
+  // Silence the drone whenever we are back on the menu / report
+  useEffect(() => {
+    if (phase === 'intro' || phase === 'report') audioRef.current?.suspend();
+  }, [phase]);
 
   useEffect(() => () => audioRef.current?.close(), []);
 
   const begin = () => {
     if (!audioRef.current) audioRef.current = createAudio();
-    audioRef.current?.ctx.resume();
+    audioRef.current?.resume();
     resetBaseline();
     sawResetRef.current = false;
+    calStartRef.current = performance.now();
+    setBreathLabel('BREATHE IN');
     setPhase('calibrate');
+  };
+
+  // Check-in values apply to this session only; the menu settings (cue/minutes) are left alone.
+  const startWith = (next) => {
+    sessionRef.current = next;
+    setSession(next);
+    begin();
+  };
+  const startCheckIn = () => startWith({ cue: CUES[1], minutes: 2, checkIn: true });
+  const startNormal = () => startWith({ cue, minutes, checkIn: false });
+  const stop = () => {
+    stateRef.current = null; // abandon without saving
+    audioRef.current?.set(0, true);
+    setPhase('intro');
   };
 
   const panel = 'border-4 border-[var(--nes-yellow)] bg-black/75 px-6 py-5 text-center text-white max-w-lg';
@@ -328,20 +641,46 @@ export function FocusBall() {
       <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
         <div>
           <h2 className="text-2xl text-[var(--nes-yellow)]">FOCUS BALL</h2>
-          {phase === 'play' && <p className="text-[10px] text-gray-200 mt-2">{cue}</p>}
+          {phase === 'play' && <p className="text-[10px] text-gray-200 mt-2">{session?.cue}</p>}
         </div>
-        {phase === 'play' && (
-          <div className="text-right text-xs space-y-2 mt-16">
-            <div>POINTS <span className="text-[var(--nes-yellow)]">{Math.round(hud.points)}</span></div>
-            <div>
-              {Math.floor(hud.timeLeft / 60)}:{String(hud.timeLeft % 60).padStart(2, '0')}
-            </div>
-            {hud.mult > 1 && (
-              <div className="inline-block border-2 border-[var(--nes-yellow)] bg-black/60 px-2 py-1 text-[var(--nes-yellow)]">STREAK x{hud.mult}</div>
-            )}
-          </div>
-        )}
       </div>
+
+      {phase === 'play' && (
+        <>
+          {/* Session progress bar (thin, pixel) */}
+          <div className="absolute top-0 inset-x-0 h-2 bg-black/60 border-b-2 border-white/30 pointer-events-none">
+            <div className="h-full bg-[var(--nes-yellow)] transition-all duration-300" style={{ width: `${Math.round(hud.progress * 100)}%` }} />
+          </div>
+          {/* HUD row: centered, below the title row / top-right badges */}
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 flex items-center gap-5 border-2 border-white/40 bg-black/55 px-4 py-2 text-xs text-white pointer-events-none whitespace-nowrap">
+            <span>↗ <span className="text-[var(--nes-green)]">{hud.activity >= 0 ? '+' : ''}{Math.round(hud.activity)}%</span></span>
+            <span>★ <span className="text-[var(--nes-yellow)]">{Math.floor(hud.goalSec)}s</span></span>
+            <span>
+              ⚡ <span className="text-[var(--nes-yellow)]">{Math.round(hud.points)}</span>
+              {hud.mult > 1 && <span className="ml-1 text-[9px] text-[var(--nes-yellow)]">x{hud.mult}</span>}
+            </span>
+            <span className="text-[9px] text-gray-300">
+              {Math.floor(hud.timeLeft / 60)}:{String(hud.timeLeft % 60).padStart(2, '0')}
+            </span>
+          </div>
+          {/* Neural activity card (scaled game value, above SOUND button) */}
+          <div className="absolute bottom-[4.5rem] right-6 flex items-center gap-3 border-4 border-[var(--nes-yellow)] bg-black/75 px-3 py-2 pointer-events-none">
+            <svg width="24" height="21" viewBox="0 0 8 7" shapeRendering="crispEdges" aria-hidden="true">
+              {BRAIN.flatMap((row, j) => [...row].map((ch, i) => (ch === '1' ? <rect key={`${i}-${j}`} x={i} y={j} width="1" height="1" fill="#ffd84a" /> : null)))}
+            </svg>
+            <div>
+              <p className="text-[8px] text-gray-300">NEURAL ACTIVITY</p>
+              <p className="text-sm text-[var(--nes-yellow)] mt-1">{hud.activity >= 0 ? '+' : ''}{hud.activity.toFixed(1)}%</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {phase === 'countdown' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span aria-live="polite" className="text-8xl text-[var(--nes-yellow)]" style={{ textShadow: '6px 6px 0 #000' }}>{count}</span>
+        </div>
+      )}
 
       <button
         type="button"
@@ -351,11 +690,23 @@ export function FocusBall() {
         {muted ? 'SOUND OFF' : 'SOUND ON'}
       </button>
 
-      {phase === 'play' && hud.paused && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-xs text-[var(--nes-yellow)]">
-          HOLD STILL
-        </div>
+      {(phase === 'calibrate' || phase === 'countdown' || phase === 'play') && (
+        <button
+          type="button"
+          onClick={stop}
+          className="absolute bottom-6 left-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white hover:bg-white hover:text-black"
+        >
+          STOP
+        </button>
       )}
+
+      <div aria-live="polite" className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
+        {phase === 'play' && hud.paused && (
+          <div className="border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-xs text-[var(--nes-yellow)] whitespace-nowrap">
+            {hud.hint === 'headband' ? 'CHECK HEADBAND' : 'HOLD STILL'}
+          </div>
+        )}
+      </div>
 
       <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
         {phase === 'intro' && (
@@ -364,6 +715,13 @@ export function FocusBall() {
               <p className="text-xs leading-relaxed">This game needs a Muse S Athena (fNIRS light sensors).</p>
             ) : (
               <>
+                {checkInDue && (
+                  <div className="border-4 border-[var(--nes-green)] bg-[var(--nes-green)]/15 px-3 py-3 mb-4">
+                    <p className="text-xs text-[var(--nes-green)] mb-2">CHECK-IN DUE</p>
+                    <p className="text-[9px] text-gray-200 leading-relaxed mb-3">A short re-test to see how your focus is growing.</p>
+                    <button type="button" onClick={startCheckIn} className={btn}>Start check-in (2 min)</button>
+                  </div>
+                )}
                 <p className="text-sm leading-relaxed mb-3">Focus on the ball and keep it above the line.</p>
                 <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
                 <p className="text-[9px] text-gray-300 mb-2">PICK YOUR FOCUS TRICK</p>
@@ -378,7 +736,7 @@ export function FocusBall() {
                     <button key={m} type="button" className={chip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
                   ))}
                 </div>
-                <button type="button" onClick={begin} className={btn}>START</button>
+                <button type="button" onClick={startNormal} className={btn}>START</button>
                 {best > 0 && <p className="text-[9px] text-gray-400 mt-3">BEST {best}</p>}
               </>
             )}
@@ -386,8 +744,8 @@ export function FocusBall() {
         )}
 
         {phase === 'calibrate' && (
-          <div className={panel}>
-            <p className="text-xs mb-3">Relax and breathe slowly…</p>
+          <div className={`${panel} absolute bottom-24 left-1/2 -translate-x-1/2`}>
+            <p className="text-sm text-[var(--nes-yellow)] mb-3">{breathLabel}</p>
             <div className="h-3 w-64 mx-auto border-2 border-[var(--nes-yellow)]">
               <div className="h-full bg-[var(--nes-yellow)]" style={{ width: `${Math.round((data?.baselineProgress || 0) * 100)}%` }} />
             </div>
@@ -402,6 +760,9 @@ export function FocusBall() {
               points={report.points}
               bestScore={best}
               isNewBest={report.isNewBest}
+              samples={report.samples}
+              sessionId={report.id}
+              insufficient={!!report.insufficient}
               onPlayAgain={() => setPhase('intro')}
             />
           </div>

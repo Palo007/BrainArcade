@@ -92,6 +92,11 @@ export function NavBar({ onActiveGameClick } = {}) {
   const visible = filter === ALL ? games : games.filter((g) => g.category === filter);
 
   const handleClick = (game, isActive) => (e) => {
+    // Pages (kind: "page") open in one click: let the Link navigate directly
+    if (game.kind === 'page') {
+      if (isActive) e.preventDefault();
+      return;
+    }
     // If a handler is provided, use modal flow instead of direct nav
     if (onActiveGameClick) {
       e.preventDefault();

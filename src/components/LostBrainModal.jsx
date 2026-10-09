@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RetroModal } from './RetroModal.jsx';
+import { isPageRoute } from '../games/games.config';
 import { useEEG } from '../contexts/MuseContext';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import '../styles/retro.css';
@@ -50,7 +51,7 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
   }, [show, navigate, location.pathname]);
 
   // Hide the modal on the home screen regardless
-  if (!show || location.pathname === '/') return null;
+  if (!show || location.pathname === '/' || isPageRoute(location.pathname)) return null;
 
   return (
     <RetroModal

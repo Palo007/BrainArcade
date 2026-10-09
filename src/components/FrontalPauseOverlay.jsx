@@ -3,11 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { RetroModal } from './RetroModal.jsx';
+import { isPageRoute } from '../games/games.config';
 
 export function FrontalPauseOverlay() {
   const { frontalBad, adjusting } = useQuality();
   const location = useLocation();
-  const isGamePage = location.pathname.startsWith('/game/');
+  const isGamePage = location.pathname.startsWith('/game/') && !isPageRoute(location.pathname);
   const { visible: baselineVisible } = useBaseline();
 
   // Debounce to avoid flicker; require bad for >1.5s to show, and good for >1.5s to hide

@@ -7,6 +7,7 @@ import { NavBar } from './NavBar';
 import '../styles/retro.css';
 import { RetroModal } from './RetroModal';
 import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
+import { isPageRoute } from '../games/games.config';
 
 /**
  * Layout - Main layout wrapper with responsive handling
@@ -21,6 +22,7 @@ export function Layout({ children }) {
   const navigate = useNavigate();
   const isFullScreen = location.pathname === '/' || location.pathname === '/about';
   const isGamePage = location.pathname.startsWith('/game/');
+  const isPage = isPageRoute(location.pathname); // kind: "page" -> no device guard
   const [showMenu, setShowMenu] = useState(false);
   const [showMusePopup, setShowMusePopup] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -183,11 +185,11 @@ export function Layout({ children }) {
         {isFullScreen ? (
           <>{children}</>
         ) : (
-          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8">
+          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8 overflow-y-auto overscroll-contain">
             <div className="w-full h-full">
               <div className="text-left p-2 sm:p-6 space-y-6 h-full">
                 {/* Global not-connected guard for game pages */}
-                {isGamePage && !isConnected ? (
+                {isGamePage && !isPage && !isConnected ? (
                   <div className="text-center py-12">
                     <div className="text-4xl mb-4">⚠️</div>
                     <p className="text-[var(--nes-red)] mb-2">MUSE NOT CONNECTED</p>

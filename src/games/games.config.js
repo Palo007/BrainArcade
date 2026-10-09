@@ -19,6 +19,9 @@
  *   thumb?: string       - Imported image for the menu card background
  *   sprite?: string      - Imported image drawn on top of the card background
  *   badge?: string       - Short label on the card (e.g. required hardware)
+ *   kind?: "game" | "page" - Default "game". "page" opens in one click (no launch modal,
+ *                           countdown, baseline or device/quality guards); for non-game pages
+ *                           that only read local data.
  * }
  */
 
@@ -31,11 +34,13 @@ import { Diver } from "./diver/Diver.jsx";
 import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
 import { GlowOrb } from "./glow-orb/GlowOrb.jsx";
 import { FocusBall } from "./focus-ball/FocusBall.jsx";
+import { TrainingJournal } from "./training-journal/TrainingJournal.jsx";
 
 // Menu card art: `thumb` = background image, `sprite` = optional character drawn on top
 import commandCenterThumb from "./joystick-visualizer/assets/brain_command_center.png";
 import glowOrbThumb from "./glow-orb/assets/thumb.svg";
 import focusBallThumb from "./focus-ball/assets/thumb.svg";
+import journalThumb from "./training-journal/assets/thumb.svg";
 import sweetSpotSprite from "./sweet-spot/assets/chill.png";
 import sailorThumb from "./sailor/assets/scene.png";
 import blinkThumb from "./blinking-contest/assets/thumb.svg";
@@ -79,6 +84,16 @@ export const games = [
     category: "fnirs",
     thumb: focusBallThumb,
     badge: "ATHENA",
+  },
+  {
+    id: "training-journal",
+    name: "TRAINING JOURNAL",
+    description: "Your Focus Ball history: score over time, day streak and check-ins.",
+    component: TrainingJournal,
+    category: "fnirs",
+    thumb: journalThumb,
+    badge: "JOURNAL",
+    kind: "page",
   },
   {
     id: "sweet-spot",
@@ -141,3 +156,9 @@ export const games = [
 /* SPDX-License-Identifier: CC-BY-SA-4.0
    Copyright (c) 2025 Itay Inbar and contributors
 */
+
+// True for routes of `kind: "page"` entries (e.g. /game/training-journal): no device/baseline/quality gating.
+export const isPageRoute = (pathname = "") => {
+  const id = pathname.startsWith("/game/") ? pathname.slice(6) : null;
+  return !!id && games.some((g) => g.id === id && g.kind === "page");
+};
