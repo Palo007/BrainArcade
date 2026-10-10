@@ -36,8 +36,14 @@ const LOW_LIGHT = 0.005; // fraction of full scale → no skin contact
 const HIGH_LIGHT = 0.98; // fraction of full scale → saturated
 // Motion = fast light changes: RMS of the sample-to-sample ΔOD (heartbeat ≈ 0.001, head jerk ≈ 0.03+).
 // A slow, lasting offset from the baseline is NOT motion.
+// At a lower input rate the per-sample ΔOD of smooth signals grows (heartbeat ~0.004 at 16 Hz), still below this.
 const MOTION_RMS = 0.01;
-const MOTION_ALPHA = 0.05; // EMA weight per sample (~0.3 s)
+const MOTION_TAU_S = 0.3; // motion EMA time constant
+// The real input rate is measured, not assumed: via the phone relay the Athena optics arrive at ~16 Hz,
+// not the nominal 64 Hz, which made the baseline 4× slower and the low-pass cutoff 4× lower.
+const RATE_WINDOW_S = 4; // measure over this much wall time
+const RATE_MAX_GAP_MS = 1000; // a window with a longer gap (BLE stall) is not used
+const RATE_CHANGE = 0.15; // adopt a new rate only if it differs by more than this
 
 // Sides → [730 nm channel, 850 nm channel]
 const SIDES = { left: [0, 2], right: [1, 3] };
@@ -75,17 +81,22 @@ const emptySide = () => ({ hbo: 0, hbr: 0, level: 0, quality: 'waiting' });
 
 export class FnirsProcessor {
   constructor({ fs = OPTICS_FS } = {}) {
-    this.fs = fs;
+    this.fs = fs; // nominal until measured (see _measureRate)
     this.samples = 0;
     this.channels = 0;
     this.history = []; // [{ t, l: {hbo,hbr}, r: {hbo,hbr} }]
+    this._rateT0 = null;
+    this._rateN = 0;
+    this._rateLast = 0;
+    this._rateGap = false;
     this.resetBaseline();
   }
 
   resetBaseline() {
     this._sum = [0, 0, 0, 0];
     this._n = 0;
-    this._settle = 0; // samples seen since the reset, up to SETTLE_S worth
+    this._baseS = 0; // seconds of baseline averaged so far
+    this._settleS = 0; // seconds seen since the reset, up to SETTLE_S
     this._i0 = null;
     this._lp = Array.from({ length: 4 }, () => lowpass(LOWPASS_HZ, this.fs));
     this._diffSq = [0, 0, 0, 0]; // EMA of (sample-to-sample ΔOD)² = fast-change (motion) estimate
@@ -95,39 +106,65 @@ export class FnirsProcessor {
   }
 
   get baselineProgress() {
-    return this._i0 ? 1 : Math.min(1, (this._settle + this._n) / ((SETTLE_S + BASELINE_S) * this.fs));
+    return this._i0 ? 1 : Math.min(1, (this._settleS + this._baseS) / (SETTLE_S + BASELINE_S));
   }
 
   get baselineReady() {
     return !!this._i0;
   }
 
-  // One optics sample: array of 4 / 8 / 16 values (64 Hz)
-  push(sample) {
+  // Count samples against wall time; adopt the measured rate when it clearly differs (filters are rebuilt)
+  _measureRate(nowMs) {
+    if (this._rateT0 === null) {
+      this._rateT0 = this._rateLast = nowMs;
+      return;
+    }
+    if (nowMs - this._rateLast > RATE_MAX_GAP_MS) this._rateGap = true;
+    this._rateLast = nowMs;
+    this._rateN++;
+    const elapsed = (nowMs - this._rateT0) / 1000;
+    if (elapsed < RATE_WINDOW_S) return;
+    const est = this._rateN / elapsed;
+    if (!this._rateGap && Math.abs(est - this.fs) / this.fs > RATE_CHANGE) {
+      this.fs = Math.round(est * 10) / 10;
+      this._lp = Array.from({ length: 4 }, () => lowpass(LOWPASS_HZ, this.fs));
+    }
+    this._rateT0 = nowMs;
+    this._rateN = 0;
+    this._rateGap = false;
+  }
+
+  // One optics sample: array of 4 / 8 / 16 values (nominal 64 Hz; the real rate is measured)
+  push(sample, nowMs = performance.now()) {
     if (!sample || sample.length < 4 || sample.length > 8) return;
     this.channels = sample.length;
     this.samples++;
+    this._measureRate(nowMs);
+    const dt = 1 / this.fs;
+    const motionAlpha = 1 - Math.exp(-dt / MOTION_TAU_S);
     const raw = [sample[0], sample[1], sample[2], sample[3]];
     for (let ch = 0; ch < 4; ch++) {
       const prev = this._lastLevel[ch];
       const d = raw[ch] > 0 && prev > 0 ? Math.log10(raw[ch] / prev) : 0;
-      this._diffSq[ch] += (d * d - this._diffSq[ch]) * MOTION_ALPHA;
+      this._diffSq[ch] += (d * d - this._diffSq[ch]) * motionAlpha;
       this._lastLevel[ch] = raw[ch];
     }
 
     if (!this._i0) {
       this._updateQuality();
       const q = [this.current.left.quality, this.current.right.quality];
-      if (this._settle < SETTLE_S * this.fs) {
-        this._settle++;
+      if (this._settleS < SETTLE_S) {
+        this._settleS += dt;
       } else if (q.includes('motion')) {
         // Moved during calibration → start the baseline again so it is not skewed
         this._sum = [0, 0, 0, 0];
         this._n = 0;
+        this._baseS = 0;
       } else if (!q.includes('no-light') && !q.includes('saturated')) {
         for (let ch = 0; ch < 4; ch++) this._sum[ch] += raw[ch];
         this._n++;
-        if (this._n >= BASELINE_S * this.fs) {
+        this._baseS += dt;
+        if (this._baseS >= BASELINE_S) {
           this._i0 = this._sum.map((s) => s / this._n);
           this._updateQuality();
         }
@@ -146,7 +183,7 @@ export class FnirsProcessor {
     }
     this._updateQuality();
 
-    if (this.samples % Math.round(this.fs / HISTORY_HZ) === 0) {
+    if (this.samples % Math.max(1, Math.round(this.fs / HISTORY_HZ)) === 0) {
       const { left, right } = this.current;
       this.history.push({
         t: Date.now(),
