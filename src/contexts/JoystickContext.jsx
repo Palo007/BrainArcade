@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useRef, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useRef } from 'react';
+import { driftFloor } from '../lib/fnirs.js';
 import { useBiomarkers } from './BiomarkerContext.jsx';
 import { useQuality } from './QualityContext.jsx';
 import { useEEG } from './MuseContext.jsx';
@@ -9,21 +10,25 @@ export const useJoysticks = () => useContext(JoystickContext);
 
 function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 
-function normalizeRatio(curr, base, { center = 1, range = 0.4, adaptiveOffset = 0 } = {}) {
-  if (!base || base <= 0 || curr == null) return 0.5;
-  const r = curr / base;
-  const adjustedCenter = center + adaptiveOffset;
-  const t = (r - adjustedCenter) / range; // -1..1 at ±range
+// r = drift-corrected ratio vs baseline (see rel() below), null when there is no baseline
+function normalizeRatio(r, { center = 1, range = 0.4 } = {}) {
+  if (r == null) return 0.5;
+  const t = (r - center) / range; // -1..1 at ±range
   return clamp01(0.5 + 0.5 * t);
 }
 
+// EEG drift: the session baseline is taken once, but band power drifts for minutes while dry
+// electrodes settle, which used to pin an axis at 0 or 1 for a whole round. Every ratio vs
+// baseline is divided by its own slow running level (EMA in log space): a slow drift fades out,
+// a change over seconds still shows. After an axis sits at 0 or 1 for 10 s the level catches up
+// faster, so a drift cannot hold a game at an extreme. (Replaces the old autoAdjustBaseline offset,
+// which could move the output by 0.06 at most; the option is still accepted and ignored.)
+const DRIFT_TAU_S = 90;
+const PINNED_TAU_S = 20;
+const PINNED_AFTER_MS = 10000;
+
 // Level 1: Cognitive joystick axes metadata
 // Defines which biomarker each axis uses and whether baseline is required
-//
-// Optional feature: autoAdjustBaseline
-// Games can pass { autoAdjustBaseline: true } to enable adaptive baseline adjustment.
-// When enabled, if the user is stuck at extremes (0 or 100) for 10+ seconds,
-// the baseline center smoothly shifts to make the joystick more responsive.
 export const JOYSTICK_AXES = {
   focus: {
     biomarker: 'frontal-midline-theta',
@@ -98,74 +103,11 @@ export function JoystickProvider({ children }) {
   const { muse } = useEEG();
   const fnirs = muse?.fnirs || null;
   const fnirsScaleRef = useRef(FNIRS_START_SCALE);
+  const fnirsDriftRef = useRef(null); // driftFloor() for the current fNIRS baseline
+  const fnirsTRef = useRef(0);
   const lastStableRef = useRef({}); // per-axis last stable output
-
-  // Auto-baseline adjustment state
-  const [adaptiveOffsets, setAdaptiveOffsets] = useState({});
-  const extremeTimersRef = useRef({}); // track time spent at extremes
-  const autoAdjustEnabledRef = useRef({}); // track which axes have auto-adjustment enabled
-
-  // Monitor values and adjust baseline adaptively (only for opted-in axes)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Only process axes that have auto-adjustment enabled
-      const enabledAxes = Object.keys(autoAdjustEnabledRef.current).filter(
-        (axis) => autoAdjustEnabledRef.current[axis]
-      );
-
-      enabledAxes.forEach((axis) => {
-        const currentValue = lastStableRef.current[axis];
-        if (currentValue == null) return;
-
-        const isAtExtreme = currentValue <= 0.05 || currentValue >= 0.95;
-        const now = Date.now();
-
-        if (!extremeTimersRef.current[axis]) {
-          extremeTimersRef.current[axis] = { startTime: null, lastValue: null };
-        }
-
-        const timer = extremeTimersRef.current[axis];
-
-        if (isAtExtreme) {
-          // Start or continue tracking extreme time
-          if (timer.startTime === null) {
-            timer.startTime = now;
-            timer.lastValue = currentValue;
-          }
-
-          const timeAtExtreme = (now - timer.startTime) / 1000; // seconds
-
-          // After 10 seconds at extreme, start adjusting baseline
-          if (timeAtExtreme > 10) {
-            const targetOffset = currentValue >= 0.95 ? 0.05 : -0.05; // shift center up or down
-
-            setAdaptiveOffsets((offsets) => {
-              const currentOffset = offsets[axis] || 0;
-              // Smooth exponential adjustment
-              const newOffset = currentOffset * 0.95 + targetOffset * 0.05;
-              return { ...offsets, [axis]: newOffset };
-            });
-          }
-        } else {
-          // Not at extreme - reset timer and gradually return offset to 0
-          timer.startTime = null;
-          timer.lastValue = null;
-
-          setAdaptiveOffsets((offsets) => {
-            const currentOffset = offsets[axis];
-            if (currentOffset != null && Math.abs(currentOffset) > 0.001) {
-              // Gradually reset to 0
-              const newOffset = currentOffset * 0.98;
-              return { ...offsets, [axis]: newOffset };
-            }
-            return offsets;
-          });
-        }
-      });
-    }, 500); // Check every 500ms
-
-    return () => clearInterval(interval);
-  }, []);
+  const driftRef = useRef({}); // per-biomarker running level: { log, t, base }
+  const pinnedRef = useRef({}); // per-axis time the output reached 0 or 1
 
   const get = useMemo(() => ({
     meta: (axis) => JOYSTICK_AXES[axis] || null,
@@ -176,26 +118,48 @@ export function JoystickProvider({ children }) {
       };
       const updateStable = (v) => {
         lastStableRef.current[axis] = v;
+        if (v > 0.02 && v < 0.98) delete pinnedRef.current[axis];
+        else if (pinnedRef.current[axis] == null) pinnedRef.current[axis] = Date.now();
         return v;
       };
+      const pinnedSince = pinnedRef.current[axis];
+      const fast = pinnedSince != null && Date.now() - pinnedSince > PINNED_AFTER_MS;
 
-      // Register if this axis should use auto-adjustment
-      if (options.autoAdjustBaseline !== undefined) {
-        autoAdjustEnabledRef.current[axis] = options.autoAdjustBaseline;
-      }
-
-      const adaptiveOffset = adaptiveOffsets[axis] || 0;
+      // Drift-corrected ratio of a biomarker vs its baseline, or null without a baseline
+      const rel = (key, value, baseline) => {
+        if (!baseline || baseline <= 0 || !(value > 0)) return null;
+        const r = value / baseline;
+        const now = performance.now();
+        let d = driftRef.current[key];
+        if (!d || d.base !== baseline) d = driftRef.current[key] = { log: 0, t: now, base: baseline }; // new baseline → start at it
+        const dt = Math.min(5, (now - d.t) / 1000);
+        d.t = now;
+        d.log += (Math.log(r) - d.log) * (1 - Math.exp(-dt / (fast ? PINNED_TAU_S : DRIFT_TAU_S)));
+        return r / Math.exp(d.log);
+      };
+      const relOf = (key) => {
+        const { value, baseline } = getBiomarker(key);
+        return rel(key, value, baseline);
+      };
 
       // fNIRS oxygenation as 0..1 (0.5 = baseline), or null when not available / not trustworthy
       const oxygenation01 = () => {
         const idx = fnirs?.index();
         if (!idx?.ready) {
           fnirsScaleRef.current = FNIRS_START_SCALE; // new baseline → start scaling again
+          fnirsDriftRef.current = null;
           return null;
         }
+        const now = performance.now();
+        const dt = Math.min(1, (now - fnirsTRef.current) / 1000);
+        fnirsTRef.current = now;
+        if (!fnirsDriftRef.current) fnirsDriftRef.current = driftFloor();
+        const oxy = fnirsDriftRef.current(idx.oxy, dt, idx.bad); // same drift fix as Focus Ball / Glow Orb
         if (idx.bad) return null;
-        fnirsScaleRef.current = Math.max(fnirsScaleRef.current, idx.oxy * 0.9);
-        return clamp01(0.5 + 0.5 * (idx.oxy / fnirsScaleRef.current));
+        // Grows with strong upswings, relaxes back over ~30 s, so one spike cannot cap the range
+        fnirsScaleRef.current += (FNIRS_START_SCALE - fnirsScaleRef.current) * (1 - Math.exp(-dt / 30));
+        fnirsScaleRef.current = Math.max(fnirsScaleRef.current, oxy * 0.9);
+        return clamp01(0.5 + 0.5 * (oxy / fnirsScaleRef.current));
       };
 
       switch (axis) {
@@ -205,65 +169,50 @@ export function JoystickProvider({ children }) {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) {
             return useStable();
           }
-          const { value, baseline } = getBiomarker('frontal-midline-theta');
-          return updateStable(normalizeRatio(value, baseline, { ...options, adaptiveOffset }));
+          return updateStable(normalizeRatio(relOf('frontal-midline-theta'), options));
         }
         case 'relaxation': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) {
             return useStable();
           }
           // Relaxation index already increases with relaxation
-          const { value, baseline } = getBiomarker('relaxation-index');
-          return updateStable(normalizeRatio(value, baseline, { ...options, adaptiveOffset }));
+          return updateStable(normalizeRatio(relOf('relaxation-index'), options));
         }
         case 'alertness': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('frontal-delta');
-          const ratio = baseline && baseline > 0 ? value / baseline : 1;
+          const ratio = relOf('frontal-delta') ?? 1;
           const range = options.range ?? 0.6; // 60% increase indicates drowsiness onset
           // Map: higher delta => lower alertness
-          const alert = 1 - clamp01((ratio - 1) / range);
-          const adjusted = clamp01(alert + (adaptiveOffset * 0.2));
-          return updateStable(adjusted);
+          return updateStable(1 - clamp01((ratio - 1) / range));
         }
         case 'drowsiness': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('frontal-delta');
-          const ratio = baseline && baseline > 0 ? value / baseline : 1;
+          const ratio = relOf('frontal-delta') ?? 1;
           const range = options.range ?? 0.6;
           // Map: 0 at baseline, ->1 as delta increases by 'range'
-          const score = clamp01((ratio - 1) / range);
-          return updateStable(score);
+          return updateStable(clamp01((ratio - 1) / range));
         }
         case 'stress': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('beta-alpha-ratio');
           // Higher beta/alpha => higher stress
-          return updateStable(normalizeRatio(value, baseline, { ...options, range: options.range ?? 0.5, adaptiveOffset }));
+          return updateStable(normalizeRatio(relOf('beta-alpha-ratio'), { ...options, range: options.range ?? 0.5 }));
         }
         case 'workload': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('theta-alpha-ratio');
           // Higher theta/alpha => higher workload
-          return updateStable(normalizeRatio(value, baseline, { ...options, range: options.range ?? 0.6, adaptiveOffset }));
+          return updateStable(normalizeRatio(relOf('theta-alpha-ratio'), { ...options, range: options.range ?? 0.6 }));
         }
         case 'engagement': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('engagement-index');
-          return updateStable(normalizeRatio(value, baseline, { ...options, range: options.range ?? 0.6, adaptiveOffset }));
+          return updateStable(normalizeRatio(relOf('engagement-index'), { ...options, range: options.range ?? 0.6 }));
         }
         case 'flow': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
           // Composite: 0.3*Engagement + 0.3*(1-ExcessiveTheta) + 0.2*BetaModerate + 0.2*(1-Drowsiness)
-          const eng = getBiomarker('engagement-index');
-          const theta = getBiomarker('theta');
-          const beta = getBiomarker('beta');
-          const delta = getBiomarker('frontal-delta');
-          // Normalize against baselines
-          const rEng = (eng.baseline && eng.baseline > 0 && eng.value != null) ? (eng.value / eng.baseline) : 1;
-          const rTheta = (theta.baseline && theta.baseline > 0 && theta.value != null) ? (theta.value / theta.baseline) : 1;
-          const rBeta = (beta.baseline && beta.baseline > 0 && beta.value != null) ? (beta.value / beta.baseline) : 1;
-          const rDelta = (delta.baseline && delta.baseline > 0 && delta.value != null) ? (delta.value / delta.baseline) : 1;
+          const rEng = relOf('engagement-index') ?? 1;
+          const rTheta = relOf('theta') ?? 1;
+          const rBeta = relOf('beta') ?? 1;
+          const rDelta = relOf('frontal-delta') ?? 1;
           const excessiveTheta = clamp01((rTheta - 1) / (options.thetaRange ?? 0.6));
           // Beta moderate: peak around ~1.2x baseline with triangular window [1.0, 1.4]
           const betaCenter = options.betaCenter ?? 1.2;
@@ -276,12 +225,8 @@ export function JoystickProvider({ children }) {
         }
         case 'frustration': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const th = getBiomarker('theta');
-          const be = getBiomarker('beta');
-          const thBase = th.baseline || 0;
-          const beBase = be.baseline || 0;
-          const rTh = thBase > 0 && th.value != null ? th.value / thBase : 1;
-          const rBe = beBase > 0 && be.value != null ? be.value / beBase : 1;
+          const rTh = relOf('theta') ?? 1;
+          const rBe = relOf('beta') ?? 1;
           const thInc = clamp01((rTh - 1) / (options.thetaRange ?? 0.6));
           const beInc = clamp01((rBe - 1) / (options.betaRange ?? 0.6));
           const asym = getBiomarker('theta-asymmetry');
@@ -296,8 +241,7 @@ export function JoystickProvider({ children }) {
         }
         case 'focus-plus': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const { value, baseline } = getBiomarker('engagement-index');
-          const eeg = normalizeRatio(value, baseline, { ...options, range: options.range ?? 0.6, adaptiveOffset });
+          const eeg = normalizeRatio(relOf('engagement-index'), { ...options, range: options.range ?? 0.6 });
           const oxy = oxygenation01();
           const w = options.fnirsWeight ?? FOCUS_PLUS_FNIRS_WEIGHT;
           return updateStable(oxy == null ? eeg : (1 - w) * eeg + w * oxy);
@@ -306,7 +250,7 @@ export function JoystickProvider({ children }) {
           return useStable();
       }
     },
-  }), [getBiomarker, hasRecentExtreme, adjusting, adaptiveOffsets, fnirs]);
+  }), [getBiomarker, hasRecentExtreme, adjusting, fnirs]);
 
   return (
     <JoystickContext.Provider value={get}>{children}</JoystickContext.Provider>

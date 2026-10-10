@@ -595,7 +595,11 @@ export function FocusBall() {
       s.paused = lost || q.some((x) => x === 'motion' || x === 'saturated');
       s.hint = lost ? 'headband' : 'still';
       const oxy = s.drift(Number.isFinite(d?.oxy) ? d.oxy : 0, dt, s.paused);
-      if (!s.paused) s.scale = Math.max(s.scale, oxy * 0.9); // grows on upswings only, never shrinks
+      if (!s.paused) {
+        // Grows with strong upswings, relaxes back over ~30 s, so one spike cannot cap the ball's height
+        s.scale += (START_SCALE - s.scale) * (1 - Math.exp(-dt / 30));
+        s.scale = Math.max(s.scale, oxy * 0.9);
+      }
       const target = s.paused ? s.ballY : clamp(REST + 0.7 * (oxy / s.scale), 0.03, 0.97);
       s.ballY = lerp(s.ballY, target, 1 - Math.exp(-dt * 1.2)); // ~1 s easing
       s.above = !s.paused && s.ballY >= GOAL;
