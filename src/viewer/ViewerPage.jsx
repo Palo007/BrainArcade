@@ -272,6 +272,22 @@ export function ViewerPage() {
               </span>
               <span className="truncate text-gray-500 text-[9px] max-w-[40%] hidden sm:inline ml-2">{rec.meta.fileName}</span>
             </div>
+            {/* Manual time slider (like Mind Monitor): drag to scrub the cursor; dragging pauses playback */}
+            <div className="flex items-center gap-1 mb-1">
+              <button type="button" aria-label="Back 1 second" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.max(0, cursor - 1)); }}>-1S</button>
+              <input
+                type="range"
+                min={0}
+                max={dur || 0}
+                step={dur > 600 ? 0.5 : 0.1}
+                value={Math.min(cursor, dur || 0)}
+                onChange={(e) => { setPlaying(false); seek(Number(e.target.value)); }}
+                aria-label="Time"
+                aria-valuetext={fmtElapsed(cursor, 0.1)}
+                className="flex-1 min-w-0 h-8 cursor-pointer accent-[var(--nes-green)]"
+              />
+              <button type="button" aria-label="Forward 1 second" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.min(dur, cursor + 1)); }}>+1S</button>
+            </div>
             <div className="flex flex-wrap items-center gap-1 mb-1">
               {[['−', () => zoom(2), 'Zoom out'], ['+', () => zoom(0.5), 'Zoom in'], ['◀', () => pan(-0.5), 'Pan left'], ['▶', () => pan(0.5), 'Pan right']].map(([l, f, a]) => (
                 <button key={a} type="button" aria-label={a} className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] w-8 sm:w-9 min-h-[30px] text-xs" onClick={f}>{l}</button>
