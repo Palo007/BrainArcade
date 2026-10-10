@@ -62,7 +62,7 @@ if (!fs.existsSync(path.join(DIST, 'index.html'))) {
 server.listen(PORT, '127.0.0.1', () => {
   log('server', 'start', { url: `http://localhost:${PORT}` });
   console.log(`  Log:   ${log.file()}`);
-  console.log(`\n  PC:    http://localhost:${PORT}\n  Phone: http://localhost:${PORT}/?mobile=1  (via adb reverse)\n`);
+  console.log(`\n  PC:    http://localhost:${PORT}\n  Phone: http://localhost:${PORT}  (via adb reverse)\n`);
 });
 
 // ---------- adb supervisor ----------

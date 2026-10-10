@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { MuseProvider } from './contexts/MuseContext';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
@@ -19,7 +19,6 @@ import { games } from './games/games.config';
 import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
 import { LostBrainModal } from './components/LostBrainModal.jsx';
-import { MobileBlock } from './components/MobileBlock.jsx';
 import { GameTimelineCollector } from './components/GameTimelineCollector.jsx';
 
 /**
@@ -74,47 +73,6 @@ function GamePage() {
  * App - Main application component with routing
  */
 function App() {
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return window.innerWidth >= 1024; // desktop threshold
-  });
-
-  useEffect(() => {
-    const onResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  // `?mobile=1` lets phones in (Athena pairing works on Android Chrome); remembered per browser
-  // Installed app / Android TWA (Bubblewrap) is let in automatically
-  const isInstalledApp = (() => {
-    try {
-      return (
-        document.referrer.startsWith('android-app://') ||
-        window.matchMedia('(display-mode: fullscreen)').matches ||
-        window.matchMedia('(display-mode: standalone)').matches
-      );
-    } catch {
-      return false;
-    }
-  })();
-  const allowMobile = isInstalledApp || (() => {
-    try {
-      if (new URLSearchParams(window.location.search).get('mobile') === '1') {
-        localStorage.setItem('allowMobile', '1');
-      }
-      return localStorage.getItem('allowMobile') === '1';
-    } catch {
-      return new URLSearchParams(window.location.search).get('mobile') === '1';
-    }
-  })();
-
-  if (!isDesktop && !allowMobile) {
-    return <MobileBlock />;
-  }
-
   return (
     <MuseProvider>
       <ProcessingProvider>
