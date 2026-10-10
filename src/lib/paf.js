@@ -72,6 +72,14 @@ export function fftRadix2(re, im) {
   }
 }
 
+export function quantile(values, q) {
+  const v = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!v.length) return NaN;
+  const pos = (v.length - 1) * q;
+  const i = Math.floor(pos);
+  return i + 1 < v.length ? v[i] + (pos - i) * (v[i + 1] - v[i]) : v[i];
+}
+
 export function median(values) {
   const v = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!v.length) return NaN;
@@ -225,7 +233,7 @@ export function channelPaf(signal, fs = PAF_FS, opts = {}) {
     const pk = findPeak(spec.freqs, resid, lo, hi, spec.df);
     if (pk && pk.prominence >= MIN_WINDOW_PROMINENCE) peaks.push(pk.freq);
   }
-  return { spec, peaks, nWindows: spec.spectra.length, meanPeak };
+  return { spec, peaks, nWindows: spec.spectra.length, meanPeak, meanResid };
 }
 
 // Robust PAF from the eyes-closed (or any resting) recording.
@@ -235,6 +243,7 @@ export function computePaf(channelsIn, fs = PAF_FS, opts = {}) {
   const per = {};
   for (const name of PAF_CHANNELS) per[name] = channels[name] ? channelPaf(channels[name], fs, opts) : null;
 
+  const [lo0, hi0] = opts.search || PAF_SEARCH;
   const attempt = (names, source) => {
     const peaks = [];
     let nWindows = 0;
@@ -255,13 +264,56 @@ export function computePaf(channelsIn, fs = PAF_FS, opts = {}) {
     const prominence = promin.length ? promin.reduce((a, b) => a + b, 0) / promin.length : 0;
     if (confidence < 0.45 || prominence < MIN_MEAN_PROMINENCE) return null;
     // Refine with the interior-peak median of agreeing windows only
-    const refined = median(peaks.filter((f) => Math.abs(f - paf) <= 0.75));
-    return { found: true, paf: refined, confidence, prominenceDb: prominence * 10, source, channelPaf: chPaf, nWindows };
+    const agree = peaks.filter((f) => Math.abs(f - paf) <= 0.75);
+    const refined = median(agree);
+    const resid = meanResidual(names.map((nm) => per[nm]).filter(Boolean));
+    return {
+      found: true, paf: refined, confidence, prominenceDb: prominence * 10, source, channelPaf: chPaf, nWindows,
+      pafLo: quantile(agree, 0.25), pafHi: quantile(agree, 0.75), // spread of the window peaks (IQR)
+      cog: resid ? alphaCog(resid, refined, [lo0, hi0]) : null,
+      spectrum: resid ? compactSpectrum(resid) : null,
+    };
   };
 
   return attempt(POSTERIOR, 'posterior')
     || attempt(PAF_CHANNELS, 'all')
     || { found: false, paf: null, confidence: 0, prominenceDb: 0, source: null, channelPaf: {}, nWindows: per.TP9?.nWindows || per.AF7?.nWindows || 0 };
+}
+
+// Average 1/f-removed residual (log10) of several channels; all share one frequency grid.
+function meanResidual(results) {
+  if (!results.length) return null;
+  const { freqs } = results[0].spec;
+  const resid = new Float64Array(freqs.length);
+  for (const r of results) for (let k = 0; k < freqs.length; k++) resid[k] += r.meanResid[k] / results.length;
+  return { freqs, resid };
+}
+
+// Centre of gravity (Klimesch 1999; Corcoran et al. 2018) of the periodic alpha power above the 1/f fit,
+// within PAF +-2.5 Hz. A second estimate that stays stable when the peak is broad or split.
+export function alphaCog({ freqs, resid }, paf, [lo, hi] = PAF_SEARCH) {
+  const a = Math.max(lo, paf - 2.5), b = Math.min(hi, paf + 2.5);
+  let sw = 0, swf = 0;
+  for (let k = 0; k < freqs.length; k++) {
+    if (freqs[k] < a || freqs[k] > b) continue;
+    const w = Math.max(0, 10 ** resid[k] - 1); // power ratio above 1/f, periodic part only
+    sw += w; swf += w * freqs[k];
+  }
+  return sw > 0 ? swf / sw : null;
+}
+
+// Residual spectrum in dB above 1/f on a fixed grid (SPEC_GRID), rounded, small enough for localStorage.
+export const SPEC_GRID = { from: 3, to: 20, step: 0.25 };
+export function compactSpectrum({ freqs, resid }) {
+  const out = [];
+  for (let f = SPEC_GRID.from; f <= SPEC_GRID.to + 1e-9; f += SPEC_GRID.step) {
+    let k = 1;
+    while (k < freqs.length - 1 && freqs[k] < f) k++;
+    const t = (f - freqs[k - 1]) / (freqs[k] - freqs[k - 1]);
+    const v = resid[k - 1] + Math.max(0, Math.min(1, t)) * (resid[k] - resid[k - 1]);
+    out.push(Math.round(v * 100) / 10); // log10 -> dB, 0.1 dB
+  }
+  return out;
 }
 
 // Mean linear power in [lo, hi] Hz of the averaged spectra of the given channels (posterior by default).
@@ -341,4 +393,51 @@ export function saveCalibration(obj) {
   const store = readPafStore();
   store.byChild[childId] = { ...obj, childId, date: obj?.date || new Date().toISOString() };
   try { localStorage.setItem(PAF_STORE_KEY, JSON.stringify(store)); } catch { /* storage unavailable */ }
+}
+
+// History of every real full calibration per child, for the trend report.
+// localStorage "brainarcade.pafHistory" = {byChild: {[childId]: [{date, paf, pafLo, pafHi, cog, confidence,
+// prominenceDb, alphaReactivity, source, nWindows, spectrum?}]}} oldest first, at most PAF_HISTORY_MAX per child.
+export const PAF_HISTORY_KEY = 'brainarcade.pafHistory';
+export const PAF_HISTORY_MAX = 60;
+function readHistoryStore() {
+  try {
+    const o = JSON.parse(localStorage.getItem(PAF_HISTORY_KEY) || 'null');
+    return o && o.byChild && typeof o.byChild === 'object' ? o : { byChild: {} };
+  } catch { return { byChild: {} }; }
+}
+export function loadPafHistory(childId = getActiveProfileId()) {
+  const list = readHistoryStore().byChild[childId];
+  if (Array.isArray(list) && list.length) return list;
+  // Seed from the last saved calibration so children calibrated before the history existed get one point.
+  const c = readPafStore().byChild[childId];
+  return c && Number.isFinite(c.paf) ? [{ date: c.date, paf: c.paf, alphaReactivity: c.alphaReactivity ?? null }] : [];
+}
+export function appendPafHistory(entry) {
+  const childId = getActiveProfileId();
+  const store = readHistoryStore();
+  const list = (store.byChild[childId] || []).concat({ ...entry, date: entry?.date || new Date().toISOString() });
+  store.byChild[childId] = list.slice(-PAF_HISTORY_MAX);
+  try { localStorage.setItem(PAF_HISTORY_KEY, JSON.stringify(store)); } catch { /* storage unavailable */ }
+}
+
+// Day-to-day PAF varies by about +-0.3 Hz in the same person; changes below this are treated as "stable".
+export const PAF_STABLE_HZ = 0.5;
+// Trend of a history list: change first->latest, typical session-to-session jitter, slope (Hz per 30 days).
+export function pafTrend(list) {
+  const pts = (list || []).filter((e) => Number.isFinite(e.paf) && !Number.isNaN(Date.parse(e.date)));
+  if (!pts.length) return null;
+  const first = pts[0], last = pts[pts.length - 1];
+  const jumps = pts.slice(1).map((e, i) => Math.abs(e.paf - pts[i].paf));
+  const t0 = Date.parse(first.date);
+  const days = (Date.parse(last.date) - t0) / 864e5;
+  const fit = pts.length >= 3 && days >= 14 ? linFit(pts.map((e) => (Date.parse(e.date) - t0) / 864e5), pts.map((e) => e.paf)) : null;
+  const change = last.paf - first.paf;
+  return {
+    n: pts.length, first, last, days, change,
+    mean: pts.reduce((a, e) => a + e.paf, 0) / pts.length,
+    jitter: jumps.length ? median(jumps) : null,
+    slopePerMonth: fit ? fit.b * 30 : null,
+    stable: Math.abs(change) < PAF_STABLE_HZ,
+  };
 }

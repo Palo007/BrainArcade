@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useEEG } from './MuseContext.jsx';
 import { useProcessing } from './ProcessingContext.jsx';
 import { useQuality } from './QualityContext.jsx';
-import { calibrate, computePaf, personalBands, loadCalibration, saveCalibration } from '../lib/paf.js';
+import { calibrate, computePaf, personalBands, loadCalibration, saveCalibration, appendPafHistory } from '../lib/paf.js';
 import { PROFILE_CHANGED_EVENT } from '../lib/profiles.js';
 import { setActiveCalibration, setDemoMode } from '../lib/sessionStore.js';
 import { playChime, primeAudio } from '../lib/chime.js';
@@ -204,6 +204,11 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
                 device: deviceKey,
               };
               saveCalibration(saved);
+              appendPafHistory({
+                date: cal.date, paf: cal.paf, pafLo: cal.pafLo, pafHi: cal.pafHi, cog: cal.cog,
+                confidence: cal.confidence, prominenceDb: cal.prominenceDb, alphaReactivity: cal.reactivity,
+                source: cal.source, nWindows: cal.nWindows, spectrum: cal.spectrum, device: deviceKey,
+              });
               setSavedCalibration(saved); // offer QUICK for the next game in this session
             }
           } else if (savedCalibration) {
