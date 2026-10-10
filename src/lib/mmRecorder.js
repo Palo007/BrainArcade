@@ -11,7 +11,8 @@
 //                   100 ms. Empty until the first full window (1 s). Same maths as Mind Monitor,
 //                   NOT BiomarkerContext (which is relative/smoothed).
 //   RAW_*           µV, whatever the app feeds the EEG pipeline (Athena: 1 Hz high-pass + 50 Hz notch).
-//   Optics1..8      samples[N-1] of the optics stream (p1034), Optics9..16 empty.
+//   Optics1..8      the optics stream (p1034), every sample once: bursts are queued, one per row,
+//                   then held. Optics9..16 empty.
 //   Accelerometer / Gyro  from the Athena acc/gyro stream when present, else empty.
 //   HSI_*           1 good / 4 bad (the app has no "medium" level). HeadBandOn 1/0.
 //   Battery         percent as reported by the headband.
@@ -44,6 +45,7 @@ export const BANDS = [
 const WIN = 256;
 const BAND_EVERY = 26; // samples between band updates (~9.8 Hz)
 const CHUNK_ROWS = 512; // ~2 s of data per sink write
+const OPT_QUEUE_MAX = 128; // ~2 s of optics at 64 Hz
 const GAP_RESYNC_MS = 500; // wall clock persistently ahead of the sample clock by more than this -> jump (data really lost)
 const GAP_WINDOW_ROWS = 128; // offset must stay above GAP_RESYNC_MS for this many rows to count as lost samples
 const SLEW_MAX_MS = 1; // max clock correction per row (both directions)
@@ -139,6 +141,7 @@ export class MMRecorder {
     this.ring = Array.from({ length: 4 }, () => new Float64Array(WIN));
     this.bandStr = emptyCells(20);
     this.optStr = emptyCells(16);
+    this.optQ = []; // optics rows not yet written (see setOptics)
     this.accStr = emptyCells(3);
     this.gyroStr = emptyCells(3);
     this.hsiStr = '1,1,1,1';
@@ -187,8 +190,9 @@ export class MMRecorder {
       this.sinceBand = 0;
       this._updateBands();
     }
+    if (this.optQ.length) this.optStr = this.optQ.shift(); // next queued optics sample, else hold the last
     const head = formatTimestamp(t);
-    const tail = `${num(s[0], 3)},${num(s[1], 3)},${num(s[2], 3)},${num(s[3], 3)},` +
+    const tail =`${num(s[0], 3)},${num(s[1], 3)},${num(s[2], 3)},${num(s[3], 3)},` +
       `,,,,,,${this.accStr},${this.gyroStr},${this.optStr},,${this.headOn},${this.hsiStr},${this.battStr}`; // 60 fields: no Elements cell, like Mind Monitor
     if (this.nSamples < WIN) {
       // No band powers yet. The Chart.php viewer reads a row with an empty Delta_TP9 as an event row,
@@ -224,7 +228,10 @@ export class MMRecorder {
     if (!v) return;
     const cells = [];
     for (let i = 0; i < 16; i++) cells.push(i < 8 && i < v.length ? num(v[i], 4) : '');
-    this.optStr = cells.join(',');
+    // Optics arrive in BLE bursts (~4 samples at once, 64 Hz). Queue them and let each EEG row take
+    // one, so no sample is overwritten before a row is written (was ~15 of 64 samples/s kept).
+    this.optQ.push(cells.join(','));
+    if (this.optQ.length > OPT_QUEUE_MAX) this.optQ.shift(); // EEG stalled: keep the newest
   }
 
   /** acc in g, gyro in deg/s, each {x,y,z} (either may be missing) */
