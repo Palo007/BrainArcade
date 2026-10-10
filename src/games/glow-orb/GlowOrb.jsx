@@ -4,6 +4,7 @@
 // Think hard → more fresh-oxygen blood in the forehead → the orb flies up.
 import React, { useEffect, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
+import { driftFloor } from '../../lib/fnirs.js';
 import { recordSession } from '../../lib/sessionStore.js';
 import { GameEndActions } from '../../components/GameEndActions.jsx';
 import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
@@ -251,7 +252,7 @@ export function GlowOrb() {
     if (phase !== 'calibrate' || !data) return;
     if (!data.baselineReady) sawResetRef.current = true;
     else if (sawResetRef.current) {
-      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0, roundS: minutes * 60, cue };
+      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0, roundS: minutes * 60, cue, drift: driftFloor() };
       audioRef.current?.chime(mutedRef.current, 0);
       setPhase('play');
     }
@@ -290,7 +291,7 @@ export function GlowOrb() {
       const d = dataRef.current;
       const q = [d?.left?.quality, d?.right?.quality];
       s.paused = q.some((x) => x === 'motion' || x === 'no-light' || x === 'saturated');
-      const oxy = d?.oxy ?? 0;
+      const oxy = s.drift(Number.isFinite(d?.oxy) ? d.oxy : 0, dt, s.paused);
       if (!s.paused) {
         // Grows with strong upswings (top stays reachable); relaxes back to the start range over ~30 s,
         // so one odd spike cannot make the round unwinnable
@@ -450,17 +451,20 @@ export function GlowOrb() {
         </GameStartPanel>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
-        {phase === 'calibrate' && (
+      {/* Calibration panel sits low so it does not cover the orb in the middle. */}
+      {phase === 'calibrate' && (
+        <div className="absolute inset-x-0 bottom-20 flex justify-center px-4 pointer-events-none">
           <div className={panel}>
             <p className="text-[10px] mb-3">Relax and breathe slowly…</p>
-            <div className="h-3 w-64 mx-auto border-2 border-[var(--nes-yellow)]">
+            <div className="h-3 w-64 max-w-full mx-auto border-2 border-[var(--nes-yellow)]">
               <div className="h-full bg-[var(--nes-yellow)]" style={{ width: `${Math.round((data?.baselineProgress || 0) * 100)}%` }} />
             </div>
             {!data?.available && <p className="text-[8px] text-gray-400 mt-3">Waiting for light sensors…</p>}
           </div>
-        )}
+        </div>
+      )}
 
+      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
         {phase === 'done' && (
           <div className={`${panel} pointer-events-auto max-h-full overflow-y-auto`}>
             <p className="text-sm text-[var(--nes-yellow)] mb-3">{['NICE TRY!', 'GOOD JOB!', 'GREAT!', 'AMAZING!'][stars]}</p>

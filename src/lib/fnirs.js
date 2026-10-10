@@ -219,3 +219,18 @@ export function startMockOptics(processor) {
   }, 100);
   return () => clearInterval(id);
 }
+
+// Slow-drift removal for the games. The 30 s calibration baseline is fixed, but the light signal
+// drifts over minutes (headband settles, skin warms), which can hold the index below zero for a
+// whole round so the ball never leaves the floor. This floor follows drops fast and rises slowly:
+// a drift down is forgiven in ~10 s, but a real rise (task response, ~5-30 s) still shows.
+const DRIFT_DOWN_S = 8;
+const DRIFT_UP_S = 90;
+export function driftFloor() {
+  let base = null;
+  return (x, dt, frozen = false) => {
+    if (base === null) base = x;
+    else if (!frozen) base += (x - base) * (1 - Math.exp(-dt / (x < base ? DRIFT_DOWN_S : DRIFT_UP_S)));
+    return x - base;
+  };
+}

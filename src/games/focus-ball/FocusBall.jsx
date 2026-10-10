@@ -3,6 +3,7 @@
 // Ball height follows the forehead oxygenation index (dHbO - dHbR) from the Muse S Athena.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
+import { driftFloor } from '../../lib/fnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
 import { recordSession, loadSessions, isCheckInDue, sessionsForChild } from '../../lib/sessionStore.js';
 import { useProfiles } from '../../contexts/ProfileContext.jsx';
@@ -482,6 +483,7 @@ export function FocusBall() {
         ballY: REST, scale: START_SCALE, points: 0, streakSec: 0, mult: 1, elapsed: 0, durationSec,
         above: false, paused: false, done: false, samples: [], sampleAcc: 0, chimeStep: 0, ptsAcc: 0,
         worldX: 0, hist: [{ x: -2000, y: REST }, { x: 0, y: REST }], stars: [], aboveSec: 0, starAcc: 1.5, goalSec: 0, activity: 0,
+        drift: driftFloor(),
       };
       setHud({ points: 0, timeLeft: durationSec, mult: 1, paused: false, progress: 0, activity: 0, goalSec: 0, hint: 'still' });
       setCount(3);
@@ -589,7 +591,7 @@ export function FocusBall() {
       const lost = !d || !d.available || !d.baselineReady || q.includes('no-light');
       s.paused = lost || q.some((x) => x === 'motion' || x === 'saturated');
       s.hint = lost ? 'headband' : 'still';
-      const oxy = Number.isFinite(d?.oxy) ? d.oxy : 0;
+      const oxy = s.drift(Number.isFinite(d?.oxy) ? d.oxy : 0, dt, s.paused);
       if (!s.paused) s.scale = Math.max(s.scale, oxy * 0.9); // grows on upswings only, never shrinks
       const target = s.paused ? s.ballY : clamp(REST + 0.7 * (oxy / s.scale), 0.03, 0.97);
       s.ballY = lerp(s.ballY, target, 1 - Math.exp(-dt * 1.2)); // ~1 s easing
