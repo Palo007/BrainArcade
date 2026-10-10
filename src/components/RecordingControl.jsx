@@ -75,29 +75,39 @@ export function RecordingControl() {
       </div>
     );
   }
-  const collapsed = !expanded && !error; // only takes effect under compact: (see classes below)
+  const collapsed = !expanded && !error;
+  // Start screen on a portrait phone: big box with checkbox + explanation (collapses only on landscape phones).
+  // Other pages: collapses to a small REC button on any phone (compact:), so it never covers the game list.
+  const onStart = pathname === '/';
+  const v = onStart
+    ? { box: 'short-land:p-0 short-land:border-0 short-land:bg-transparent', btn: 'hidden short-land:inline-block', hide: 'short-land:hidden' }
+    : { box: 'compact:p-0 compact:border-0 compact:bg-transparent', btn: 'hidden compact:inline-block', hide: 'compact:hidden' };
+  const boxBase = armed ? box.replace('border-white', 'border-red-500') : box;
+  const idleBox = onStart ? `${boxBase} phone-port:left-3 phone-port:right-3 phone-port:max-w-none phone-port:p-3 phone-port:border-4 phone-port:text-[11px] phone-port:z-[600]` : boxBase;
   return (
-    <div className={collapsed ? `${box} compact:p-0 compact:border-0 compact:bg-transparent` : box} style={font}>
+    <div className={collapsed ? `${idleBox} ${v.box}` : idleBox} style={font}>
       {collapsed && (
         <button
           type="button"
-          className="hidden compact:inline-block border-2 border-white bg-black/80 px-2 py-1 text-[7px] phone-port:text-[9px] phone-port:min-h-[40px]"
+          className={`${v.btn} border-2 border-white bg-black/80 px-2 py-1 text-[7px] phone-port:text-[9px] phone-port:min-h-[40px]`}
           aria-expanded="false"
           onClick={() => setExpanded(true)}
         >
           <span className={armed ? 'text-red-500' : 'text-white/60'} aria-hidden="true">●</span> REC{armed ? ' ARMED' : ''}
         </button>
       )}
-      <div className={collapsed ? 'compact:hidden' : ''}>
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" checked={armed} onChange={(e) => setArmed(e.target.checked)} />
-        <span>RECORD THIS SESSION</span>
+      <div className={collapsed ? v.hide : ''}>
+      <label className={`flex items-center gap-2 cursor-pointer ${onStart ? 'phone-port:min-h-[40px] phone-port:gap-3' : ''}`}>
+        <input type="checkbox" className={`accent-red-600 shrink-0 ${onStart ? 'phone-port:w-6 phone-port:h-6' : ''}`} checked={armed} onChange={(e) => setArmed(e.target.checked)} />
+        <span><span className={`inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle ${armed ? 'bg-red-500 animate-pulse' : 'bg-white/40'}`} aria-hidden="true" />RECORD THIS SESSION{armed ? ' — ON' : ''}</span>
         {expanded && (
-          <button type="button" className="hidden compact:inline-block ml-1 border border-white px-1" aria-label="Collapse" onClick={() => setExpanded(false)}>X</button>
+          <button type="button" className={`${v.btn} ml-1 border border-white px-1`} aria-label="Collapse" onClick={() => setExpanded(false)}>X</button>
         )}
       </label>
-      <div className="opacity-60 mt-1 compact:hidden">
-        {armed ? 'Starts when the headband is connected. Saved only on this device.' : 'Off. Saves a CSV on this device only.'}
+      <div className={`opacity-60 mt-1 ${v.hide} ${onStart ? 'phone-port:opacity-100 phone-port:text-[14px] phone-port:leading-snug phone-port:font-sans phone-port:mt-2' : ''}`}>
+        {armed
+          ? 'Records when the headband connects. File stays on this device.'
+          : 'Tick to save the brain data as a file on this device.'}
       </div>
       {error && <div className="mt-1 text-red-400">{error}</div>}
       </div>

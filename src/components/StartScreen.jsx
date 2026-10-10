@@ -96,13 +96,8 @@ export function StartScreen() {
 
   return (
     <div
-      className="absolute inset-0 overflow-hidden"
-      style={{
-        backgroundImage: `url(${background})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
+      className="absolute inset-0 overflow-hidden bg-[#111] bg-cover bg-center bg-no-repeat phone-port:[--start-bg:none]"
+      style={{ backgroundImage: `var(--start-bg, url(${background}))` }}
     >
       {/* VHS Effects */}
       <div className="scanlines-vhs"></div>
@@ -144,7 +139,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Right - About + GitHub + Privacy */}
-        <div className="absolute right-20 bottom-20 short-land:right-4 short-land:bottom-3 phone-port:left-4 phone-port:right-4 phone-port:bottom-12 phone-port:flex-row phone-port:justify-between phone-port:items-center phone-port:space-y-0 flex flex-col items-end space-y-2 short-land:space-y-1">
+        <div className="absolute right-20 bottom-20 short-land:right-4 short-land:bottom-3 phone-port:left-4 phone-port:right-4 phone-port:bottom-[136px] phone-port:flex-row phone-port:justify-between phone-port:items-center phone-port:space-y-0 flex flex-col items-end space-y-2 short-land:space-y-1">
           <button
             onClick={() => navigate('/about')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
@@ -174,13 +169,13 @@ export function StartScreen() {
         </div>
 
         {/* Center - Main UI */}
-        <div className="absolute left-20 top-50 short-land:left-4 short-land:top-14 phone-port:left-4 phone-port:right-4 phone-port:top-24 phone-port:bottom-24 phone-port:overflow-y-auto">
+        <div className="absolute left-20 top-50 short-land:left-4 short-land:top-14 phone-port:left-4 phone-port:right-4 phone-port:top-24 phone-port:bottom-[180px] phone-port:overflow-y-auto phone-port:flex phone-port:flex-col phone-port:z-[600]">
           {!isConnected ? (
             <>
               {/* Subtitle */}
               <div className="mb-12-center">
                 <p
-                  className="text-xl short-land:text-[10px] phone-port:text-[10px] text-white rgb-text uppercase"
+                  className="text-xl short-land:text-[10px] phone-port:text-[11px] phone-port:leading-relaxed phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   Use your thoughts as a joystick
@@ -195,7 +190,7 @@ export function StartScreen() {
               {/* Instructions */}
               <div className="mt-8 short-land:mt-2 phone-port:mt-3">
                 <p
-                  className="text-md short-land:text-[8px] phone-port:text-[9px] text-white opacity-60"
+                  className="text-md short-land:text-[8px] phone-port:text-[10px] phone-port:opacity-90 phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
                   CONNECT YOUR MUSE DEVICE 
@@ -249,6 +244,16 @@ export function StartScreen() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Portrait phones: the background art shrinks into the free space below the buttons */}
+          {(!isConnected || hasEnteredStartPhase) && (
+            <img
+              src={background}
+              alt=""
+              aria-hidden="true"
+              className="hidden phone-port:block flex-1 min-h-[96px] w-full object-contain mt-3"
+            />
           )}
         </div>
       </div>

@@ -85,7 +85,7 @@ export function MuseConnector({ onConnected }) {
         <button
           onClick={() => handleConnect({ athena: true, preset: 'p1034' })}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[10px] phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[44px]"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (ATHENA)'}
@@ -94,7 +94,7 @@ export function MuseConnector({ onConnected }) {
         <button
           onClick={() => handleConnect()}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[10px] phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[44px]"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (CLASSIC)'}
@@ -104,7 +104,7 @@ export function MuseConnector({ onConnected }) {
           <button
             onClick={() => handleConnect({ relay: true })}
             disabled={isConnecting}
-            className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[10px] phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[44px]"
+            className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             {isConnecting ? 'WAITING FOR PHONE…' : 'CONNECT VIA PHONE'}
@@ -114,7 +114,7 @@ export function MuseConnector({ onConnected }) {
         <button
           onClick={handleMockConnect}
           disabled={isConnecting}
-          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[10px] phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[44px]"
+          className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
           style={{ fontFamily: "'Press Start 2P', cursive" }}
         >
           {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT A DEVICE'}

@@ -16,7 +16,7 @@ Thought-controlled minigames in your browser. This fork adds full support for th
 | **fNIRS games** | **Glow Orb** and **Focus Ball**: think hard and the orb flies or the ball stays up. Mendi-style, with a session report. | <img src="./docs/screenshots/07-glow-orb.png" width="200" alt="Glow Orb"> |
 | **Training Journal** | Score over time, day streak and check-ins, per child. | <img src="./docs/screenshots/06-journal.png" width="200" alt="Training Journal"> |
 | **Two-phase calibration** | Peak Alpha Frequency from eyes closed, then eyes open. Personal frequency bands for each child. | <img src="./docs/screenshots/04-calibration.png" width="200" alt="Calibration"> |
-| **Session recording** | Opt-in, on-device, crash-safe CSV. Mind Monitor compatible, with Athena optics. Opens in [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php). | <img src="./docs/screenshots/05-recording.png" width="200" alt="Recording"> |
+| **Session recording** | Opt-in, on-device, crash-safe CSV. Mind Monitor compatible, with Athena optics. Opens in [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php). See [where the file goes](#session-recordings-where-the-file-goes). | <img src="./docs/screenshots/05-recording.png" width="200" alt="Recording"> |
 | **Child profiles and history** | One profile per child. Session history, trends, CSV export and import. | [Journal](./docs/screenshots/06-journal.png) |
 | **Parent report** | Band timeline, topomap and a plain-language summary. Print or save as PDF. | (in game over screen) |
 | **Phone first** | Installable PWA. Fullscreen, rotation, portrait and landscape layouts. No desktop-only block. | <img src="./docs/screenshots/02-start-phone.png" width="100" alt="Phone"> |
@@ -41,6 +41,51 @@ Run it locally: `npm install`, then `npm run dev`.
 Open the site in Chrome. Tap the menu (three dots), then **Install app**. This makes a WebAPK with a home-screen icon and fullscreen mode.
 
 Why not a Trusted Web Activity (Bubblewrap)? We built one. It works, but Chrome disables Web Bluetooth inside TWAs ("Web Bluetooth API globally disabled"). The headset cannot connect there. So the Chrome install is the recommended way.
+
+## Session recordings: where the file goes
+
+Recording is **off** by default. To turn it on, tick **RECORD THIS SESSION** on the start screen before you connect the headset.
+
+### How it works
+
+1. **While you record**, the data goes into a private storage area inside the browser (the Origin Private File System). Only Brain Arcade can open it. You cannot see it in a file manager. Nothing is uploaded. The file is written to disk every 20 seconds, so a crash or a closed tab loses 20 seconds at most.
+2. **Recording stops** when you tap **STOP** or when the headset disconnects.
+3. A box opens: **RECORDING SAVED ON THIS DEVICE**. It has three buttons:
+   - **SAVE FILE** copies the CSV to your normal downloads folder.
+   - **SHARE** opens the system share menu (phones only), for example to send the file to e-mail or Google Drive.
+   - **DELETE** removes the private copy.
+
+**Important:** after you tap SAVE FILE (or SHARE), tap **DELETE** too. Otherwise the private copy stays in the browser and uses storage. The saved file in your downloads folder is not changed.
+
+### Where SAVE FILE puts the file
+
+| Device | Browser | Folder |
+|---|---|---|
+| Android phone | Chrome or the installed app | `Internal storage/Download`. Open the **Files** app, then **Downloads**. |
+| Windows PC | Chrome or Edge | `C:\Users\<your name>\Downloads` |
+| Mac | Chrome or Edge | `~/Downloads` (Finder, then **Downloads**) |
+| Linux | Chrome | `~/Downloads` |
+
+If you changed the browser's download folder, or if the browser asks where to save, the file goes there.
+
+The headset needs Web Bluetooth. Safari (Mac) and all browsers on iPhone/iPad do not have it. Use Chrome or Edge.
+
+### File name and format
+
+`mindMonitor_YYYY-MM-DD--HH-MM-SS_brainarcade.csv`, for example `mindMonitor_2026-10-10--10-21-02_brainarcade.csv`.
+
+The file is one CSV in the [Mind Monitor](https://mind-monitor.com/) format. You can open it at [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php), in a spreadsheet, or in Python. Athena fNIRS (optics) data is in the columns `Optics1` to `Optics16`. Game start and end are marked as `/Marker/1` and `/Marker/2`.
+
+### If you forget to save
+
+The next time you open Brain Arcade, a box asks **RECOVER LAST RECORDING?**. Tap **SAVE FILE** to get the file, **DELETE** to remove it, or **LATER** to ask again next time.
+
+The private copy is lost if you uninstall the app or clear the site data for Brain Arcade. Save the file first.
+
+### Limits
+
+- Recording stops when the device storage is almost full. The file is kept up to that point.
+- If the browser has no private file storage, the recording is kept in memory and stops after 30 minutes.
 
 ## Privacy
 
