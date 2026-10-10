@@ -1,3 +1,61 @@
+# Brain Arcade — Athena edition (this fork)
+
+<p align="center">
+  <img src="./docs/screenshots/01-start-desktop.png" alt="Brain Arcade start screen" width="640">
+</p>
+
+Thought-controlled minigames in your browser. This fork adds full support for the **Muse S Athena (Gen 3)**, including its fNIRS light sensors. It also adds calm, Mendi-style training games, personal brainwave calibration, child profiles with a training journal, and a parent report. It works on a phone. Everything stays on your device.
+
+**Try it now:** https://palo007.github.io/BrainArcade/
+
+## What this fork adds
+
+| Feature | What it does | Screenshot |
+|---|---|---|
+| **Muse S Athena over Web Bluetooth** | Connects the Athena (EEG, motion and fNIRS HbO/HbR) straight from Chrome. Reconnects by itself if the link drops. A phone relay is also available. | [Start screen](./docs/screenshots/01-start-desktop.png) |
+| **fNIRS games** | **Glow Orb** and **Focus Ball**: think hard and the orb flies or the ball stays up. Mendi-style, with a session report. | <img src="./docs/screenshots/07-glow-orb.png" width="200" alt="Glow Orb"> |
+| **Training Journal** | Score over time, day streak and check-ins, per child. | <img src="./docs/screenshots/06-journal.png" width="200" alt="Training Journal"> |
+| **Two-phase calibration** | Peak Alpha Frequency from eyes closed, then eyes open. Personal frequency bands for each child. | <img src="./docs/screenshots/04-calibration.png" width="200" alt="Calibration"> |
+| **Session recording** | Opt-in, on-device, crash-safe CSV. Mind Monitor compatible, with Athena optics. Opens in [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php). | <img src="./docs/screenshots/05-recording.png" width="200" alt="Recording"> |
+| **Child profiles and history** | One profile per child. Session history, trends, CSV export and import. | [Journal](./docs/screenshots/06-journal.png) |
+| **Parent report** | Band timeline, topomap and a plain-language summary. Print or save as PDF. | (in game over screen) |
+| **Phone first** | Installable PWA. Fullscreen, rotation, portrait and landscape layouts. No desktop-only block. | <img src="./docs/screenshots/02-start-phone.png" width="100" alt="Phone"> |
+
+### Gallery
+
+| | |
+|---|---|
+| <img src="./docs/screenshots/03-games.png" alt="Game list with Glow Orb, Focus Ball and Training Journal"><br>Game list | <img src="./docs/screenshots/07-glow-orb.png" alt="Glow Orb in action"><br>Glow Orb in action |
+| <img src="./docs/screenshots/04-calibration.png" alt="Calibration step 1 of 2"><br>Calibration, step 1 of 2 | <img src="./docs/screenshots/02-start-phone.png" alt="Phone portrait" width="200"><br>Phone portrait |
+
+## Try it
+
+1. Open https://palo007.github.io/BrainArcade/ in Chrome (Android or desktop).
+2. With a headset: tap **CONNECT MUSE (ATHENA)**.
+3. No headset: tap **EXPLORE WITHOUT A DEVICE**, then **USE SIMULATED REAL-TIME DATA**.
+
+Run it locally: `npm install`, then `npm run dev`.
+
+## Install on Android
+
+Open the site in Chrome. Tap the menu (three dots), then **Install app**. This makes a WebAPK with a home-screen icon and fullscreen mode.
+
+Why not a Trusted Web Activity (Bubblewrap)? We built one. It works, but Chrome disables Web Bluetooth inside TWAs ("Web Bluetooth API globally disabled"). The headset cannot connect there. So the Chrome install is the recommended way.
+
+## Privacy
+
+All processing runs in your browser. Brain data, profiles and recordings stay on your device. Nothing is uploaded. Recording is off unless you turn it on. See [PRIVACY.md](./PRIVACY.md).
+
+## Credits and license
+
+Fork of [itayinbarr/brain-arcade](https://github.com/itayinbarr/brain-arcade), licensed **AGPL-3.0**. This fork keeps the same license. Thanks to the original author and contributors. Details of what changed: see the git history.
+
+---
+
+## Original project
+
+The text below is the upstream README, unchanged.
+
 # Brain Arcade 🧠🕹️
 
 <p align="center">
