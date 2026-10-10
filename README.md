@@ -87,6 +87,46 @@ The private copy is lost if you uninstall the app or clear the site data for Bra
 - Recording stops when the device storage is almost full. The file is kept up to that point.
 - If the browser has no private file storage, the recording is kept in memory and stops after 30 minutes.
 
+## Alpha peak: how to measure it and see changes over time
+
+Your **alpha peak** (peak alpha frequency, PAF) is the frequency where your brain makes the most alpha waves
+when you rest with your eyes closed. Adults are usually near 10 Hz, children lower (about 7-9 Hz). The app
+uses it to fit the colour bands to you. It is a personal reference, **not a score and not a medical test**.
+
+### Measure it (about 1 minute)
+
+1. Put on the headband. Wet the sensors a little if contact is poor. Hair must not sit under the sensors.
+2. Connect the headband and start a game. The calibration window opens.
+3. Tap **START** (not QUICK). Only START measures a new alpha peak.
+4. **Step 1:** close your eyes and stay still for 30 s. Do not talk, chew or frown.
+5. A soft chime plays. **Step 2:** open your eyes and look at the cross for 30 s.
+6. The game starts. The result is saved for the active player.
+
+QUICK reuses the last alpha peak and only does the eyes-open part. It does not add a point to the history.
+Demo mode ("EXPLORE WITHOUT A DEVICE") saves nothing.
+
+### See the result
+
+Open **Training Journal** (in the game list) and pick the player. The panel **ALPHA PEAK OVER TIME** shows:
+
+| Part | What it means |
+|---|---|
+| Summary text | Latest peak, and "Stable" or "Changed by ..." since the first calibration |
+| Trend chart | One pink dot per calibration, by date. The pink bar is the spread (where most measurements fell). The cyan ring is a second estimate (centre of gravity). The green band is ±0.5 Hz around the first value: changes inside it are normal day-to-day variation |
+| Alpha spectrum | Alpha power above the background. Pink line = latest, grey dashed = first. A taller, sharper hump = clearer alpha |
+| Alpha reactivity | How much alpha drops when the eyes open. Above the dashed line (1.2x) = good contact. Below = check the headband fit |
+| All calibrations | Table with every value, and **EXPORT CSV** |
+
+### Test plan
+
+1. Do one full calibration (START) today. Check the journal: you see one point and the text "Latest alpha peak".
+2. Do a second full calibration right after. The two values should be within about 0.5 Hz. If not, check the fit.
+3. Repeat on 3 or more different days, at a similar time of day. After 3 points over 14 days or more, the summary also shows a slow trend in Hz per month.
+4. If you see "No clear alpha peak found": sit still, relax the face and jaw, keep the eyes closed for the whole step, and try again.
+
+The history is stored only in this browser on this device (up to 60 calibrations per player).
+Clearing the browser data deletes it. Use EXPORT CSV to keep a copy.
+
 ## Privacy
 
 All processing runs in your browser. Brain data, profiles and recordings stay on your device. Nothing is uploaded. Recording is off unless you turn it on. See [PRIVACY.md](./PRIVACY.md).
