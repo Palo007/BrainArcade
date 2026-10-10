@@ -123,12 +123,12 @@ export function QualityProvider({ children }) {
 
   // Compute quality per channel using time-based rule: in last 1s, too many samples above the spike threshold = bad.
   // Athena: a flat channel is also bad (railed/open input looks flat after the adapter's high-pass).
-  // Per channel: 'good' | 'weak' (some spikes or a nearly flat signal, not yet bad) | 'bad'
+  // Per channel: 'good' | 'weak' (some spikes or a nearly flat signal, not yet bad) | 'bad' | 'none' (no samples in the last second)
   const perChannelLevel = useMemo(() => {
     const t = now;
     const total1s = sampleTimesRef.current.filter((x) => x >= t - SECOND_MS).length;
     return [0, 1, 2, 3].map((ch) => {
-      if (total1s === 0) return 'good';
+      if (total1s === 0) return 'none';
       const above1s = aboveTimesRef.current[ch].filter((x) => x >= t - SECOND_MS).length;
       const ratioAbove = above1s / total1s;
       const haveRms = recentRef.current[ch].length >= RMS_WINDOW / 2;
@@ -138,7 +138,8 @@ export function QualityProvider({ children }) {
       return ratioAbove > maxBadRatio / 3 || nearlyFlat ? 'weak' : 'good';
     });
   }, [now, channelRms, maxBadRatio, flatRmsUv]);
-  const perChannelBad = useMemo(() => perChannelLevel.map((l) => l === 'bad'), [perChannelLevel]);
+  // No data while connected counts as bad (pauses games); while disconnected the disconnect UI takes over
+  const perChannelBad = useMemo(() => perChannelLevel.map((l) => l === 'bad' || (l === 'none' && isConnected)), [perChannelLevel, isConnected]);
 
   // Convenience flags
   const frontalBad = perChannelBad[1] || perChannelBad[2];

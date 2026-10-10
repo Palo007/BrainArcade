@@ -43,6 +43,18 @@ function BlinkDebug() {
   );
 }
 
+// Small hint when the detector is blind (threshold stuck at its cap, usually a clenched jaw)
+function JawHint() {
+  const { debugRef } = useBlink();
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setOn(!!debugRef.current?.saturated), 1000);
+    return () => clearInterval(id);
+  }, [debugRef]);
+  if (!on) return null;
+  return <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>Relax your jaw — blinks can't be seen.</p>;
+}
+
 export function BlinkingContest() {
   // Game state
   const [showWelcome, setShowWelcome] = useState(true);
@@ -213,6 +225,7 @@ export function BlinkingContest() {
             <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>
               Don't blink!
             </p>
+            {gameStarted && <JawHint />}
           </div>
 
           {/* Eyes Container */}

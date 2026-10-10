@@ -24,7 +24,7 @@ export function relativeBands(bandPowers) {
     for (const b of TIMELINE_BANDS) if (fin(bp[b]) && bp[b] > 0) total += bp[b];
     if (!(total > 0)) { alpha.push(null); continue; }
     for (const b of TIMELINE_BANDS) sums[b] += fin(bp[b]) && bp[b] > 0 ? bp[b] / total : 0;
-    alpha.push(fin(bp.alpha) && bp.alpha > 0 ? bp.alpha / total : 0);
+    alpha.push(fin(bp.alpha) && bp.alpha > 0 ? bp.alpha / total : null); // missing alpha is no data, not 0%
     n += 1;
   }
   if (!n) return null;

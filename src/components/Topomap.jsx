@@ -77,7 +77,7 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
             style={{ ...sensor(s), transform: 'translate(-50%, -50%)' }}
           >
             {l}
-            {vals[s] !== null && <span className="block">{pct(vals[s])}</span>}
+            <span className="block">{vals[s] !== null ? pct(vals[s]) : '–'}</span>
           </span>
         ))}
       </div>

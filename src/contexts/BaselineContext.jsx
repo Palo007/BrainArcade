@@ -10,6 +10,12 @@ import { getAutoSkip, setAutoSkip as storeAutoSkip, SKIP_SECONDS } from '../lib/
 
 const BaselineContext = createContext(null);
 
+// Ticks arrive at ~4 Hz. A baseline needs a few seconds of real spectrum, else games would run on zeros.
+const MIN_TICKS_FULL = 20;
+const MIN_TICKS_SKIP = 3;
+const SKIP_WAIT_MAX_S = 10; // SKIP waits this long for the spectrum buffer to fill before giving up
+const hasPower = (bp) => !!bp && Object.values(bp).some((v) => Number.isFinite(v) && v > 0);
+
 export const useBaseline = () => useContext(BaselineContext);
 
 export function BaselineProvider({ children, defaultSeconds = 30 }) {
@@ -40,6 +46,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
   const skipRef = useRef(false); // current run is a SKIP (no rest task)
   const forceFullRef = useRef(false); // RECALIBRATE asked for the full test: ignore "always skip" until it is done
   const [skipping, setSkipping] = useState(false);
+  const [baselineError, setBaselineError] = useState(null); // message when the last calibration had no usable signal
   // Games call ensureBaseline({seconds: 30}) on every render, so a SKIP keeps its own length
   const effectiveSeconds = skipping ? SKIP_SECONDS : secondsRequested;
   const deviceKey = isMock ? 'mock' : (profile?.name || 'device');
@@ -53,6 +60,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       setSecondsElapsed(0);
       setPhase('idle');
       setCalibration(null);
+      setBaselineError(null);
     }
   }, [isConnected]);
 
@@ -108,6 +116,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     rawRef.current = { closed: [[], [], [], []], open: [[], [], [], []] };
     pafRef.current = null;
     accumRef.current = null;
+    setBaselineError(null);
     setSecondsRequested(seconds || defaultSeconds);
     setSecondsElapsed(0);
     setCalibration(null);
@@ -170,6 +179,8 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       };
     }
     if (!bandPowers || !bandPowers[0]) return;
+    // Spectrum buffer not full yet (all-zero PSD): a zero tick would drag the baseline to 0
+    if (!hasPower(bandPowers[1]) && !hasPower(bandPowers[2])) return;
     // Right after the chime the 8 s spectrum buffer still holds eyes-closed data: do not average it in
     // (games keep their live signal; clearing the shared buffer would blank them instead)
     if (modeRef.current === 'full' && phase === 'open' && Date.now() - openStartRef.current < Math.min(8000, secondsRequested * 500)) return;
@@ -194,6 +205,28 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       const s = Math.floor((Date.now() - startedAt) / 1000);
       setSecondsElapsed(s);
       if (s >= effectiveSeconds) {
+        if (phase !== 'closed') {
+          // Validate before finishing: enough ticks and real power on the frontal channels (AF7/AF8)
+          const a = accumRef.current;
+          const ok = !!a && a.ticks >= (skipRef.current ? MIN_TICKS_SKIP : MIN_TICKS_FULL)
+            && [1, 2].every((ch) => hasPower(a.sums[ch]));
+          if (!ok) {
+            // SKIP may still be waiting for the buffer to fill: give it some more time
+            if (skipRef.current && s < effectiveSeconds + SKIP_WAIT_MAX_S) return;
+            clearInterval(timer);
+            accumRef.current = null;
+            setBands(prevBandsRef.current);
+            skipRef.current = false;
+            forceFullRef.current = true; // do not auto-skip again into the same failure
+            setSkipping(false);
+            setInProgress(false);
+            setSecondsElapsed(0);
+            setPhase('idle');
+            setPhaseCount(2);
+            setBaselineError('No usable brain signal during calibration. Check the headband and press START to try again.');
+            return;
+          }
+        }
         clearInterval(timer);
         if (phase === 'closed') {
           // Eyes-closed phase done: find the PAF, switch to personal bands, cue the child to open their eyes
@@ -319,7 +352,8 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     autoSkip,
     setAutoSkip,
     skipping: inProgress && skipping,
-  }), [autoSkip, setAutoSkip, baseline, inProgress, effectiveSeconds, skipping, secondsElapsed, visible, phase, phaseCount, calibration, savedCalibration, ensureBaseline, start, cancel, resetBaseline]);
+    baselineError,
+  }), [baselineError, autoSkip, setAutoSkip, baseline, inProgress, effectiveSeconds, skipping, secondsElapsed, visible, phase, phaseCount, calibration, savedCalibration, ensureBaseline, start, cancel, resetBaseline]);
 
   return (
     <BaselineContext.Provider value={value}>{children}</BaselineContext.Provider>

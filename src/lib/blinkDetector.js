@@ -31,7 +31,7 @@ export class BlinkDetector {
     this.cfg = cfg;
     this.win = Math.round((cfg.windowMs * FS) / 1000);
     this.reset();
-    this.debug = { threshold: 0, earRange: 0, frontalRange: 0, peak: 0, quiet: 0, blinks: 0, rejected: 0, reason: '' };
+    this.debug = { threshold: 0, earRange: 0, frontalRange: 0, peak: 0, quiet: 0, blinks: 0, rejected: 0, reason: '', saturated: false };
   }
 
   reset() {
@@ -39,6 +39,7 @@ export class BlinkDetector {
     this.buf = [[], [], [], []];
     this.lp = this.cfg.lowpassHz > 0 ? [0, 1, 2, 3].map(() => makeLowpass(this.cfg.lowpassHz)) : null;
     this.quiet = null;
+    this.satSince = null; // ms when the threshold hit its cap
     this.lastHit = -Infinity; // sample index of the last detection
     this.armed = true;
     this.cand = null; // event being measured before the decision
@@ -79,6 +80,7 @@ export class BlinkDetector {
     const d = this.debug;
 
     if (c.mode !== 'ears') {
+      d.saturated = false;
       // Original rule
       const hit = range.some((r) => r >= c.minRangeUv);
       d.threshold = c.minRangeUv;
@@ -103,6 +105,9 @@ export class BlinkDetector {
       this.quiet = q == null ? earMin : q + (earMin - q) * (earMin < q ? 0.01 : warm ? 0.01 : 0.0005);
     }
     const threshold = Math.min(c.maxRangeUv, Math.max(c.minRangeUv, c.rangeFactor * (this.quiet ?? 0)));
+    // Threshold stuck at its cap for >5 s: jaw/ear muscle noise lifted the quiet level, real blinks are missed
+    if (threshold >= c.maxRangeUv) { if (this.satSince == null) this.satSince = ms; } else this.satSince = null;
+    d.saturated = this.satSince != null && ms - this.satSince > 5000;
     d.threshold = threshold;
     d.earRange = earMin;
     d.frontalRange = frontal;

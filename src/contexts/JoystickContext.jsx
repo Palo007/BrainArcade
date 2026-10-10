@@ -209,10 +209,11 @@ export function JoystickProvider({ children }) {
         case 'flow': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
           // Composite: 0.3*Engagement + 0.3*(1-ExcessiveTheta) + 0.2*BetaModerate + 0.2*(1-Drowsiness)
-          const rEng = relOf('engagement-index') ?? 1;
-          const rTheta = relOf('theta') ?? 1;
-          const rBeta = relOf('beta') ?? 1;
-          const rDelta = relOf('frontal-delta') ?? 1;
+          const rEng = relOf('engagement-index');
+          const rTheta = relOf('theta'); // null when no channel is usable
+          const rBeta = relOf('beta');
+          const rDelta = relOf('frontal-delta');
+          if (rEng == null || rTheta == null || rBeta == null || rDelta == null) return useStable();
           const excessiveTheta = clamp01((rTheta - 1) / (options.thetaRange ?? 0.6));
           // Beta moderate: peak around ~1.2x baseline with triangular window [1.0, 1.4]
           const betaCenter = options.betaCenter ?? 1.2;
@@ -225,8 +226,9 @@ export function JoystickProvider({ children }) {
         }
         case 'frustration': {
           if (adjusting || hasRecentExtreme(1, 1000) || hasRecentExtreme(2, 1000)) return useStable();
-          const rTh = relOf('theta') ?? 1;
-          const rBe = relOf('beta') ?? 1;
+          const rTh = relOf('theta');
+          const rBe = relOf('beta');
+          if (rTh == null || rBe == null) return useStable();
           const thInc = clamp01((rTh - 1) / (options.thetaRange ?? 0.6));
           const beInc = clamp01((rBe - 1) / (options.betaRange ?? 0.6));
           const asym = getBiomarker('theta-asymmetry');

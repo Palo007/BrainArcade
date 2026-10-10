@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useProcessing } from './ProcessingContext.jsx';
 import { useBaseline } from './BaselineContext.jsx';
+import { useQuality } from './QualityContext.jsx';
 import { BANDS } from '../lib/signal.js';
 
 const BiomarkerContext = createContext(null);
@@ -10,14 +11,19 @@ export const useBiomarkers = () => useContext(BiomarkerContext);
 export function BiomarkerProvider({ children }) {
   const { bandPowers, leftChannels, rightChannels, bands } = useProcessing();
   const { baseline } = useBaseline();
+  const { perChannelBad } = useQuality();
+  // All-channel averages skip channels flagged bad (a loose ear sensor must not skew them); same set for the baseline
+  const badKey = (perChannelBad || []).map((b) => (b ? 1 : 0)).join('');
+  const okChannels = useMemo(() => [0, 1, 2, 3].filter((ch) => badKey[ch] !== '1'), [badKey]);
 
   const compute = useMemo(() => {
     const helpers = {
       bandAvg: (band) => {
         if (!bandPowers || !bandPowers[0]) return null;
-        let sum = 0, count = 0;
-        for (let ch = 0; ch < 4; ch++) { sum += bandPowers[ch][band] || 0; count++; }
-        return sum / Math.max(1, count);
+        if (okChannels.length === 0) return null; // every channel bad: callers hold their last value
+        let sum = 0;
+        for (const ch of okChannels) sum += bandPowers[ch][band] || 0;
+        return sum / okChannels.length;
       },
       bandFrontal: (band) => {
         // Average of frontal channels AF7 (1) and AF8 (2)
@@ -98,14 +104,15 @@ export function BiomarkerProvider({ children }) {
       // Flow/Frustration high-level indices built from above components and baselines when available
     };
     return helpers;
-  }, [bandPowers, leftChannels, rightChannels]);
+  }, [bandPowers, leftChannels, rightChannels, okChannels]);
 
   const baselineValues = useMemo(() => {
     if (!baseline) return null;
     const base = baseline.channels; // per-channel band powers
     return {
       bandAvg: (band) => {
-        let sum = 0; for (let ch = 0; ch < 4; ch++) sum += base[ch][band] || 0; return sum / 4;
+        if (okChannels.length === 0) return null;
+        let sum = 0; for (const ch of okChannels) sum += base[ch][band] || 0; return sum / okChannels.length;
       },
       bandFrontal: (band) => {
         const l = base[1][band] || 0;
@@ -166,7 +173,7 @@ export function BiomarkerProvider({ children }) {
       },
       frontalDelta: () => ((base[1].delta || 0) + (base[2].delta || 0)) / 2,
     };
-  }, [baseline, leftChannels, rightChannels]);
+  }, [baseline, leftChannels, rightChannels, okChannels]);
 
   const getBiomarker = (name) => {
     if (!compute) return { value: null, baseline: null };

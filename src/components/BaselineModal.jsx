@@ -24,6 +24,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     autoSkip,
     setAutoSkip,
     skipping,
+    baselineError,
   } = useBaseline();
   const [noteOpen, setNoteOpen] = useState(false);
   const calKey = calibration ? `${calibration.paf}|${calibration.reactivity}` : '';
@@ -120,6 +121,9 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
               <p className="text-[10px] mb-3 opacity-80">Quick mode keeps your last alpha peak ({savedCalibration.paf.toFixed(1)} Hz) and only needs the eyes-open part.</p>
             )}
           </>
+        )}
+        {baselineError && !inProgress && (
+          <p className="text-[10px] mb-3 text-[var(--nes-red)]" role="alert">{baselineError}</p>
         )}
         {!skipping && <p className="text-[10px] mb-3">Duration: {secondsRequested}s per step</p>}
         {!inProgress && (

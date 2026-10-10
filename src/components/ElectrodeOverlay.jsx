@@ -79,9 +79,10 @@ function CompactSignalCheck({ note }) {
         <span className="text-[var(--nes-yellow)]">EEG</span>
         {order.map((idx) => {
           const info = CHANNEL_INFO[idx];
-          const rms = Math.round(channelRms?.[idx] || 0);
-          const lvl = rms > 0 ? (perChannelLevel?.[idx] || 'good') : 'none';
-          return <Chip key={info.id} label={info.id} level={lvl} detail={rms > 0 ? `${LEVELS[lvl].text} ${rms}µV` : 'WAITING'} />;
+          const rmsRaw = channelRms?.[idx] || 0; // unrounded: a flat Athena channel (rms < 0.5) is BAD, not waiting
+          const rms = Math.round(rmsRaw);
+          const lvl = rmsRaw > 0 ? (perChannelLevel?.[idx] || 'good') : 'none';
+          return <Chip key={info.id} label={info.id} level={lvl} detail={lvl !== 'none' ? `${LEVELS[lvl].text} ${rms}µV` : 'WAITING'} />;
         })}
       </div>
       {note && <p className="text-xs text-gray-300 leading-relaxed mt-2">{note}</p>}
@@ -106,14 +107,15 @@ function FullSignalCheck({ eegNote = null }) {
       <div className="grid grid-cols-2 phone-port:grid-cols-1 gap-2">
         {order.map((idx) => {
           const info = CHANNEL_INFO[idx];
-          const rms = Math.round(channelRms?.[idx] || 0);
-          const lvl = rms > 0 ? (perChannelLevel?.[idx] || 'good') : 'none';
+          const rmsRaw = channelRms?.[idx] || 0; // unrounded: a flat Athena channel (rms < 0.5) is BAD, not waiting
+          const rms = Math.round(rmsRaw);
+          const lvl = rmsRaw > 0 ? (perChannelLevel?.[idx] || 'good') : 'none';
           return (
             <Row
               key={info.id}
               name={`${info.id} ${info.label}`}
               level={lvl}
-              detail={rms > 0 ? `${LEVELS[lvl].text} ${rms}µV` : 'WAITING'}
+              detail={lvl !== 'none' ? `${LEVELS[lvl].text} ${rms}µV` : 'WAITING'}
             />
           );
         })}
