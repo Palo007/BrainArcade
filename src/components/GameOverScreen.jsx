@@ -6,6 +6,7 @@ import { useQuality } from '../contexts/QualityContext.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { useJoystick } from '../contexts/JoystickContext.jsx';
 import { recordSession, isDemoMode } from '../lib/sessionStore.js';
+import { ParentReport } from './ParentReport.jsx';
 import '../styles/retro.css';
 
 /**
@@ -67,6 +68,7 @@ export function GameOverScreen({
   // Session history: one summary row per game over (shared by every game using this screen)
   const recordedRef = useRef(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [savedId, setSavedId] = useState(null);
   useEffect(() => {
     if (recordedRef.current) return;
     recordedRef.current = true;
@@ -78,7 +80,8 @@ export function GameOverScreen({
       playedSec: secs,
       outcome: outcome || undefined,
     });
-    if (!id && !isDemoMode()) setSaveFailed(true);
+    if (id) setSavedId(id);
+    else if (!isDemoMode()) setSaveFailed(true);
   }, [gameName, finalScore, quality10s, playedSec, outcome]);
 
   // Monitor joystick values during readiness check
@@ -296,6 +299,10 @@ export function GameOverScreen({
               Click "CHECK READINESS" to begin
             </div>
           </div>
+        )}
+
+        {!checkingReadiness && (
+          <ParentReport sessionId={savedId} game={gameName} seconds={playedSec} />
         )}
       </div>
     </RetroModal>
