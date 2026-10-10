@@ -149,11 +149,12 @@ Tap **VIEW A RECORDING** on the start screen. You do not need to connect a heads
 
 - **Panels:** session summary, band power, raw EEG, signal quality, markers and events (with stats between two markers), band topomaps that follow the cursor, peak alpha frequency, spectrum and spectrogram, band ratios and frontal alpha asymmetry, theta/beta, fNIRS, heart rate, motion and battery. Mellow and Concentration show if the file has them.
 - **Heart rate:** uses the `Heart_Rate` column. If it is empty, the viewer estimates it from the optics ("estimated from optics").
+- **Breathing & HRV (estimated):** breathing rate and RMSSD over time, plus a session HRV summary (RMSSD, SDNN, pNN50, artifacts). HRV needs 64 Hz optics (recordings made after the recorder fix). Older files show breathing only. Not validated against a chest strap.
 - **Time slider:** drag it to move to any time, like in Mind Monitor. The **-1S** and **+1S** buttons step one second. **▶** plays the recording (×1, ×4, ×16 or ×64). The topomaps and all charts follow the time.
 - **Moving around:** the mouse wheel scrolls the page. Ctrl + wheel or pinch zooms. Shift + wheel pans. There is an overview strip and there are keyboard shortcuts.
 - **Stats:** shown for the visible range and for the whole session.
 - **Export:** summary JSON, a CSV with one row per second, an events CSV, and a PNG of each chart. Your view settings are saved on the device.
-- **Not yet:** ZIP or JSONL input, comparing several files, heart rate variability.
+- **Not yet:** ZIP or JSONL input, comparing several files, live breathing / HRV during games.
 
 ## Privacy
 

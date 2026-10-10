@@ -6,6 +6,7 @@
 import { fftRadix2, nextPow2, hammingWindow, windowIsClean, channelPaf, computePaf, PAF_SEARCH, MAX_PTP_UV } from '../../lib/paf.js';
 import { BANDS } from '../../lib/signal.js';
 import { FnirsProcessor, OPTICS_FS } from '../../lib/fnirs.js';
+import { hrvInRange, respirationInRange } from '../../lib/pulseAnalysis.js';
 import { SENSORS, BAND_NAMES } from './csvParse.js';
 import { heldShare, rangeStats, median } from './series.js';
 
@@ -512,6 +513,12 @@ export function computeSummary(rec, ana, a = 0, b = rec.meta.duration) {
   if (ana?.coherence) out.coherence = meanIn(ana.coherence, 'coherence', a, b);
   if (ana?.fnirs) {
     out.fnirs = Object.fromEntries(['hboL', 'hbrL', 'hboR', 'hbrR'].map((k) => [k, meanIn(ana.fnirs, k, a, b)]));
+  }
+  if (ana?.pulse) {
+    // estimated from optics (forehead PPG), not validated against a chest strap
+    const br = respirationInRange(ana.pulse.resp, a, b);
+    out.breathing = { ...br, estimated: true };
+    out.hrv = { ...hrvInRange(ana.pulse, a, b), estimated: true };
   }
   const ev = {};
   for (const e of rec.events) if (e.t >= a && e.t <= b) ev[e.kind] = (ev[e.kind] || 0) + 1;

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
-// Recording viewer: fNIRS (HbO/HbR replayed through lib/fnirs.js), heart rate, motion + battery, Mellow/Concentration.
+// Recording viewer: fNIRS (HbO/HbR replayed through lib/fnirs.js), heart rate, breathing + HRV (lib/pulseAnalysis.js),
+// motion + battery, Mellow/Concentration.
 import React, { useMemo } from 'react';
 import { TimeChart } from './TimeChart.jsx';
 import { Toggle, Legend, Note, Stat, Seg } from './Panel.jsx';
@@ -7,6 +8,7 @@ import { THEME, SMOOTH_OPTS } from './theme.js';
 import { stripeLane, flagShade } from './lanes.js';
 import { rangeStats, smoothSeries, fmt, fmtElapsed } from '../lib/series.js';
 import { FNIRS_QUALITY } from '../lib/analysis.js';
+import { hrvInRange, respirationInRange, HRV_MIN_FS, LFHF_MIN_S } from '../../lib/pulseAnalysis.js';
 
 const HBO = '#FC8080', HBR = '#40C0FF';
 const QCOL = { good: 'rgba(0,192,32,0.55)', calibrating: 'rgba(160,112,255,0.6)', motion: 'rgba(252,192,96,0.85)', 'no-light': 'rgba(252,128,128,0.85)', saturated: 'rgba(252,128,128,0.85)' };
@@ -70,7 +72,69 @@ export function HeartPanel({ vc, hr }) {
       <Seg label="SMOOTH" value={prefs.hrSmooth} onChange={(v) => setPref('hrSmooth', v)} options={SMOOTH_OPTS} />
       <Legend cursor={cursor} items={[{ label: 'HR', color: '#FC8080', t: hr.t, y: hr.y }]} format={(v) => (Number.isFinite(v) ? `${v.toFixed(0)} bpm` : '–')} />
       <TimeChart {...chart} cursor={cursor} lanes={lanes} height={140} title="heart-rate" />
-      <Note>Gaps = no reliable pulse at that time. Beat-to-beat (HRV) data is not in the CSV.</Note>
+      <Note>Gaps = no reliable pulse at that time. Beat-to-beat variability and breathing: see Breathing &amp; HRV (estimated from the optics).</Note>
+    </>
+  );
+}
+
+const BREATH = '#40C0FF', RMSSD = '#A070FF';
+
+export function BreathHrvPanel({ vc }) {
+  const { rec, ana, chart, cursor, view, prefs, setPref, busy } = vc;
+  const p = ana.pulse;
+  const src = !!prefs.breathSources;
+  const lanes = useMemo(() => {
+    if (!p) return null;
+    const r = p.resp;
+    const series = [{ t: r.t, y: r.v, color: BREATH, gap: 20, width: 2 }, { t: r.t, y: r.v, color: BREATH, dots: 4 }];
+    if (src) {
+      series.push({ t: r.t, y: r.rifv, color: '#FCC060', dots: 3 }, { t: r.t, y: r.riav, color: '#00C020', dots: 3 }, { t: r.t, y: r.riiv, color: '#909090', dots: 3 });
+      if (r.summary.gyro) series.push({ t: r.t, y: r.gyro, color: '#FC8080', dots: 3 });
+    }
+    const out = [{ label: 'BREATHS / MIN (estimated)', series, weight: 1 }];
+    if (p.rmssd) out.push({ label: 'RMSSD ms, 60 s (estimated)', includeZero: true, series: [{ t: p.rmssd.t, y: p.rmssd.v, color: RMSSD, gap: 40, width: 2 }, { t: p.rmssd.t, y: p.rmssd.v, color: RMSSD, dots: 4 }], weight: 1 });
+    return out;
+  }, [p, src]);
+  const inView = useMemo(() => (p ? { br: respirationInRange(p.resp, view.t0, view.t1), hrv: hrvInRange(p, view.t0, view.t1) } : null), [p, view.t0, view.t1]);
+  if (!rec.groups.optics) return <Note>No optics columns in this file (breathing and HRV need a Muse S Athena recording).</Note>;
+  if (!p) return <Note>{busy ? 'Analysing pulse…' : 'Optics present but no usable pulse signal.'}</Note>;
+  const s = p.resp.summary, h = p.hrv, v = inView;
+  const ms = (x) => (Number.isFinite(x) ? `${x.toFixed(0)} ms` : '–');
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+        <Stat label="Breathing (session)" value={Number.isFinite(s.median) ? `${s.median.toFixed(1)} /min` : '–'} sub={`IQR ${fmt(s.q1, 1)}–${fmt(s.q3, 1)} · ${s.accepted}/${s.windows} windows`} color={BREATH} />
+        <Stat label="Breathing (view)" value={Number.isFinite(v.br.median) ? `${v.br.median.toFixed(1)} /min` : '–'} sub={`${v.br.accepted}/${v.br.windows} windows`} color={BREATH} />
+        {h ? (
+          <>
+            <Stat label="RMSSD (session)" value={ms(h.rmssd)} sub={`view ${ms(v.hrv.rmssd)}`} color={RMSSD} />
+            <Stat label="SDNN · pNN50" value={`${ms(h.sdnn)} · ${fmt(h.pnn50, 0)}%`} sub={`view ${ms(v.hrv.sdnn)} · ${fmt(v.hrv.pnn50, 0)}%`} color={RMSSD} />
+            <Stat label="Mean HR (beats)" value={`${fmt(h.meanHR, 1)} bpm`} sub={`view ${fmt(v.hrv.meanHR, 1)} bpm`} color="var(--nes-red)" />
+            <Stat label="Beats used" value={`${h.nn} / ${h.ibis}`} sub={`artifacts ${fmt(h.artifactPct, 1)}%`} />
+            <Stat label="Optics rate" value={`${fmt(p.effFs, 1)} Hz`} sub={`${p.timebase} clock`} />
+            <Stat label="LF/HF" value={Number.isFinite(h.lfhf) ? fmt(h.lfhf, 2) : '–'} sub={Number.isFinite(h.lfhf) ? 'at rest only' : `needs ≥ ${LFHF_MIN_S / 60} min`} />
+          </>
+        ) : (
+          <>
+            <Stat label="HRV" value="unavailable" sub={`optics ${fmt(p.effFs, 1)} Hz (needs ≥ ${HRV_MIN_FS})`} color="var(--nes-red)" />
+            <Stat label="Beats found" value={String(p.beats)} sub={`${p.timebase} clock`} />
+          </>
+        )}
+      </div>
+      {!h && <Note>HRV unavailable: {p.hrvReason}.</Note>}
+      <Toggle on={src} onChange={(x) => setPref('breathSources', x)}>SOURCES</Toggle>
+      <Legend cursor={cursor} items={[
+        { label: 'Breathing', color: BREATH, t: p.resp.t, y: p.resp.v, format: (x) => (Number.isFinite(x) ? `${x.toFixed(1)} /min` : '–') },
+        ...(p.rmssd ? [{ label: 'RMSSD', color: RMSSD, t: p.rmssd.t, y: p.rmssd.v, format: (x) => ms(x) }] : []),
+        ...(src ? [{ label: 'RIFV', color: '#FCC060' }, { label: 'RIAV', color: '#00C020' }, { label: 'RIIV', color: '#909090' }, ...(s.gyro ? [{ label: 'Head pitch', color: '#FC8080' }] : [])] : []),
+      ]} />
+      <TimeChart {...chart} cursor={cursor} lanes={lanes} height={p.rmssd ? 220 : 120} title="breathing-hrv" />
+      <Note>
+        Estimated from the forehead pulse (optics), not validated against a chest strap; pulse-rate variability reads a little higher than ECG HRV.
+        Breathing: 60 s windows every 15 s from beat-interval (RIFV) and pulse-amplitude (RIAV) rhythms; baseline (RIIV) and head pitch only vote; gaps = the
+        estimators disagreed (rejected). RMSSD: 60 s windows every 30 s from clean beat intervals (gaps = too many artifacts). HRV needs
+        ≥ {HRV_MIN_FS} Hz unique optics samples; LF/HF only for ≥ {LFHF_MIN_S / 60} min at rest.
+      </Note>
     </>
   );
 }

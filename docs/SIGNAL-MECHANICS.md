@@ -215,6 +215,22 @@ Limits: tested on 4 real recordings (52 to 92 BPM), and some files were only par
 
 ---
 
+## 8c. Breathing rate and HRV from the optics (viewer, estimated)
+
+`src/lib/pulseAnalysis.js` works on a whole recording (viewer worker, **Breathing & HRV** panel). It is pure, so live use can follow later. Nothing is written to the CSV.
+
+- **Beat timing:** the same pulse channels and biquads as 8b, run forward and backward (0.5 to 4 Hz). Peaks get parabolic sub-sample interpolation. Beat times come from **sample index ÷ measured optics rate**, not from row timestamps: optics arrive in BLE bursts of about 4 samples, so row times jitter by −121 to +61 ms.
+- **Artifacts:** an interval is dropped if it is outside 0.33 to 1.5 s or more than 20 % from the median of its 11 neighbours.
+- **HRV:** RMSSD, SDNN, pNN50 and mean HR on the clean intervals, plus RMSSD in 60 s windows. LF/HF only for 5 min or more, and only meaningful at rest.
+- **Gate:** HRV is shown as unavailable when the file has fewer than 30 unique optics samples/s. Recordings made before the recorder fix (§8) keep only about 15 to 16, at irregular times.
+- **Breathing:** 60 s windows every 15 s, spectral peak 6 to 36 /min. Beat-interval rhythm (RIFV) and pulse amplitude (RIAV) must agree within 3 /min. The slow IR baseline (RIIV) and head pitch (Gyro_X) only vote. Head pitch can also rescue a window by matching one of the two. Other windows are rejected. Breathing also works at 16 Hz.
+
+Results on the real files: 21-37-54 (64 Hz): 248 beats, 2.8 % artifacts, HR 57.8, RMSSD 51.5 ms, SDNN 66.8 ms, pNN50 32 %, breathing median 16.3 /min. 21-08-42 and 10-29-33 (15 to 16 Hz): HRV unavailable, breathing median 12.4 and 11.4 /min.
+
+Limits: forehead pulse-rate variability reads a little higher than ECG HRV. Breathing is about ±2 to 3 /min when the estimators agree, and weak during movement or talking. Nothing has been checked against a chest strap. Test with `node tools/test-pulseAnalysis.mjs`.
+
+---
+
 ## 9. How to check these mechanics yourself
 
 - **Mock mode:** on the start screen, tap **EXPLORE WITHOUT A DEVICE**, then **USE SIMULATED REAL-TIME DATA**. All games run on synthetic EEG and fNIRS data.

@@ -5,6 +5,7 @@
 // in : { type: 'parse', file }            -> progress*, parsed, progress*, analysis
 //      { type: 'fnirs', baselineAt }      -> fnirs
 //      { type: 'classicPaf', key, opts }  -> classicPaf
+// analysis.pulse = lib/pulseAnalysis.js analyzePulse() (beats, IBIs, HRV, breathing track)
 // out: { type: 'progress', phase, value } | { type: 'error', message }
 import { createCsvParser, transferList } from './lib/csvParse.js';
 import {
@@ -13,6 +14,7 @@ import {
 } from './lib/analysis.js';
 import { estimateHeartRateFromOptics } from './lib/hrFallback.js';
 import { OPTICS_FS } from '../lib/fnirs.js';
+import { analyzePulse } from '../lib/pulseAnalysis.js';
 
 let kept = null; // { rawT, dsp, fs, optics } for re-runs after the parsed buffers were transferred
 
@@ -65,7 +67,7 @@ async function handleParse(file) {
     const est = estimateHeartRateFromOptics(rec.groups.optics, OPTICS_FS); // HR-FALLBACK-HOOK
     if (est) early.hrEstimate = est;
   }
-  kept = { rawT: canDsp ? raw.t.slice() : null, dsp, fs, duration, optics: cloneGroup(rec.groups.optics) };
+  kept = { rawT: canDsp ? raw.t.slice() : null, dsp, fs, duration, optics: cloneGroup(rec.groups.optics), gyro: cloneGroup(rec.groups.gyro) };
   rec.meta.dspAvailable = !!canDsp;
   postMessage({ type: 'parsed', rec, early }, [...new Set([...transferList(rec), ...buffersOf(early)])]); // early shares time axes with rec
 
@@ -93,6 +95,9 @@ async function handleParse(file) {
   if (kept.optics) {
     progress('fnirs', 0);
     ana.fnirs = fnirsReplay(kept.optics);
+    progress('pulse', 0);
+    const pulse = analyzePulse(kept.optics, { gyro: kept.gyro, duration }); // breathing + HRV (estimated)
+    if (pulse) ana.pulse = pulse;
   }
   progress('done', 1);
   postMessage({ type: 'analysis', ana }, buffersOf(ana));

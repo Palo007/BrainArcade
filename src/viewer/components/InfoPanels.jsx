@@ -29,6 +29,8 @@ export function SummaryPanel({ vc, summary }) {
         <Stat label="PAF" value={o ? (o.found ? `${o.paf.toFixed(2)} Hz` : 'no clear peak') : m.dspAvailable ? '…' : '–'} sub={o?.found ? `${o.source} · conf ${pct(o.confidence)}` : s.pafMetrics ? `window mean ${fmt(s.pafMetrics.posteriorMean)} Hz` : ''} color="var(--nes-blue)" />
         <Stat label="Frontal asym. (FAA)" value={fmt(s.faa, 3)} sub={`θ/β ${fmt(s.thetaBeta)} · θ/α ${fmt(s.thetaAlpha)}`} />
         <Stat label="Heart rate" value={s.hr ? `${fmt(s.hr.mean, 0)} bpm` : 'not recorded'} sub={s.hr ? `min ${fmt(s.hr.min, 0)} · max ${fmt(s.hr.max, 0)}${s.hr.estimated ? ' · estimated' : ''}` : ''} color="var(--nes-red)" />
+        <Stat label="Breathing (est.)" value={Number.isFinite(s.breathing?.median) ? `${s.breathing.median.toFixed(1)} /min` : '–'} sub={s.breathing ? `${s.breathing.accepted}/${s.breathing.windows} windows` : ''} color="var(--nes-blue)" />
+        <Stat label="HRV RMSSD (est.)" value={s.hrv ? (s.hrv.available ? (Number.isFinite(s.hrv.rmssd) ? `${s.hrv.rmssd.toFixed(0)} ms` : '–') : 'unavailable') : '–'} sub={s.hrv ? (s.hrv.available ? `SDNN ${fmt(s.hrv.sdnn, 0)} · art ${fmt(s.hrv.artifactPct, 1)}%` : `optics ${fmt(s.hrv.effFs, 1)} Hz`) : ''} color="var(--nes-purple)" />
         <Stat label="Battery" value={s.battery ? `${fmt(s.battery.start, 0)} → ${fmt(s.battery.end, 0)}%` : '–'} />
         <Stat label="Events" value={`${s.events.marker || 0} mark · ${s.events.blink || 0} blink`} sub={`${s.events.jaw || 0} jaw clench${s.events.other ? ` · ${s.events.other} other` : ''}`} color="var(--nes-yellow)" />
         <Stat label="Alpha coherence" value={fmt(s.coherence)} sub="TP9–TP10, 8–13 Hz" />
@@ -184,6 +186,8 @@ const ROWS = [
   ['Alpha coherence', (s) => fmt(s.coherence)],
   ['PAF posterior median', (s) => (s.pafMetrics ? `${fmt(s.pafMetrics.posteriorMedian)} Hz` : '–')],
   ['Heart rate mean', (s) => (s.hr ? `${fmt(s.hr.mean, 0)} bpm` : '–')],
+  ['Breathing (estimated)', (s) => (Number.isFinite(s.breathing?.median) ? `${fmt(s.breathing.median, 1)} /min` : '–')],
+  ['RMSSD · SDNN (estimated)', (s) => (s.hrv?.available ? `${fmt(s.hrv.rmssd, 0)} · ${fmt(s.hrv.sdnn, 0)} ms` : '–')],
   ['ΔHbO left / right', (s) => (s.fnirs ? `${fmt(s.fnirs.hboL, 3)} / ${fmt(s.fnirs.hboR, 3)}` : '–')],
   ['ΔHbR left / right', (s) => (s.fnirs ? `${fmt(s.fnirs.hbrL, 3)} / ${fmt(s.fnirs.hbrR, 3)}` : '–')],
   ['Markers / blinks', (s) => `${s.events.marker || 0} / ${s.events.blink || 0}`],

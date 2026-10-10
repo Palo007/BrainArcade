@@ -9,7 +9,7 @@ import { Panel, Note } from './components/Panel.jsx';
 import { Overview } from './components/Overview.jsx';
 import { BandsPanel, RawPanel, QualityPanel, RatiosPanel } from './components/EegPanels.jsx';
 import { PafPanel, SpectrumPanel } from './components/AnalysisPanels.jsx';
-import { FnirsViewerPanel, HeartPanel, MotionPanel, MmPanel } from './components/BodyPanels.jsx';
+import { FnirsViewerPanel, HeartPanel, BreathHrvPanel, MotionPanel, MmPanel } from './components/BodyPanels.jsx';
 import { SummaryPanel, TopoPanel, MarkersPanel, RangePanel, ExportPanel } from './components/InfoPanels.jsx';
 import { THEME, loadPrefs, savePrefs } from './components/theme.js';
 import { computeSummary, heartSeries } from './lib/analysis.js';
@@ -17,7 +17,7 @@ import { fmtElapsed } from './lib/series.js';
 import { formatWall } from './lib/csvParse.js';
 
 const DEFAULT_PREFS = {
-  open: { summary: true, topo: true, bands: true, raw: true, quality: true, markers: false, range: false, paf: false, spectrum: false, ratios: false, fnirs: false, hr: true, motion: false, mm: false, export: false },
+  open: { summary: true, topo: true, bands: true, raw: true, quality: true, markers: false, range: false, paf: false, spectrum: false, ratios: false, fnirs: false, hr: true, breath: true, motion: false, mm: false, export: false },
   bandMode: 'rel', bandSensor: 'mean', smooth: 10,
   bandsOn: { Delta: true, Theta: true, Alpha: true, Beta: true, Gamma: true },
   rawFilter: true, rawScale: 100,
@@ -25,9 +25,9 @@ const DEFAULT_PREFS = {
   speed: 4, clock: false,
   pafMethod: 'whitened', pafSmooth: 0, pafShow: { TP9: true, AF7: false, AF8: false, TP10: true, balance: false, power: false },
   ratiosOn: { alphaRel: true, faa: true, thetaBeta: true, thetaAlpha: false, focus: false, coherence: false }, ratioSmooth: 10,
-  specChannel: 'TP9', motionXYZ: false, hrSmooth: 0,
+  specChannel: 'TP9', motionXYZ: false, hrSmooth: 0, breathSources: false,
 };
-const PHASE = { parse: 'READING FILE', filter: 'FILTERING EEG', artifacts: 'ARTIFACTS', spectrogram: 'SPECTROGRAM', paf: 'PEAK ALPHA', fnirs: 'FNIRS', classicPaf: 'PAF (FFT)' };
+const PHASE = { parse: 'READING FILE', filter: 'FILTERING EEG', artifacts: 'ARTIFACTS', spectrogram: 'SPECTROGRAM', paf: 'PEAK ALPHA', fnirs: 'FNIRS', pulse: 'BREATHING & HRV', classicPaf: 'PAF (FFT)' };
 const MIN_SPAN = 0.5;
 const SPEEDS = [1, 4, 16, 64];
 const font = { fontFamily: 'var(--font-retro)' };
@@ -319,6 +319,7 @@ export function ViewerPage() {
           {P('ratios', 'Ratios & asymmetry', 'var(--nes-blue)', <RatiosPanel vc={vc} />, { png: true })}
           {P('fnirs', 'fNIRS (HbO / HbR)', 'var(--nes-red)', <FnirsViewerPanel vc={vc} />, { png: true })}
           {hr && P('hr', 'Heart rate', 'var(--nes-red)', <HeartPanel vc={vc} hr={hr} />, { png: true })}
+          {rec.groups.optics && P('breath', 'Breathing & HRV (estimated)', 'var(--nes-blue)', <BreathHrvPanel vc={vc} />, { png: true })}
           {P('motion', 'Motion & battery', 'var(--nes-yellow)', <MotionPanel vc={vc} />, { png: true })}
           {rec.groups.mm && P('mm', 'Mellow / Concentration', 'var(--nes-green)', <MmPanel vc={vc} />, { png: true })}
           {P('export', 'Export', 'var(--nes-green)', rangeSummary && <ExportPanel vc={vc} summary={summary} rangeSummary={rangeSummary} />)}
