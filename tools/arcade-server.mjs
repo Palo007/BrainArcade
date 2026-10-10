@@ -20,7 +20,32 @@ import { attachRelay, createLogger } from './relay-hub.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.resolve(process.env.ARCADE_DIST || path.join(ROOT, 'dist'));
 const PORT = Number(process.env.ARCADE_PORT || 5180);
-const ADB = process.env.ADB || 'adb';
+// adb is often not on PATH when started from a .bat (e.g. scrcpy's adb added by WinGet
+// only to the user's shell) → look in the usual install folders too
+function findAdb() {
+  if (process.env.ADB) return process.env.ADB;
+  const exe = process.platform === 'win32' ? 'adb.exe' : 'adb';
+  const onPath = (process.env.PATH || '').split(path.delimiter).some((d) => d && fs.existsSync(path.join(d, exe)));
+  if (onPath) return 'adb';
+  const local = process.env.LOCALAPPDATA || '';
+  const dirs = [
+    process.env.ANDROID_HOME && path.join(process.env.ANDROID_HOME, 'platform-tools'),
+    process.env.ANDROID_SDK_ROOT && path.join(process.env.ANDROID_SDK_ROOT, 'platform-tools'),
+    local && path.join(local, 'Android', 'Sdk', 'platform-tools'),
+    local && path.join(local, 'Microsoft', 'WinGet', 'Links'),
+  ];
+  const winget = local && path.join(local, 'Microsoft', 'WinGet', 'Packages');
+  try {
+    for (const pkg of fs.readdirSync(winget)) {
+      if (!/scrcpy|platformtools/i.test(pkg)) continue;
+      dirs.push(path.join(winget, pkg));
+      for (const sub of fs.readdirSync(path.join(winget, pkg))) dirs.push(path.join(winget, pkg, sub));
+    }
+  } catch {}
+  const hit = dirs.filter(Boolean).map((d) => path.join(d, exe)).find((f) => fs.existsSync(f));
+  return hit || 'adb';
+}
+const ADB = findAdb();
 const ADB_POLL_MS = 5000;
 
 const log = createLogger(path.join(ROOT, 'logs'));
@@ -73,7 +98,24 @@ const adb = (args, timeout = 8000) =>
     );
   });
 
-let serial = process.env.ADB_SERIAL || null; // last device we used
+// Last device we used survives a restart, so wireless adb (ip:port) is reconnected
+// even when the adb daemon forgot it (a fresh daemon lists no wireless devices)
+const SERIAL_FILE = path.join(ROOT, 'logs', 'adb-serial.txt');
+const readSerial = () => {
+  try {
+    return fs.readFileSync(SERIAL_FILE, 'utf8').trim() || null;
+  } catch {
+    return null;
+  }
+};
+const saveSerial = (s) => {
+  try {
+    fs.writeFileSync(SERIAL_FILE, s);
+  } catch {}
+};
+
+let serial = process.env.ADB_SERIAL || readSerial(); // last device we used
+let lastAdbErr = null; // last `adb devices` error (logged once per change)
 let online = null; // last known online state (for change logging)
 let logcat = null;
 let chromeUid = null;
@@ -105,6 +147,10 @@ function startLogcat() {
 
 async function pollAdb() {
   const res = await adb(['devices']);
+  if (res.err !== lastAdbErr) {
+    if (res.err) log('adb', 'adb-error', { adb: ADB, err: res.err });
+    lastAdbErr = res.err;
+  }
   const devices = res.out
     .split('\n')
     .slice(1)
@@ -117,6 +163,7 @@ async function pollAdb() {
   if (isOnline !== online) {
     log('adb', isOnline ? 'device-online' : 'device-offline', { serial, devices });
     online = isOnline;
+    if (isOnline) saveSerial(serial);
   }
   if (!isOnline) {
     // Wireless adb (ip:port) drops when Wi-Fi sleeps → try to reconnect

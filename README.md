@@ -45,6 +45,18 @@ Open the site in Chrome. Tap the menu (three dots), then **Install app**. This m
 
 Why not a Trusted Web Activity (Bubblewrap)? We built one. It works, but Chrome disables Web Bluetooth inside TWAs ("Web Bluetooth API globally disabled"). The headset cannot connect there. So the Chrome install is the recommended way.
 
+## Windows PC with bad Bluetooth: play through your phone
+
+Does the Muse fail to connect to your Windows PC ("GATT Server is disconnected", or it drops after a few seconds)? Let an Android phone hold the Bluetooth link, and play on the PC.
+
+1. Install Node.js 20+ and `adb` (Android Platform Tools or scrcpy). Turn on USB debugging on the phone.
+2. Connect the phone with a USB cable (or Wi-Fi adb).
+3. Double-click [`scripts/start-arcade.bat`](./scripts/start-arcade.bat). It builds the app, starts the server on port 5180, and keeps `adb reverse tcp:5180 tcp:5180` alive.
+4. Phone Chrome: `http://localhost:5180`, then **CONNECT MUSE (ATHENA)**.
+5. PC Chrome: `http://localhost:5180`, then **CONNECT VIA PHONE**.
+
+Full guide, settings (`ADB`, `ADB_SERIAL`, `ARCADE_PORT`, `REPO`) and fixes: [docs/WINDOWS-ADB-RELAY.md](./docs/WINDOWS-ADB-RELAY.md). This needs the local server. It does not work from the public site.
+
 ## Session recordings: where the file goes
 
 Recording is **off** by default. To turn it on, tick **RECORD THIS SESSION** on the start screen before you connect the headset.
