@@ -93,6 +93,9 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
       <div className={shell} style={FONT}>
         <p className="text-sm text-[var(--nes-yellow)] mb-4">NOT ENOUGH SIGNAL</p>
         <p className="text-[10px] leading-relaxed mb-5 text-gray-100">Not enough signal — check the headband and try again.</p>
+        <div className="mb-5">
+          <ParentReport sessionId={sessionId} game="focus-ball" />
+        </div>
         <div className="flex gap-3 justify-center">
           <button
             type="button"
@@ -164,6 +167,10 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
 
       {m.insight && <p className="text-[10px] leading-relaxed mb-5 text-gray-100">{m.insight}</p>}
 
+      <div className="mb-5">
+        <ParentReport sessionId={sessionId} game="focus-ball" seconds={samples?.length ? samples[samples.length - 1].t : 0} />
+      </div>
+
       <div className="flex gap-3 justify-center">
         <button
           type="button"
@@ -183,9 +190,6 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
         )}
       </div>
 
-      <div className="mt-5">
-        <ParentReport sessionId={sessionId} seconds={samples?.length ? samples[samples.length - 1].t : 0} />
-      </div>
     </div>
   );
 }

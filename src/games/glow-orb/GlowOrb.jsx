@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { recordSession } from '../../lib/sessionStore.js';
+import { ParentReport } from '../../components/ParentReport.jsx';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -226,6 +227,7 @@ export function GlowOrb() {
   const [hud, setHud] = useState({ score: 0, timeLeft: ROUND_S, flyPct: 0, paused: false });
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(readBest);
+  const [savedId, setSavedId] = useState(null);
 
   const canvasRef = useRef(null);
   const dataRef = useRef(null);
@@ -344,7 +346,7 @@ export function GlowOrb() {
   useEffect(() => {
     if (phase !== 'done') return;
     const score = Math.round(stateRef.current?.score || 0);
-    if (!recordedRef.current) recordSession('glow-orb', { score, durationSec: ROUND_S, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available });
+    if (!recordedRef.current) setSavedId(recordSession('glow-orb', { score, durationSec: ROUND_S, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available }));
     recordedRef.current = true;
     if (score > best) {
       setBest(score);
@@ -430,7 +432,7 @@ export function GlowOrb() {
         )}
 
         {phase === 'done' && (
-          <div className={`${panel} pointer-events-auto`}>
+          <div className={`${panel} pointer-events-auto max-h-full overflow-y-auto`}>
             <p className="text-sm text-[var(--nes-yellow)] mb-3">{['NICE TRY!', 'GOOD JOB!', 'GREAT!', 'AMAZING!'][stars]}</p>
             <p className="text-2xl mb-3 text-[var(--nes-yellow)]">{'★'.repeat(stars)}<span className="text-gray-600">{'★'.repeat(3 - stars)}</span></p>
             <p className="text-[10px] mb-1">SCORE {hud.score}</p>
@@ -439,6 +441,7 @@ export function GlowOrb() {
               PLAY AGAIN
             </button>
             <p className="text-[8px] text-gray-400 mt-3">BEST {best}</p>
+            <ParentReport sessionId={savedId} game="glow-orb" seconds={ROUND_S} />
           </div>
         )}
       </div>
