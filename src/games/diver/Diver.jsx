@@ -3,6 +3,7 @@ import { useJoystick } from '../../contexts/JoystickContext';
 import { useBaseline } from '../../contexts/BaselineContext';
 import { useGameScore } from '../../hooks/useGameScore';
 import { useGameHealth } from '../../hooks/useGameHealth';
+import { useSignalPause } from '../../hooks/useSignalPause';
 import { PixelHearts } from '../../components/PixelHearts';
 import { GameHint } from '../../components/GameHint';
 import { GameOverScreen } from '../../components/GameOverScreen';
@@ -31,6 +32,9 @@ export function Diver() {
   // Baseline and joystick
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
   const [started, setStarted] = useState(false); // START screen gate
+  const paused = useSignalPause(started); // electrode-check overlay is up
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
   const { value01: frustration } = useJoystick('frustration', {
     range: 0.6,
     autoAdjustBaseline: true
@@ -41,7 +45,7 @@ export function Diver() {
     initialHealth: 100,
     maxHealth: 100,
     // Be more permissive: only drain after grace period handled below
-    drainWhen: drainActive,
+    drainWhen: drainActive && !paused,
     drainRate: 16.67, // Lose 1 heart (33.33 HP) in 2 seconds once draining
   });
 
@@ -51,7 +55,7 @@ export function Diver() {
     minThreshold: 0.3,
     maxVelocity: 5,
     velocityBuildRate: 0.15,
-    frozen: isDead || !started || !isBaselineReady, // Freeze score on game over and before START
+    frozen: isDead || !started || !isBaselineReady || paused, // Freeze score on game over and before START
   });
 
   // Initialize baseline
@@ -469,7 +473,9 @@ export function Diver() {
       }
 
       // Update permissive drain logic and warnings (reuse isBad from above)
-      if (isBad) {
+      if (pausedRef.current) {
+        // signal lost: hold the warning timer, no new drain
+      } else if (isBad) {
         lowFrustrationTimerRef.current += dt;
         const t = lowFrustrationTimerRef.current;
         // Show stepwise warnings !, !!, !!! before draining

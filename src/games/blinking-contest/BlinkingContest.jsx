@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useBlinkDetector, useBlink } from '../../contexts/BlinkContext.jsx';
+import { useEEG } from '../../contexts/MuseContext.jsx';
+import { useSignalPause } from '../../hooks/useSignalPause.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
@@ -54,8 +56,24 @@ export function BlinkingContest() {
 
   // Refs
   const gameStartTimeRef = useRef(null);
-  const scoreIntervalRef = useRef(null);
   const animationTimeoutRef = useRef(null);
+
+  // Score only ticks while the headband signal is alive and not paused
+  const { isConnected } = useEEG();
+  const paused = useSignalPause(gameStarted);
+  const timeRef = useRef(0);
+  useEffect(() => {
+    if (!gameStarted || isDead || !isConnected || paused) return;
+    const baseRate = 10; // points per second
+    const id = setInterval(() => {
+      timeRef.current += 0.1;
+      // Velocity rises slightly over time (up to 2x after 60 seconds)
+      const velocity = 1 + Math.min(timeRef.current / 60, 1);
+      setTimeElapsed(timeRef.current);
+      setScore((s) => s + baseRate * 0.1 * velocity);
+    }, 100);
+    return () => clearInterval(id);
+  }, [gameStarted, isDead, isConnected, paused]);
 
   // Blink detection
   const { resetBlinks } = useBlinkDetector(
@@ -117,9 +135,6 @@ export function BlinkingContest() {
           // Check if game over
           if (newRemaining <= 0) {
             setIsDead(true);
-            if (scoreIntervalRef.current) {
-              clearInterval(scoreIntervalRef.current);
-            }
           }
         }, 600); // Duration of double-blink animation
 
@@ -133,20 +148,6 @@ export function BlinkingContest() {
     setShowWelcome(false);
     setGameStarted(true);
     gameStartTimeRef.current = Date.now();
-
-    // Start score accumulation with increasing velocity
-    let baseRate = 10; // Points per second
-    scoreIntervalRef.current = setInterval(() => {
-      setTimeElapsed(prev => {
-        const newTime = prev + 0.1; // Update every 100ms
-
-        // Increase velocity slightly over time (up to 2x after 60 seconds)
-        const velocity = 1 + Math.min(newTime / 60, 1);
-        setScore(s => s + (baseRate * 0.1 * velocity));
-
-        return newTime;
-      });
-    }, 100);
   };
 
   // Retry game
@@ -157,21 +158,15 @@ export function BlinkingContest() {
     setBlinkTimestamps([]);
     setCurrentAnimation(null);
     setTimeElapsed(0);
+    timeRef.current = 0;
     setScore(0);
     setIsDead(false);
     resetBlinks();
-
-    if (scoreIntervalRef.current) {
-      clearInterval(scoreIntervalRef.current);
-    }
   };
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (scoreIntervalRef.current) {
-        clearInterval(scoreIntervalRef.current);
-      }
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }

@@ -5,6 +5,10 @@
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const MAX_STEP = 1; // seconds; a longer gap between samples is not counted as one long sample
 const DEFAULT_STEP = 0.25;
+const LIMIT_LO = 0.03; // ball height clamp limits in the games
+const LIMIT_HI = 0.97;
+const LIMIT_EPS = 0.02;
+const STUCK_SHARE = 0.8; // more than this share of ok-time at one limit = signal stuck
 
 function pickInsight({ score, energy, flow, increase, flowSec }) {
   const parts = [];
@@ -13,7 +17,7 @@ function pickInsight({ score, energy, flow, increase, flowSec }) {
   const weakest = [
     ['energy', energy, 'Try to keep the ball a bit higher on average.'],
     ['flow', flow, 'Next time, try to keep the ball up a little longer without a drop.'],
-    ['increase', increase, 'When the ball drops, take a breath and start your counting again — it comes back faster with practice.'],
+    ['increase', increase ?? 0, 'When the ball drops, take a breath and start your counting again — it comes back faster with practice.'],
   ].sort((a, b) => a[1] - b[1])[0];
   if (parts.length === 0 || weakest[1] < 85) parts.push(weakest[2]);
   if (parts.length === 0) parts.push('Great job!');
@@ -41,6 +45,8 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
   let seenOk = false;
   const recoveries = [];
   let periods = 0;
+  let loTime = 0; // ok-time with v at the bottom / top clamp limit
+  let hiTime = 0;
 
   const oks = list.filter((s) => s.ok); // bad-quality samples are ignored entirely
   for (let i = 0; i < oks.length; i++) {
@@ -50,6 +56,8 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
     const above = s.v >= goal;
     okTime += w;
     vWeighted += s.v * w;
+    if (s.v <= LIMIT_LO + LIMIT_EPS) loTime += w;
+    else if (s.v >= LIMIT_HI - LIMIT_EPS) hiTime += w;
     if (above) {
       everAbove = true;
       aboveTime += w;
@@ -81,7 +89,7 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
 
   let avgRecoverySec = null;
   let increase;
-  if (!seenOk || !everAbove) increase = 0;
+  if (!seenOk || !everAbove) increase = null; // n/a: the goal was never reached, so there was nothing to recover from
   else if (periods === 0) increase = 100;
   else if (recoveries.length === 0) increase = 0;
   else {
@@ -90,9 +98,13 @@ export function computeSessionMetrics(samples, { goal = 0.62, durationSec = 180 
   }
 
   const finite = (x) => (Number.isFinite(x) ? x : 0);
-  const score = Math.round(finite(0.4 * timeAbovePct + 0.2 * energy + 0.2 * flow + 0.2 * increase));
+  const score = Math.round(finite(0.4 * timeAbovePct + 0.2 * energy + 0.2 * flow + 0.2 * (increase ?? 0)));
   const stars = score >= 75 ? 3 : score >= 55 ? 2 : score >= 30 ? 1 : 0;
   const insight = pickInsight({ score, energy, flow, increase, flowSec });
 
-  return { score, stars, energy, flow, flowSec, increase, avgRecoverySec, timeAbovePct, okSec: okTime, insight };
+  // Degenerate: the value sat at a clamp limit for most of the time, so it says nothing about focus
+  const degenerate = okTime > 0 && Math.max(loTime, hiTime) > STUCK_SHARE * okTime;
+  const degenerateSide = degenerate ? (loTime >= hiTime ? 'low' : 'high') : null;
+
+  return { score, stars, energy, flow, flowSec, increase, avgRecoverySec, timeAbovePct, okSec: okTime, degenerate, degenerateSide, insight };
 }

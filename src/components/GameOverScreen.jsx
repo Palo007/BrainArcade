@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RetroModal } from './RetroModal.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { recordSession, isDemoMode } from '../lib/sessionStore.js';
+import { takePausedSec } from '../hooks/useSignalPause.js';
 import { GameEndActions } from './GameEndActions.jsx';
 import '../styles/retro.css';
 
@@ -37,16 +38,22 @@ export function GameOverScreen({
   const recordedRef = useRef(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [savedId, setSavedId] = useState(null);
+  const [poorSignal, setPoorSignal] = useState(false);
   useEffect(() => {
     if (recordedRef.current) return;
     recordedRef.current = true;
     const secs = Number.isFinite(playedSec) && playedSec > 0 ? Math.round(playedSec) : undefined;
+    // Poor signal: the electrode-check pause covered most of the round (good share < 30%)
+    const pausedSec = takePausedSec();
+    const poor = secs ? pausedSec / secs > 0.7 : false;
+    if (poor) setPoorSignal(true);
     const id = recordSession(gameName, {
       score: Math.round(finalScore),
       qualityPct: quality10s ? Math.round(quality10s.stablePct * 100) : undefined,
       durationSec: secs,
       playedSec: secs,
       outcome: outcome || undefined,
+      ...(poor ? { valid: false, invalidReason: 'bad-quality' } : {}),
     });
     if (id) setSavedId(id);
     else if (!isDemoMode()) setSaveFailed(true);
@@ -77,6 +84,11 @@ export function GameOverScreen({
           </div>
         </div>
 
+        {poorSignal && (
+          <div className="text-center text-[8px] text-[var(--nes-yellow)] mb-3">
+            The headband signal was poor for most of this round, so this score is not counted in your progress.
+          </div>
+        )}
         {isDemoMode() && (
           <div className="text-center text-[8px] opacity-70 mb-3">Demo mode — not saved</div>
         )}

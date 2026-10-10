@@ -62,12 +62,13 @@ function ActivityGraph({ samples }) {
 }
 
 function Bar({ label, value, note, color }) {
-  const pct = Math.round(Math.max(0, Math.min(100, value)));
+  const na = value == null;
+  const pct = na ? 0 : Math.round(Math.max(0, Math.min(100, value)));
   return (
     <div className="text-left">
       <div className="flex justify-between text-xs mb-1">
         <span style={{ color }}>{label}</span>
-        <span>{pct}</span>
+        <span>{na ? 'n/a' : pct}</span>
       </div>
       <div className="h-4 border-2 border-white/70 bg-black/50">
         <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
@@ -77,7 +78,7 @@ function Bar({ label, value, note, color }) {
   );
 }
 
-export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = false, onPlayAgain, samples, sessionId = null, insufficient = false }) {
+export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = false, onPlayAgain, samples, sessionId = null, insufficient = false, invalidReason = null, stuckSide = null }) {
   const m = metrics || {};
   const stars = m.stars || 0;
   const flowSec = Math.round(m.flowSec || 0);
@@ -88,11 +89,18 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
     setSaved(updateSession(sessionId, { feeling: n }));
   };
   const shell = 'border-4 border-[var(--nes-yellow)] bg-black/80 px-6 phone-port:px-3 py-5 text-center text-white w-full max-w-xl max-h-full overflow-y-auto';
-  if (insufficient) {
+  const reason = invalidReason || (insufficient ? 'too-little-signal' : null);
+  if (reason) {
+    const stuck = reason === 'stuck';
+    const text = stuck
+      ? `The signal was stuck at the ${stuckSide === 'high' ? 'top' : 'bottom'}, so these numbers do not show your focus. Check the headband fit and try again.`
+      : reason === 'bad-quality'
+        ? 'The signal quality was too low, so these numbers do not show your focus. Check the headband fit and try again.'
+        : 'Not enough signal — check the headband and try again.';
     return (
       <div className={shell} style={FONT}>
-        <p className="text-sm text-[var(--nes-yellow)] mb-4">NOT ENOUGH SIGNAL</p>
-        <p className="text-[10px] leading-relaxed mb-5 text-gray-100">Not enough signal — check the headband and try again.</p>
+        <p className="text-sm text-[var(--nes-yellow)] mb-4">{stuck ? 'SIGNAL STUCK' : 'NOT ENOUGH SIGNAL'}</p>
+        <p className="text-[10px] leading-relaxed mb-5 text-gray-100">{text}</p>
         <GameEndActions onPlayAgain={onPlayAgain} sessionId={sessionId} game="focus-ball" />
       </div>
     );
@@ -109,7 +117,7 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
 
       <div className="space-y-4 my-4">
         <Bar label="ENERGY" value={m.energy || 0} color="#ffd84a" note="How high your focus was on average" />
-        <Bar label="INCREASE" value={m.increase || 0} color="#5ee0ff" note="How fast you got focus back after a drop" />
+        <Bar label="INCREASE" value={m.increase} color="#5ee0ff" note={m.increase == null ? "Not measured: the ball never reached the goal line" : "How fast you got focus back after a drop"} />
         <Bar label="FLOW" value={m.flow || 0} color="#7dff7d" note={`Your longest time with the ball up: ${flowSec} s`} />
       </div>
 

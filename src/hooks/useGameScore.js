@@ -51,10 +51,11 @@ export function useGameScore({
   useEffect(() => {
     // Don't run the interval if frozen
     if (frozen) return;
+    lastUpdateRef.current = Date.now(); // don't credit the frozen period
 
     const interval = setInterval(() => {
       const now = Date.now();
-      const deltaSeconds = (now - lastUpdateRef.current) / 1000;
+      const deltaSeconds = Math.min(0.25, (now - lastUpdateRef.current) / 1000);
       lastUpdateRef.current = now;
 
       if (isAccumulating) {

@@ -4,6 +4,7 @@ import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
 import { useGameHealth } from '../../hooks/useGameHealth.js';
 import { useGameScore } from '../../hooks/useGameScore.js';
+import { useSignalPause } from '../../hooks/useSignalPause.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameStartPanel } from '../../components/GameStartPanel.jsx';
@@ -66,6 +67,10 @@ export function Sailor() {
     return filledHearts === 0;
   }, [health]);
 
+  const paused = useSignalPause(started); // electrode-check overlay is up
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
+
   // Scoring system - accumulates when in good range
   const { score: gameScore, reset: resetScore } = useGameScore({
     joystickValue: value01,
@@ -73,7 +78,7 @@ export function Sailor() {
     minThreshold: LOW_THRESHOLD,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
-    frozen: isDead || hasWon || !started,
+    frozen: isDead || hasWon || !started || paused,
   });
 
   // Choose sailor sprite based on engagement tier (lowest level -> worried)
@@ -101,6 +106,12 @@ export function Sailor() {
       const now = Date.now();
       const deltaTime = (now - lastTimeRef.current) / 1000; // seconds
       lastTimeRef.current = now;
+
+      // Signal lost: no movement, no penalty timer
+      if (pausedRef.current) {
+        animationFrameRef.current = requestAnimationFrame(gameLoop);
+        return;
+      }
 
       // Read latest engagement each frame and compute speed
       const v = latestEngagementRef.current ?? 0.5;

@@ -232,6 +232,7 @@ export function GlowOrb() {
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(readBest);
   const [savedId, setSavedId] = useState(null);
+  const [invalid, setInvalid] = useState(null); // {reason, side} when the round's signal was unusable
   const [cue, setCue] = useState(CUES[0]);
   const [minutes, setMinutes] = useState(ROUND_S / 60);
 
@@ -252,7 +253,7 @@ export function GlowOrb() {
     if (phase !== 'calibrate' || !data) return;
     if (!data.baselineReady) sawResetRef.current = true;
     else if (sawResetRef.current) {
-      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0, roundS: minutes * 60, cue, drift: driftFloor() };
+      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0, wallSec: 0, contPauseSec: 0, loSec: 0, hiSec: 0, roundS: minutes * 60, cue, drift: driftFloor() };
       audioRef.current?.chime(mutedRef.current, 0);
       setPhase('play');
     }
@@ -290,7 +291,8 @@ export function GlowOrb() {
       }
       const d = dataRef.current;
       const q = [d?.left?.quality, d?.right?.quality];
-      s.paused = q.some((x) => x === 'motion' || x === 'no-light' || x === 'saturated');
+      const lost = !d || !d.available || !d.baselineReady || q.includes('no-light');
+      s.paused = lost || q.some((x) => x === 'motion' || x === 'saturated');
       const oxy = s.drift(Number.isFinite(d?.oxy) ? d.oxy : 0, dt, s.paused);
       if (!s.paused) {
         // Grows with strong upswings (top stays reachable); relaxes back to the start range over ~30 s,
@@ -302,7 +304,13 @@ export function GlowOrb() {
       s.orbY = lerp(s.orbY, target, 1 - Math.exp(-dt * 1.2));
       const wasFlying = s.flying;
       s.flying = !s.paused && s.orbY >= GOAL;
-      s.elapsed += dt;
+      s.wallSec += dt;
+      s.contPauseSec = s.paused ? s.contPauseSec + dt : 0;
+      if (!s.paused) {
+        s.elapsed += dt; // round time only runs while the signal is usable
+        if (s.orbY <= 0.05) s.loSec += dt; // stuck at the clamp limits 0.03 / 0.97
+        else if (s.orbY >= 0.95) s.hiSec += dt;
+      }
       if (s.flying) {
         s.flyTime += dt;
         s.score += dt * 10 * (1 + s.orbY);
@@ -312,7 +320,9 @@ export function GlowOrb() {
         }
       }
       audioRef.current?.set(s.orbY, mutedRef.current || s.paused);
-      const done = s.elapsed >= s.roundS;
+      // Ends when the round time is used up, after 60 s of continuous pause, or when pauses stretch it past twice its length
+      const gaveUp = s.contPauseSec >= 60 || s.wallSec >= 2 * s.roundS;
+      const done = s.elapsed >= s.roundS || gaveUp;
       if ((hudTick += dt) > 0.25 || done) {
         hudTick = 0;
         setHud({
@@ -323,6 +333,10 @@ export function GlowOrb() {
         });
       }
       if (done) {
+        const stuckSec = Math.max(s.loSec, s.hiSec);
+        if (gaveUp || s.elapsed < 0.3 * s.roundS) s.invalid = { reason: 'too-little-signal' };
+        else if (stuckSec > 0.8 * s.elapsed) s.invalid = { reason: 'stuck', side: s.loSec >= s.hiSec ? 'bottom' : 'top' };
+        setInvalid(s.invalid || null);
         audioRef.current?.set(0, true);
         setPhase('done');
       }
@@ -352,9 +366,10 @@ export function GlowOrb() {
   useEffect(() => {
     if (phase !== 'done') return;
     const score = Math.round(stateRef.current?.score || 0);
-    if (!recordedRef.current) setSavedId(recordSession('glow-orb', { score, durationSec: stateRef.current?.roundS || ROUND_S, cue: stateRef.current?.cue, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available }));
+    const bad = stateRef.current?.invalid;
+    if (!recordedRef.current) setSavedId(recordSession('glow-orb', { ...(bad ? { valid: false, invalidReason: bad.reason } : {}), score, durationSec: stateRef.current?.roundS || ROUND_S, cue: stateRef.current?.cue, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available }));
     recordedRef.current = true;
-    if (score > best) {
+    if (!bad && score > best) {
       setBest(score);
       saveBest(score);
     }
@@ -368,6 +383,7 @@ export function GlowOrb() {
     resetBaseline();
     sawResetRef.current = false;
     setHud({ score: 0, timeLeft: minutes * 60, flyPct: 0, paused: false });
+    setInvalid(null);
     setPhase('calibrate');
   };
   const stop = () => {
@@ -467,11 +483,24 @@ export function GlowOrb() {
       <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
         {phase === 'done' && (
           <div className={`${panel} pointer-events-auto max-h-full overflow-y-auto`}>
-            <p className="text-sm text-[var(--nes-yellow)] mb-3">{['NICE TRY!', 'GOOD JOB!', 'GREAT!', 'AMAZING!'][stars]}</p>
-            <p className="text-2xl mb-3 text-[var(--nes-yellow)]">{'★'.repeat(stars)}<span className="text-gray-600">{'★'.repeat(3 - stars)}</span></p>
-            <p className="text-[10px] mb-1">SCORE {hud.score}</p>
-            <p className="text-[10px] mb-4">FLYING {hud.flyPct}% OF THE TIME</p>
-            {best > 0 && <p className="text-[8px] text-gray-400 mb-4">BEST {best}</p>}
+            {invalid ? (
+              <>
+                <p className="text-sm text-[var(--nes-yellow)] mb-3">{invalid.reason === 'stuck' ? 'SIGNAL STUCK' : 'NOT ENOUGH SIGNAL'}</p>
+                <p className="text-[10px] leading-relaxed mb-4">
+                  {invalid.reason === 'stuck'
+                    ? `The signal was stuck at the ${invalid.side}, so these numbers do not show your focus. Check the headband fit and try again.`
+                    : 'Not enough signal — check the headband and try again.'}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[var(--nes-yellow)] mb-3">{['NICE TRY!', 'GOOD JOB!', 'GREAT!', 'AMAZING!'][stars]}</p>
+                <p className="text-2xl mb-3 text-[var(--nes-yellow)]">{'★'.repeat(stars)}<span className="text-gray-600">{'★'.repeat(3 - stars)}</span></p>
+                <p className="text-[10px] mb-1">SCORE {hud.score}</p>
+                <p className="text-[10px] mb-4">FLYING {hud.flyPct}% OF THE TIME</p>
+                {best > 0 && <p className="text-[8px] text-gray-400 mb-4">BEST {best}</p>}
+              </>
+            )}
             <GameEndActions onPlayAgain={() => setPhase('intro')} sessionId={savedId} game="glow-orb" />
           </div>
         )}

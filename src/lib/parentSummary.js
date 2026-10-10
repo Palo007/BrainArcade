@@ -29,10 +29,13 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
   if (fin(playedSec) && playedSec > 0) lines.push({ key: 'length', text: `Session length: ${formatDuration(playedSec)}.` });
 
   const pct = fin(session.timeAbovePct) ? session.timeAbovePct : focusPctFromTimeline(points);
-  if (fin(pct)) lines.push({ key: 'focus', text: `Time in focus: ${Math.round(pct)}% of the session.` });
+  if (fin(pct) && session.valid !== false) lines.push({ key: 'focus', text: `Time in focus: ${Math.round(pct)}% of the session.` });
 
-  const prev = earlier.slice(-5);
-  if (prev.length) {
+  const invalid = session.valid === false;
+  const prev = earlier.filter((s) => s && s.valid !== false).slice(-5); // unusable sessions are not history
+  if (invalid) {
+    lines.push({ key: 'invalid', text: 'The signal was not usable in this session (for example stuck or too weak), so its numbers do not show focus. Check the headband fit.' });
+  } else if (prev.length) {
     // Score is only comparable between rounds of the same length; time in focus always is.
     const usePct = fin(pct) && prev.every((s) => fin(s.timeAbovePct));
     const sameLen = fin(session.durationSec) && prev.every((s) => s.durationSec === session.durationSec);

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useJoystick } from '../../contexts/JoystickContext.jsx';
+import { useSignalPause } from '../../hooks/useSignalPause.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { RetroModal } from '../../components/RetroModal.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
@@ -20,6 +21,7 @@ preloadImages(train1, train2, train3, villainTrain, cityBackground);
 export function TrainOfThoughts() {
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
   const [started, setStarted] = useState(false); // START screen gate
+  const paused = useSignalPause(started); // electrode-check overlay is up
 
   // Joystick: stress (0..1), normalized vs baseline with adaptive centering
   const { value01: stress01 } = useJoystick('stress', {
@@ -58,7 +60,8 @@ export function TrainOfThoughts() {
   // Game loop: update train position and time-based score
   useEffect(() => {
     // Pause when modal is open or after game over
-    if (!started || !isBaselineReady || !roundRunning || showLostLife || lives <= 0) return;
+    if (paused) lastTsRef.current = null; // no time jump on resume
+    if (!started || !isBaselineReady || !roundRunning || showLostLife || lives <= 0 || paused) return;
 
     // Width is measured for collision separately; keep logic focused here
     const BASE_SPEED = 40; // px/s minimal speed when fully calm (slower)
@@ -80,7 +83,7 @@ export function TrainOfThoughts() {
 
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [started, isBaselineReady, roundRunning, showLostLife, stress01, lives]);
+  }, [started, isBaselineReady, roundRunning, showLostLife, stress01, lives, paused]);
 
   // Detect collision (train reaches character on right)
   useEffect(() => {

@@ -14,6 +14,7 @@ import '../../styles/retro.css';
 const FONT = { fontFamily: 'var(--font-retro)' };
 const GOAL = 0.62;
 const REST = 0.3;
+const PAUSE_GIVE_UP_SEC = 60; // a round paused this long in a row ends as invalid
 const START_SCALE = 0.35; // µM of oxygenation index that moves the ball from rest to the top
 const BEST_KEY = 'brainarcade.focusBall.best';
 const LENGTHS = [2, 3, 5, 10];
@@ -481,7 +482,7 @@ export function FocusBall() {
       const durationSec = sessionRef.current.minutes * 60;
       stateRef.current = {
         ballY: REST, scale: START_SCALE, points: 0, streakSec: 0, mult: 1, elapsed: 0, durationSec,
-        above: false, paused: false, done: false, samples: [], sampleAcc: 0, chimeStep: 0, ptsAcc: 0,
+        above: false, paused: false, done: false, samples: [], sampleAcc: 0, wallSec: 0, pausedSec: 0, contPauseSec: 0, chimeStep: 0, ptsAcc: 0,
         worldX: 0, hist: [{ x: -2000, y: REST }, { x: 0, y: REST }], stars: [], aboveSec: 0, starAcc: 1.5, goalSec: 0, activity: 0,
         drift: driftFloor(),
       };
@@ -555,9 +556,11 @@ export function FocusBall() {
       audioRef.current?.suspend();
       const { cue: usedCue, minutes: mins, checkIn: isCheckIn } = sessionRef.current;
       const metrics = computeSessionMetrics(s.samples, { goal: GOAL, durationSec: s.durationSec });
-      if (metrics.okSec < 0.3 * s.durationSec) {
-        // Too little usable signal: nothing saved, no score, not counted toward best
-        setReport({ insufficient: true });
+      const invalidReason = s.pauseTimeout || metrics.okSec < 0.3 * s.durationSec ? 'too-little-signal' : metrics.degenerate ? 'stuck' : null;
+      if (invalidReason) {
+        // Unusable signal: saved as invalid, no score shown, not counted toward best
+        const id = recordSession('focus-ball', { durationSec: mins * 60, playedSec: Math.round(s.elapsed), cue: usedCue, points: Math.round(s.points), ...metrics, valid: false, invalidReason, ...(isCheckIn ? { checkIn: true } : {}) });
+        setReport({ invalidReason, stuckSide: metrics.degenerateSide, id });
         setPhase('report');
         return;
       }
@@ -607,6 +610,11 @@ export function FocusBall() {
       const keep = (canvasRef.current?.clientWidth || 1600) / 2 + 100;
       while (s.hist.length > 2 && s.worldX - s.hist[1].x > keep) s.hist.shift();
 
+      s.wallSec += dt;
+      if (s.paused) {
+        s.pausedSec += dt;
+        s.contPauseSec += dt;
+      } else s.contPauseSec = 0;
       if (!s.paused) {
         s.elapsed += dt;
         if (s.above) {
@@ -639,8 +647,8 @@ export function FocusBall() {
           s.streakSec = 0; // streak resets when the ball is below the line (not on bad quality)
           s.mult = 1;
         }
-        s.sampleAcc += dt;
       }
+      s.sampleAcc += dt; // also while paused, so those samples are logged as ok:false
       if (s.sampleAcc >= 0.25) {
         s.sampleAcc = 0;
         s.samples.push({ t: s.elapsed, v: s.ballY, ok: !s.paused });
@@ -660,7 +668,10 @@ export function FocusBall() {
         };
         setHud((prev) => (Object.keys(next).every((k) => prev[k] === next[k]) ? prev : next));
       }
-      if (s.elapsed >= s.durationSec) finish(s);
+      if (s.contPauseSec >= PAUSE_GIVE_UP_SEC) {
+        s.pauseTimeout = true; // paused for a minute straight: end the round
+        finish(s);
+      } else if (s.elapsed >= s.durationSec) finish(s);
     };
     const timer = setInterval(tick, 33);
 
@@ -844,7 +855,8 @@ export function FocusBall() {
               isNewBest={report.isNewBest}
               samples={report.samples}
               sessionId={report.id}
-              insufficient={!!report.insufficient}
+              invalidReason={report.invalidReason}
+              stuckSide={report.stuckSide}
               onPlayAgain={() => setPhase('intro')}
             />
           </div>

@@ -4,6 +4,7 @@ import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { useBiomarker } from '../../contexts/BiomarkerContext.jsx';
 import { useGameHealth } from '../../hooks/useGameHealth.js';
 import { useGameScore } from '../../hooks/useGameScore.js';
+import { useSignalPause } from '../../hooks/useSignalPause.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameStartPanel } from '../../components/GameStartPanel.jsx';
@@ -33,13 +34,15 @@ export function SweetSpot() {
   const rafRef = useRef(null);
   const roundStartRef = useRef(Date.now()); // for history: seconds played this round
 
+  const paused = useSignalPause(started); // electrode-check overlay is up
+
   // Calculate score from height
   const score = Math.round(height * 100);
 
   // Game mechanics: health and scoring
   const { health, isDead, reset: resetHealth } = useGameHealth({
     initialHealth: 100,
-    drainWhen: started && isBaselineReady && score < 40,
+    drainWhen: started && isBaselineReady && !paused && score < 40,
     drainRate: 5,
   });
 
@@ -50,7 +53,7 @@ export function SweetSpot() {
     dropThreshold: 0.1,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
-    frozen: isDead || !started || !isBaselineReady, // Freeze score on game over and before START
+    frozen: isDead || !started || !isBaselineReady || paused, // Freeze score on game over and before START
   });
 
   // Generate random stars once
