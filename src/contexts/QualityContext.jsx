@@ -79,7 +79,7 @@ export function QualityProvider({ children }) {
     sampleTimesRef.current.push(t);
     for (let ch = 0; ch < 4; ch++) {
       const v = absVals[ch];
-      const prev = Math.abs(lastValRef.current[ch] || 0);
+      const prev = lastValRef.current[ch] || 0;
       if (v > spikeUv) {
         aboveTimesRef.current[ch].push(t);
       }
@@ -87,10 +87,10 @@ export function QualityProvider({ children }) {
       recent.push(sample[ch] || 0);
       if (recent.length > RMS_WINDOW) recent.shift();
       // Adjustment detection: huge value or large jump
-      if (v > hugeUv || Math.abs(v - prev) > hugeUv / 1.5) {
+      if (v > hugeUv || Math.abs((sample[ch] || 0) - prev) > hugeUv / 1.5) {
         setAdjustingUntil(t + ADJUSTING_HOLD_MS);
       }
-      lastValRef.current[ch] = absVals[ch];
+      lastValRef.current[ch] = sample[ch] || 0;
     }
     // Prune old timestamps (keep ~12s)
     const keepSince = t - SECOND_MS * 12;

@@ -354,10 +354,10 @@ export function personalBands(paf) {
   const aHi = Math.min(14, paf + 2);
   const tLo = Math.max(3, Math.min(paf - 6, aLo - 1));
   return {
-    delta: [BANDS.delta[0], Math.min(BANDS.delta[1], tLo)],
+    delta: [BANDS.delta[0], tLo],
     theta: [tLo, aLo],
     alpha: [aLo, aHi],
-    beta: [Math.max(BANDS.beta[0], aHi), BANDS.beta[1]],
+    beta: [aHi, BANDS.beta[1]], // starts where alpha ends, so no Hz falls between bands
     gamma: [...BANDS.gamma],
   };
 }

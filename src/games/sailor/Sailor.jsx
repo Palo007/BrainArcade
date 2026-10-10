@@ -136,7 +136,7 @@ export function Sailor() {
         return newX;
       });
 
-      // Penalty: if engagement stays below 10% for 8s, lose one heart
+      // Penalty: if engagement stays below 10% for LOW_PENALTY_DURATION (2 s), lose one heart
       if (v < LOW_PENALTY_THRESHOLD) {
         lowDurationRef.current += deltaTime;
         if (lowDurationRef.current >= LOW_PENALTY_DURATION) {

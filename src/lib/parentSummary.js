@@ -28,8 +28,14 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
   const playedSec = fin(session.playedSec) ? session.playedSec : points.length ? points[points.length - 1].t - points[0].t : null;
   if (fin(playedSec) && playedSec > 0) lines.push({ key: 'length', text: `Session length: ${formatDuration(playedSec)}.` });
 
-  const pct = fin(session.timeAbovePct) ? session.timeAbovePct : focusPctFromTimeline(points);
-  if (fin(pct) && session.valid !== false) lines.push({ key: 'focus', text: `Time in focus: ${Math.round(pct)}% of the session.` });
+  // Only the game's own number: the timeline focus value is a different signal from the forehead light sensor.
+  const pct = fin(session.timeAbovePct) ? session.timeAbovePct : null;
+  const thing = session.game === 'glow-orb' ? 'Orb' : session.game === 'focus-ball' ? 'Ball' : 'Signal';
+  const basisSec = fin(session.okSec) && session.okSec > 0 ? session.okSec : fin(session.playedSec) && session.playedSec > 0 ? session.playedSec : null;
+  if (fin(pct) && session.valid !== false) {
+    const detail = basisSec ? ` (${formatDuration((pct / 100) * basisSec)} of ${formatDuration(basisSec)})` : '';
+    lines.push({ key: 'focus', text: `${thing} above the line: ${Math.round(pct)}% of the playable time${detail}.` });
+  }
 
   const invalid = session.valid === false;
   const prev = earlier.filter((s) => s && s.valid !== false).slice(-5); // unusable sessions are not history
@@ -46,7 +52,7 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
       const diff = cur - base;
       const limit = usePct ? 5 : Math.max(3, Math.abs(base) * 0.1);
       const word = diff >= limit ? 'higher than' : diff <= -limit ? 'lower than' : 'about the same as';
-      const what = usePct ? 'Time in focus' : 'The score';
+      const what = usePct ? `${thing} above the line` : 'The score';
       const n = prev.length === 1 ? 'the last session' : `the last ${prev.length} sessions`;
       lines.push({ key: 'compare', text: `${what} was ${word} ${n} of this game.` });
     }
@@ -58,7 +64,8 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
     lines.push({ key: 'paf', text: `Personal alpha peak: ${calibration.paf.toFixed(1)} Hz. It is a personal reference for the colour bands, not a score.` });
   }
   if (points.some((p) => fin(p.hbo))) {
-    lines.push({ key: 'fnirs', text: 'The forehead light sensor was on. The lower chart shows its relative change.' });
+    const usable = !invalid && session.fnirsUsed !== false && !(fin(session.okSec) && session.okSec <= 0);
+    lines.push({ key: 'fnirs', text: usable ? 'The forehead light sensor was on. The lower chart shows its relative change.' : 'The forehead light sensor signal was poor.' });
   }
   lines.push({ key: 'note', text: 'This is a play summary, not a medical result. Short sessions vary a lot.' });
   return lines;

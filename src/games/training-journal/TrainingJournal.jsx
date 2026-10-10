@@ -294,8 +294,8 @@ export function TrainingJournal() {
               <Tile label="SESSIONS" value={stats.total} />
               <Tile label="MINUTES" value={stats.minutes} />
               <Tile label="DAY STREAK" value={`🔥 ${stats.streak}`} color="#ff9f43" />
-              <Tile label="BEST SCORE" value={stats.best} color="var(--nes-green)" />
-              <Tile label="AVG LAST 7" value={stats.avg7} color={CYAN} />
+              {showScoreTrend && <Tile label="BEST SCORE" value={stats.best} color="var(--nes-green)" />}
+              {showScoreTrend && <Tile label="AVG LAST 7" value={stats.avg7} color={CYAN} />}
             </div>
 
             {filter !== 'focus-ball' && trendSeries.length > 0 && (

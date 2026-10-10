@@ -8,6 +8,7 @@ const LABELS = ['TP9', 'AF7', 'AF8', 'TP10'];
 const POS = [[-0.9, -0.25], [-0.55, 0.72], [0.55, 0.72], [0.9, -0.25]];
 const STOPS = [[0, 32, 120], [0, 140, 255], [0, 200, 160], [255, 200, 0], [210, 30, 30]];
 const RES = 120;
+const NEUTRAL = [150, 170, 190];
 
 function spectralColor(t) {
   const n = STOPS.length - 1;
@@ -23,7 +24,10 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
   const vals = (values || []).map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null));
   const ok = vals.filter((v) => v !== null);
   const min = ok.length ? Math.min(...ok) : 0;
-  const span = ok.length ? Math.max(0.03, Math.max(...ok) - min) : 1;
+  const spread = ok.length ? Math.max(...ok) - min : 0;
+  // Under 5 points apart: no real difference, so one neutral colour. Otherwise a fixed span of at least 10 points.
+  const flat = spread < 0.05;
+  const span = ok.length ? Math.max(0.1, spread) : 1;
   const key = vals.join(',');
 
   useEffect(() => {
@@ -47,7 +51,7 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
           w += (vals[s] / (d * d));
           sum += 1 / (d * d);
         });
-        const [r, g, b] = spectralColor((w / sum - min) / span);
+        const [r, g, b] = flat ? NEUTRAL : spectralColor((w / sum - min) / span);
         img.data[i] = r;
         img.data[i + 1] = g;
         img.data[i + 2] = b;
@@ -56,7 +60,7 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
     }
     ctx.putImageData(img, 0, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, flat]);
 
   if (!ok.length) return <p className="text-xs">Not enough data for the head map.</p>;
   const pct = (v) => `${Math.round(v * 100)}%`;
@@ -81,12 +85,18 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
           </span>
         ))}
       </div>
-      <div className="mt-1 h-2 border border-black/60" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => `rgb(${spectralColor(t).join(',')})`).join(',')})` }} />
-      <figcaption className="flex justify-between text-[9px]">
-        <span>{pct(min)}</span>
-        <span>{title}</span>
-        <span>{pct(min + span)}</span>
-      </figcaption>
+      {flat ? (
+        <figcaption className="text-[9px] mt-1">No clear difference between sensors.</figcaption>
+      ) : (
+        <>
+          <div className="mt-1 h-2 border border-black/60" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => `rgb(${spectralColor(t).join(',')})`).join(',')})` }} />
+          <figcaption className="flex justify-between text-[9px]">
+            <span>{pct(min)}</span>
+            <span>{title}</span>
+            <span>{pct(min + span)}</span>
+          </figcaption>
+        </>
+      )}
     </figure>
   );
 }
