@@ -20,6 +20,9 @@ Thought-controlled minigames in your browser. This fork adds full support for th
 | **Child profiles and history** | One profile per child. Session history, trends, CSV export and import. | [Journal](./docs/screenshots/06-journal.png) |
 | **Parent report** | Band timeline, topomap and a plain-language summary. Print or save as PDF. | (in game over screen) |
 | **Phone first** | Installable PWA. Fullscreen, rotation, portrait and landscape layouts. No desktop-only block. | <img src="./docs/screenshots/02-start-phone.png" width="100" alt="Phone"> |
+| **Drift-proof signal mechanics** | Slow signal drift no longer pins a game at 0. Bad-signal pauses really pause. Stuck or unusable sessions are flagged, not scored. Covers the original games too. See [Signal mechanics](./docs/SIGNAL-MECHANICS.md). | — |
+
+> **How the brain signal becomes a game control, and what we changed compared with the original project:** see [docs/SIGNAL-MECHANICS.md](./docs/SIGNAL-MECHANICS.md).
 
 ### Gallery
 
