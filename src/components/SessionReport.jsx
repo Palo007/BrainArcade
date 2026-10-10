@@ -87,7 +87,7 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
     setFeeling(n);
     setSaved(updateSession(sessionId, { feeling: n }));
   };
-  const shell = 'border-4 border-[var(--nes-yellow)] bg-black/80 px-6 py-5 text-center text-white w-full max-w-xl max-h-full overflow-y-auto';
+  const shell = 'border-4 border-[var(--nes-yellow)] bg-black/80 px-6 phone-port:px-3 py-5 text-center text-white w-full max-w-xl max-h-full overflow-y-auto';
   if (insufficient) {
     return (
       <div className={shell} style={FONT}>

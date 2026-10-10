@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { loadProfiles, createProfile, switchProfile, renameProfile, deleteProfile } from '../lib/profiles.js';
 import { removeChildData } from '../lib/sessionStore.js';
 
-const btn = 'border-4 px-2 py-1 text-[9px]';
+const btn = 'border-4 px-2 py-1 phone-port:py-2 phone-port:min-h-[40px] text-[9px]';
 
 export function ProfilePicker({ onChange }) {
   const [state, setState] = useState(loadProfiles);

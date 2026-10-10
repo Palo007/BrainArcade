@@ -38,7 +38,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
       <div
         role="status"
         onClick={() => setNoteOpen(false)}
-        style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, maxWidth: 420, cursor: 'pointer', fontFamily: "'Press Start 2P', cursive" }}
+        style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, width: 'min(420px, calc(100vw - 24px))', maxWidth: 420, cursor: 'pointer', fontFamily: "'Press Start 2P', cursive" }}
         className="bg-black border-2 border-[var(--nes-yellow)] p-3 text-[9px] leading-relaxed"
       >
         {calibration.fitWarning

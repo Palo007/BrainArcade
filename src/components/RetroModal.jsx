@@ -9,7 +9,7 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
       <div className="absolute inset-0 bg-black bg-opacity-70" onClick={onCancel}></div>
 
       {/* Panel */}
-      <div className="relative w-[92%] max-w-md border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] p-6 text-white shadow-xl">
+      <div className="relative w-[92%] max-w-md border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] p-6 phone-port:p-4 text-white shadow-xl max-h-[92vh] overflow-y-auto">
         {title && (
           <h3 className="text-[var(--nes-yellow)] text-sm mb-4" style={{ fontFamily: "'Press Start 2P', cursive" }}>
             {title}
@@ -21,7 +21,7 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
         </div>
 
         {showFooter && (
-          <div className="mt-6 flex gap-3 justify-end flex-wrap">
+          <div className="mt-6 flex gap-3 justify-end flex-wrap phone-port:flex-col-reverse phone-port:[&>button]:w-full phone-port:[&>button]:min-h-[44px]">
             {leftActions}
             {onCancel && (
               <button

@@ -175,7 +175,7 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
+                <span className="text-[8px] phone-port:text-[9px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
               </button>
             )}
           </div>

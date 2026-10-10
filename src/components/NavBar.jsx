@@ -50,7 +50,7 @@ function GameCard({ game, isActive, onClick }) {
 
         {/* Badge (e.g. required hardware) */}
         {game.badge && (
-          <span className="absolute top-1.5 right-1.5 text-[7px] sm:text-[8px] px-1.5 py-1 bg-black/80 text-[var(--nes-yellow)] border border-[var(--nes-yellow)] leading-none">
+          <span className="absolute top-1.5 right-1.5 text-[7px] phone-port:text-[9px] sm:text-[8px] px-1.5 py-1 bg-black/80 text-[var(--nes-yellow)] border border-[var(--nes-yellow)] leading-none">
             {game.badge}
           </span>
         )}
@@ -70,7 +70,7 @@ function GameCard({ game, isActive, onClick }) {
 
       {/* Text */}
       <div className="p-2 sm:p-3 text-left flex-1">
-        <h3 className="text-[9px] sm:text-xs leading-snug text-white mb-1">{game.name}</h3>
+        <h3 className="text-[9px] sm:text-xs leading-snug text-white mb-1 break-words">{game.name}</h3>
         <p className="hidden sm:block text-[9px] text-gray-400 leading-relaxed group-hover:text-gray-200 line-clamp-3">
           {game.description}
         </p>
@@ -118,7 +118,7 @@ export function NavBar({ onActiveGameClick } = {}) {
         <div className="flex items-center gap-3 sm:gap-6 mb-3 short-land:mb-1 short-land:pr-44">
           <Link
             to="/"
-            className="text-sm sm:text-xl short-land:text-xs text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2 short-land:py-0"
+            className="text-sm sm:text-xl short-land:text-xs text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2 short-land:py-0 phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center"
           >
             ← HOME
           </Link>
@@ -137,7 +137,7 @@ export function NavBar({ onActiveGameClick } = {}) {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setFilter(c.id)}
-                className="shrink-0 border-2 px-3 py-2 short-land:py-1 text-[8px] sm:text-[10px] whitespace-nowrap transition-colors"
+                className="shrink-0 border-2 px-3 py-2 short-land:py-1 phone-port:py-3 text-[8px] phone-port:text-[9px] sm:text-[10px] whitespace-nowrap transition-colors"
                 style={{
                   borderColor: c.color,
                   backgroundColor: selected ? c.color : 'transparent',

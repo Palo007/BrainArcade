@@ -113,10 +113,10 @@ export function StartScreen() {
       {/* Main Content */}
       <div className="relative z-10 w-full h-full flex flex-col">
         {/* Top Left - Title */}
-        <div className="absolute left-20 top-20 short-land:left-4 short-land:top-3">
+        <div className="absolute left-20 top-20 short-land:left-4 short-land:top-3 phone-port:left-4 phone-port:top-4">
           <h1
             ref={titleRef}
-            className="text-4xl sm:text-5xl short-land:text-xl font-bold rgb-text type-effect text-white"
+            className="text-4xl sm:text-5xl short-land:text-xl phone-port:text-xl font-bold rgb-text type-effect text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             BRAIN ARCADE
@@ -124,9 +124,9 @@ export function StartScreen() {
         </div>
 
         {/* Top Right - Time */}
-        <div className="absolute right-20 top-20 short-land:right-4 short-land:top-3">
+        <div className="absolute right-20 top-20 short-land:right-4 short-land:top-3 phone-port:right-4 phone-port:top-12">
           <div
-            className="text-2xl sm:text-3xl short-land:text-sm rgb-text-fast text-white"
+            className="text-2xl sm:text-3xl short-land:text-sm phone-port:text-xs rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
           >
             {time}
@@ -134,7 +134,7 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Left - Status */}
-        <div className="absolute left-20 bottom-20 short-land:hidden">
+        <div className="absolute left-20 bottom-20 short-land:hidden phone-port:hidden">
           <div
             className="text-sm sm:text-base rgb-text-fast text-white"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
@@ -144,10 +144,10 @@ export function StartScreen() {
         </div>
 
         {/* Bottom Right - About + GitHub + Privacy */}
-        <div className="absolute right-20 bottom-20 short-land:right-4 short-land:bottom-3 flex flex-col items-end space-y-2 short-land:space-y-1">
+        <div className="absolute right-20 bottom-20 short-land:right-4 short-land:bottom-3 phone-port:left-4 phone-port:right-4 phone-port:bottom-12 phone-port:flex-row phone-port:justify-between phone-port:items-center phone-port:space-y-0 flex flex-col items-end space-y-2 short-land:space-y-1">
           <button
             onClick={() => navigate('/about')}
-            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
+            className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open About"
           >
@@ -157,7 +157,7 @@ export function StartScreen() {
             href="https://github.com/itayinbarr/brain-arcade"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4"
+            className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open GitHub Repository"
           >
@@ -165,7 +165,7 @@ export function StartScreen() {
           </a>
           <button
             onClick={() => navigate('/privacy')}
-            className="text-[10px] text-xs text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
+            className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: "'Press Start 2P', cursive" }}
             aria-label="Open Privacy Policy"
           >
@@ -174,13 +174,13 @@ export function StartScreen() {
         </div>
 
         {/* Center - Main UI */}
-        <div className="absolute left-20 top-50 short-land:left-4 short-land:top-14">
+        <div className="absolute left-20 top-50 short-land:left-4 short-land:top-14 phone-port:left-4 phone-port:right-4 phone-port:top-24 phone-port:bottom-24 phone-port:overflow-y-auto">
           {!isConnected ? (
             <>
               {/* Subtitle */}
               <div className="mb-12-center">
                 <p
-                  className="text-xl short-land:text-[10px] text-white rgb-text uppercase"
+                  className="text-xl short-land:text-[10px] phone-port:text-[10px] text-white rgb-text uppercase"
                   style={{ fontFamily: "'Press Start 2P', cursive" }}
                 >
                   Use your thoughts as a joystick
@@ -188,14 +188,14 @@ export function StartScreen() {
               </div>
 
               {/* Connection UI */}
-              <div className="w-full max-w-md mt-24 short-land:mt-2">
+              <div className="w-full max-w-md mt-24 short-land:mt-2 phone-port:mt-4 phone-port:max-w-none">
                 <MuseConnector onConnected={() => {}} />
               </div>
 
               {/* Instructions */}
-              <div className="mt-8 short-land:mt-2">
+              <div className="mt-8 short-land:mt-2 phone-port:mt-3">
                 <p
-                  className="text-md short-land:text-[8px] text-white opacity-60"
+                  className="text-md short-land:text-[8px] phone-port:text-[9px] text-white opacity-60"
                   style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
                 >
                   CONNECT YOUR MUSE DEVICE 

@@ -58,14 +58,14 @@ export function BrainCommandCenter() {
       )}
 
       {/* Title (aligned like SweetSpot) */}
-      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-        <h2 className="text-2xl text-[var(--nes-yellow)] text-left">BRAIN COMMAND CENTER</h2>
+      <div className="absolute top-6 left-6 w-[min(480px,60vw)] phone-port:w-[calc(100%-3rem)]">
+        <h2 className="text-2xl phone-port:text-base text-[var(--nes-yellow)] text-left">BRAIN COMMAND CENTER</h2>
         <p className="text-xs text-gray-400 mt-2 text-left">Check out your brain's cognitive traits in real-time</p>
       </div>
 
-      <div className="p-6 pt-24 min-h-full flex flex-col items-center">
+      <div className="p-6 phone-port:p-3 pt-24 phone-port:pt-24 min-h-full flex flex-col items-center">
 
-        <div className="w-full max-w-6xl mx-auto flex gap-6 items-start">
+        <div className="w-full max-w-6xl mx-auto flex gap-6 items-start phone-port:flex-col phone-port:items-center">
           {/* Left: Image */}
           <div className="flex-shrink-0">
             <img
@@ -83,8 +83,8 @@ export function BrainCommandCenter() {
           </div>
 
           {/* Right: Two columns of joystick blocks */}
-          <div className="flex-1">
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(2, minmax(240px, 1fr))' }}>
+          <div className="flex-1 phone-port:w-full">
+            <div className="grid gap-3 grid-cols-[repeat(2,minmax(240px,1fr))] phone-port:grid-cols-1">
               {axes.map((axis) => (
                 <AxisTile key={axis} axis={axis} />
               ))}

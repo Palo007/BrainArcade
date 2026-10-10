@@ -11,7 +11,7 @@ const CYAN = '#5ee0ff';
 const GREEN = '#7dff7d';
 const PINK = '#ff6b9d';
 const panel = 'border-4 border-[var(--nes-yellow)] bg-black/80 px-4 py-4 text-white';
-const smallBtn = 'border-4 px-3 py-2 text-[10px]';
+const smallBtn = 'border-4 px-3 py-2 phone-port:min-h-[40px] text-[10px]';
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const fmtDate = (iso) => {

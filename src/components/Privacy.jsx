@@ -24,7 +24,7 @@ export function Privacy() {
       {/* Content */}
       <div className="relative z-10 w-full h-full">
         {/* Left Third - Privacy Panel */}
-        <div className="absolute left-20 top-40 w-1/3 max-w-xl short-land:left-4 short-land:top-3 short-land:bottom-3 short-land:max-w-none short-land:w-3/5 short-land:overflow-y-auto">
+        <div className="absolute left-20 top-40 w-1/3 max-w-xl short-land:left-4 short-land:top-3 short-land:bottom-3 short-land:max-w-none short-land:w-3/5 short-land:overflow-y-auto phone-port:left-4 phone-port:right-4 phone-port:top-4 phone-port:bottom-4 phone-port:w-auto phone-port:max-w-none phone-port:overflow-y-auto">
           {/* Back Button */}
           <div className="mb-4 short-land:mb-2">
             <button

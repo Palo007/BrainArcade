@@ -583,7 +583,7 @@ export function Diver() {
   // Show waiting screen during baseline
   if (!isBaselineReady) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
+      <div className="w-screen h-screen phone-port:w-full phone-port:h-full flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
         <div className="text-center px-8">
           <div className="text-2xl text-blue-300 mb-4">CALIBRATING...</div>
           <div className="text-sm text-blue-400">
@@ -597,7 +597,7 @@ export function Diver() {
   // Show loading screen while images load
   if (!imagesLoaded) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
+      <div className="w-screen h-screen phone-port:w-full phone-port:h-full flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
         <div className="text-center px-8">
           <div className="text-2xl text-blue-300 mb-4">LOADING...</div>
           <div className="text-sm text-blue-400">Preparing underwater scene</div>

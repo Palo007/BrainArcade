@@ -2,6 +2,12 @@
 
 /* Landscape phone (short viewport) variant: short-land:* */
 @custom-variant short-land (@media (orientation: landscape) and (max-height: 500px));
+/* Portrait phone (width <= 480px): phone-port:*  and either compact phone layout: compact:* */
+@custom-variant phone-port (@media (orientation: portrait) and (max-width: 480px));
+@custom-variant compact {
+  @media (orientation: landscape) and (max-height: 500px) { @slot; }
+  @media (orientation: portrait) and (max-width: 480px) { @slot; }
+}
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
