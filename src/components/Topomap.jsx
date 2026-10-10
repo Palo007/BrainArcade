@@ -8,7 +8,7 @@ const LABELS = ['TP9', 'AF7', 'AF8', 'TP10'];
 const POS = [[-0.9, -0.25], [-0.55, 0.72], [0.55, 0.72], [0.9, -0.25]];
 const STOPS = [[0, 32, 120], [0, 140, 255], [0, 200, 160], [255, 200, 0], [210, 30, 30]];
 const RES = 120;
-const NEUTRAL = [150, 170, 190];
+const PALE = 0.65; // share of white mixed in when the differences are small
 
 function spectralColor(t) {
   const n = STOPS.length - 1;
@@ -25,9 +25,11 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
   const ok = vals.filter((v) => v !== null);
   const min = ok.length ? Math.min(...ok) : 0;
   const spread = ok.length ? Math.max(...ok) - min : 0;
-  // Under 5 points apart: no real difference, so one neutral colour. Otherwise a fixed span of at least 10 points.
+  // Under 5 points apart: only small differences, so pale colours over the real range (they must not look
+  // like big differences). Otherwise full colours over a span of at least 10 points.
   const flat = spread < 0.05;
-  const span = ok.length ? Math.max(0.1, spread) : 1;
+  const span = ok.length ? (flat ? Math.max(0.001, spread) : Math.max(0.1, spread)) : 1;
+  const tint = (rgb) => (flat ? rgb.map((c) => Math.round(c + (255 - c) * PALE)) : rgb);
   const key = vals.join(',');
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
           w += (vals[s] / (d * d));
           sum += 1 / (d * d);
         });
-        const [r, g, b] = flat ? NEUTRAL : spectralColor((w / sum - min) / span);
+        const [r, g, b] = tint(spectralColor((w / sum - min) / span));
         img.data[i] = r;
         img.data[i + 1] = g;
         img.data[i + 2] = b;
@@ -85,18 +87,13 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
           </span>
         ))}
       </div>
-      {flat ? (
-        <figcaption className="text-[9px] mt-1">No clear difference between sensors.</figcaption>
-      ) : (
-        <>
-          <div className="mt-1 h-2 border border-black/60" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => `rgb(${spectralColor(t).join(',')})`).join(',')})` }} />
-          <figcaption className="flex justify-between text-[9px]">
-            <span>{pct(min)}</span>
-            <span>{title}</span>
-            <span>{pct(min + span)}</span>
-          </figcaption>
-        </>
-      )}
+      <div className="mt-1 h-2 border border-black/60" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => `rgb(${tint(spectralColor(t)).join(',')})`).join(',')})` }} />
+      <figcaption className="flex justify-between text-[9px]">
+        <span>{pct(min)}</span>
+        <span>{title}</span>
+        <span>{pct(min + span)}</span>
+      </figcaption>
+      {flat && <figcaption className="text-[9px] mt-1">Only small differences between sensors (under 5 points).</figcaption>}
     </figure>
   );
 }

@@ -44,7 +44,9 @@ export function useSessionTimelineCollector() {
       try {
         if (fnirs?.baselineReady) {
           const { left, right } = fnirs.current;
-          hbo = (left.hbo + right.hbo) / 2;
+          // Skip seconds the light sensor itself flags (motion, no skin contact, too bright)
+          const bad = [left.quality, right.quality].some((q) => q === 'motion' || q === 'no-light' || q === 'saturated');
+          if (!bad) hbo = (left.hbo + right.hbo) / 2;
         }
       } catch { hbo = null; }
       sessionTimeline.push({ bandPowers, focus, hbo });

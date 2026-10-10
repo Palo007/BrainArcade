@@ -21,6 +21,7 @@ const mmss = (s) => {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 };
 const GAP_S = 2; // a longer pause between points breaks the lines / areas
+const HBO_TREND_HALF_S = 60; // half-width of the moving average removed from ΔHbO (slow drift)
 
 function draw(canvas, points, width) {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -101,7 +102,22 @@ function draw(canvas, points, width) {
   if (hasHbo) {
     const top = yAxis + 10;
     const h = 50;
-    const hp = points.filter((p) => p.hbo !== null && p.hbo !== undefined);
+    // ΔHbO is relative to the fixed calibration baseline and drifts by several µM over minutes, far more
+    // than a task response (~0.5-1 µM). Subtract a local straight-line fit over a centred 2-min window:
+    // the drift goes (also at the session edges, where a plain average lags), responses of 5-30 s stay.
+    // Stored data stays raw.
+    const raw = points.filter((p) => p.hbo !== null && p.hbo !== undefined);
+    const hp = raw.map((p) => {
+      let n = 0, st = 0, sy = 0, stt = 0, sty = 0;
+      for (const q of raw) {
+        const dt = q.t - p.t;
+        if (Math.abs(dt) > HBO_TREND_HALF_S) continue;
+        n++; st += dt; sy += q.hbo; stt += dt * dt; sty += dt * q.hbo;
+      }
+      const den = n * stt - st * st;
+      const trend = den > 1e-9 ? (sy * stt - st * sty) / den : sy / n; // fitted value at dt = 0
+      return { ...p, hbo: p.hbo - trend };
+    });
     let lo = Math.min(...hp.map((p) => p.hbo));
     let hi = Math.max(...hp.map((p) => p.hbo));
     if (hi - lo < 0.2) { lo -= 0.1; hi += 0.1; }
@@ -175,7 +191,7 @@ export function BandTimelineChart({ points }) {
         {hasHbo && (
           <li className="flex items-center gap-1">
             <span className="inline-block w-3 border-t-2" style={{ borderColor: '#c0392b' }} />
-            ΔHbO (µM)
+            ΔHbO (µM, slow drift removed)
           </li>
         )}
       </ul>
