@@ -63,7 +63,7 @@ function Chart({ history }) {
 
 /**
  * fNIRS dashboard panel: forehead blood-oxygen change (Muse S Athena optics).
- * Values are changes from a 10 s baseline, in approximate µM.
+ * Values are changes from a 30 s baseline, in approximate µM.
  */
 export function FnirsPanel({ className = '' }) {
   const { supported, data, resetBaseline } = useFnirs();

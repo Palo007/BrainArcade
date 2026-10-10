@@ -24,7 +24,11 @@ const EPS = {
 const SD_CM = 3.0; // assumed source-detector distance (outer optode)
 const DPF = 6.0; // differential pathlength factor, typical adult forehead
 const LOWPASS_HZ = 0.2; // removes heartbeat (~1 Hz) and breathing noise, keeps the slow haemodynamic response
-const BASELINE_S = 10;
+// Resting baseline: 30 s averages over ~3 slow blood-pressure (Mayer, ~0.1 Hz) waves and several breaths,
+// so one wave does not shift the zero point. The first SETTLE_S after a reset are not used
+// (head settles after START, low-pass filter warms up).
+const BASELINE_S = 30;
+const SETTLE_S = 5;
 const HISTORY_HZ = 4;
 const HISTORY_S = 60;
 const FULL_SCALE = 2 ** 20 / 32768; // 20-bit sample after muse-jsx scale (1/32768)
@@ -81,6 +85,7 @@ export class FnirsProcessor {
   resetBaseline() {
     this._sum = [0, 0, 0, 0];
     this._n = 0;
+    this._settle = 0; // samples seen since the reset, up to SETTLE_S worth
     this._i0 = null;
     this._lp = Array.from({ length: 4 }, () => lowpass(LOWPASS_HZ, this.fs));
     this._diffSq = [0, 0, 0, 0]; // EMA of (sample-to-sample ΔOD)² = fast-change (motion) estimate
@@ -90,7 +95,7 @@ export class FnirsProcessor {
   }
 
   get baselineProgress() {
-    return this._i0 ? 1 : Math.min(1, this._n / (BASELINE_S * this.fs));
+    return this._i0 ? 1 : Math.min(1, (this._settle + this._n) / ((SETTLE_S + BASELINE_S) * this.fs));
   }
 
   get baselineReady() {
@@ -113,7 +118,9 @@ export class FnirsProcessor {
     if (!this._i0) {
       this._updateQuality();
       const q = [this.current.left.quality, this.current.right.quality];
-      if (q.includes('motion')) {
+      if (this._settle < SETTLE_S * this.fs) {
+        this._settle++;
+      } else if (q.includes('motion')) {
         // Moved during calibration → start the baseline again so it is not skewed
         this._sum = [0, 0, 0, 0];
         this._n = 0;

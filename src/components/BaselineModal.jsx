@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RetroModal } from './RetroModal.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
+import { SKIP_SECONDS } from '../lib/calibrationPrefs.js';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import '../styles/retro.css';
@@ -20,6 +21,9 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     phaseCount,
     calibration,
     savedCalibration,
+    autoSkip,
+    setAutoSkip,
+    skipping,
   } = useBaseline();
   const [noteOpen, setNoteOpen] = useState(false);
   const calKey = calibration ? `${calibration.paf}|${calibration.reactivity}` : '';
@@ -86,7 +90,16 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
         </div>
 
         {/* Instructions and status below the cross */}
-        {eyesClosed ? (
+        {skipping ? (
+          <>
+            <p className="text-[12px] text-[var(--nes-yellow)] mb-2">Skipping calibration…</p>
+            <p className="text-[10px] mb-3">
+              {savedCalibration
+                ? `Using the last alpha peak (${savedCalibration.paf.toFixed(1)} Hz) and the last few seconds of brain data.`
+                : 'No saved alpha peak: standard bands and the last few seconds of brain data are used.'}
+            </p>
+          </>
+        ) : eyesClosed ? (
           <>
             <p className="text-[12px] text-[var(--nes-yellow)] mb-2">Step 1 of 2: close your eyes</p>
             <p className="text-[10px] mb-3">Close your eyes like a sleeping bunny and stay very still. zZz... A soft chime will tell you when to wake up.</p>
@@ -108,7 +121,19 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
             )}
           </>
         )}
-        <p className="text-[10px] mb-3">Duration: {secondsRequested}s per step</p>
+        {!skipping && <p className="text-[10px] mb-3">Duration: {secondsRequested}s per step</p>}
+        {!inProgress && (
+          <>
+            <button type="button" className="nes-btn mb-2" onClick={() => start(SKIP_SECONDS, { mode: 'skip' })}>
+              SKIP CALIBRATION
+            </button>
+            <p className="text-[10px] mb-2 opacity-80">SKIP starts the game now. Results are less exact: the full calibration finds this child's own alpha peak and resting level.</p>
+            <label className="flex items-center gap-2 text-[10px] mb-3 cursor-pointer min-h-[40px]">
+              <input type="checkbox" className="w-5 h-5" checked={autoSkip} onChange={(e) => setAutoSkip(e.target.checked)} />
+              Always skip for this player (RECALIBRATE still runs the full test)
+            </label>
+          </>
+        )}
         {!inProgress && (
           <div className="mb-3">
             <ElectrodeSetupCheck showValues={false} />

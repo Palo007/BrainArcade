@@ -6,6 +6,7 @@ import { calibrate, computePaf, personalBands, loadCalibration, saveCalibration,
 import { PROFILE_CHANGED_EVENT } from '../lib/profiles.js';
 import { setActiveCalibration, setDemoMode } from '../lib/sessionStore.js';
 import { playChime, primeAudio } from '../lib/chime.js';
+import { getAutoSkip, setAutoSkip as storeAutoSkip, SKIP_SECONDS } from '../lib/calibrationPrefs.js';
 
 const BaselineContext = createContext(null);
 
@@ -34,7 +35,13 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
   const pafRef = useRef(null); // PAF result of the closed phase
   const prevBandsRef = useRef(null); // bands in use before a calibration started (restored on cancel)
   const openStartRef = useRef(0); // when the eyes-open phase began
-  const modeRef = useRef('full'); // 'full' | 'quick' | 'single'
+  const modeRef = useRef('full'); // 'full' | 'quick' | 'single' | 'skip'
+  const [autoSkip, setAutoSkipState] = useState(getAutoSkip);
+  const skipRef = useRef(false); // current run is a SKIP (no rest task)
+  const forceFullRef = useRef(false); // RECALIBRATE asked for the full test: ignore "always skip" until it is done
+  const [skipping, setSkipping] = useState(false);
+  // Games call ensureBaseline({seconds: 30}) on every render, so a SKIP keeps its own length
+  const effectiveSeconds = skipping ? SKIP_SECONDS : secondsRequested;
   const deviceKey = isMock ? 'mock' : (profile?.name || 'device');
 
   // Reset on disconnect
@@ -55,6 +62,13 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     const c = loadCalibration();
     setSavedCalibration(c && Number.isFinite(c.paf) && c.device === deviceKey ? c : null);
   }, [isConnected, deviceKey, profileVersion]);
+
+  // "Always skip" is per child
+  useEffect(() => { setAutoSkipState(getAutoSkip()); }, [profileVersion]);
+  const setAutoSkip = useCallback((on) => {
+    storeAutoSkip(on);
+    setAutoSkipState(!!on);
+  }, []);
 
   // Another child took over: drop the previous child's baseline and personal bands
   useEffect(() => {
@@ -79,13 +93,18 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
   }, [inProgress, phase, subscribeEEG]);
 
   // options.mode: 'full' (default: eyes closed + eyes open), 'quick' (reuse saved PAF, eyes open only),
-  // 'single' (legacy: one resting phase, standard bands)
+  // 'single' (legacy: one resting phase, standard bands), 'skip' (SKIP_SECONDS, saved PAF if any, live baseline)
   const start = useCallback((seconds, options = {}) => {
     if (inProgress) return;
     primeAudio(); // start() runs inside the click handler: unlock WebAudio for the later chime
     prevBandsRef.current = bands;
-    const mode = options.mode || 'full';
+    let mode = options.mode || 'full';
+    if (mode === 'skip') seconds = SKIP_SECONDS;
+    const skipWithPaf = mode === 'skip' && !!savedCalibration;
+    if (skipWithPaf) mode = 'quick'; // same path as QUICK, just shorter and without the rest task
     modeRef.current = mode;
+    skipRef.current = options.mode === 'skip';
+    setSkipping(skipRef.current);
     rawRef.current = { closed: [[], [], [], []], open: [[], [], [], []] };
     pafRef.current = null;
     accumRef.current = null;
@@ -100,7 +119,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     setPhaseCount(mode === 'full' ? 2 : 1);
     setPhase(mode === 'full' ? 'closed' : (mode === 'quick' ? 'open' : 'rest'));
     setInProgress(true);
-    muse?.fnirs?.resetBaseline(); // fNIRS gets a fresh 10 s baseline during the EEG rest period
+    if (!skipRef.current) muse?.fnirs?.resetBaseline(); // fNIRS gets a fresh baseline during the EEG rest period
   }, [inProgress, defaultSeconds, muse, savedCalibration, setBands, bands]);
 
   const cancel = useCallback(() => {
@@ -108,9 +127,12 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     // Abort accumulation and return to pre-start state, keep modal visible
     accumRef.current = null;
     setBands(prevBandsRef.current); // undo personal bands set during an aborted calibration
+    skipRef.current = false;
+    setSkipping(false);
     setInProgress(false);
     setSecondsElapsed(0);
     setPhase('idle');
+    setPhaseCount(2);
   }, [inProgress, setBands]);
 
   cancelRef.current = cancel;
@@ -153,7 +175,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     if (modeRef.current === 'full' && phase === 'open' && Date.now() - openStartRef.current < Math.min(8000, secondsRequested * 500)) return;
     // Skip epochs with extremes over threshold in the last 1s
     const hasExtreme = [0, 1, 2, 3].some((ch) => hasRecentExtreme(ch, 1000));
-    if (hasExtreme) return; // do not accumulate this tick
+    if (hasExtreme && !skipRef.current) return; // do not accumulate this tick (SKIP takes what it gets)
     const acc = accumRef.current;
     for (let ch = 0; ch < 4; ch++) {
       const bp = bandPowers[ch];
@@ -171,7 +193,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     const timer = setInterval(() => {
       const s = Math.floor((Date.now() - startedAt) / 1000);
       setSecondsElapsed(s);
-      if (s >= secondsRequested) {
+      if (s >= effectiveSeconds) {
         clearInterval(timer);
         if (phase === 'closed') {
           // Eyes-closed phase done: find the PAF, switch to personal bands, cue the child to open their eyes
@@ -216,6 +238,10 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
               fitWarning: false, bands: personalBands(savedCalibration.paf), quick: true, date: savedCalibration.date };
           }
         }
+        if (cal && skipRef.current) cal.skipped = true;
+        forceFullRef.current = false;
+        skipRef.current = false;
+        setSkipping(false);
         setCalibration(cal);
         const acc = accumRef.current || { sums: [{}, {}, {}, {}], ticks: 0 };
         const avg = [{}, {}, {}, {}];
@@ -228,15 +254,16 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
           channels: avg, // per-channel baseline band powers
           computedAt: Date.now(),
           ticks: acc.ticks,
-          seconds: secondsRequested,
+          seconds: effectiveSeconds,
           paf: cal?.found ? cal.paf : null,
         });
         accumRef.current = null;
         rawRef.current = { closed: [[], [], [], []], open: [[], [], [], []] };
         setInProgress(false);
         setPhase('idle');
+        setPhaseCount(2); // the next calibration offered is the full one again
         setVisible(false);
-        setSecondsElapsed(secondsRequested);
+        setSecondsElapsed(effectiveSeconds);
         if (resolverRef.current) {
           resolverRef.current.resolve(true);
           resolverRef.current = null;
@@ -244,8 +271,9 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [inProgress, secondsRequested, phase, muse, setBands, savedCalibration, deviceKey, isMock]);
+  }, [inProgress, effectiveSeconds, phase, muse, setBands, savedCalibration, deviceKey, isMock]);
 
+  // options.force: RECALIBRATE buttons; ignores "always skip" and shows the full calibration
   const ensureBaseline = useCallback((options = {}) => {
     const seconds = options.seconds || defaultSeconds;
     if (baseline) return Promise.resolve(true);
@@ -254,13 +282,19 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
       resolverRef.current = { resolve };
       // Do NOT auto-start by default; show Start button in modal
       setSecondsRequested(seconds);
-      if (options.autoStart === true) {
+      if (options.force) forceFullRef.current = true;
+      if (autoSkip && !forceFullRef.current) {
+        start(SKIP_SECONDS, { mode: 'skip' });
+      } else if (options.autoStart === true) {
         start(seconds);
       }
     });
-  }, [baseline, defaultSeconds, start]);
+  }, [baseline, defaultSeconds, start, autoSkip]);
 
-  const resetBaseline = useCallback(() => {
+  // options.forceFull: RECALIBRATE. Games ask for a baseline as soon as it is cleared; this makes
+  // those requests show the full calibration even with "always skip" on.
+  const resetBaseline = useCallback((options = {}) => {
+    if (options.forceFull) forceFullRef.current = true;
     setBaseline(null);
     setCalibration(null);
   }, []);
@@ -269,7 +303,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     baseline,
     isBaselineReady: !!baseline,
     inProgress,
-    secondsRequested,
+    secondsRequested: effectiveSeconds,
     secondsElapsed,
     visible,
     phase,
@@ -282,7 +316,10 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
     hide: () => setVisible(false),
     show: () => setVisible(true),
     resetBaseline,
-  }), [baseline, inProgress, secondsRequested, secondsElapsed, visible, phase, phaseCount, calibration, savedCalibration, ensureBaseline, start, cancel, resetBaseline]);
+    autoSkip,
+    setAutoSkip,
+    skipping: inProgress && skipping,
+  }), [autoSkip, setAutoSkip, baseline, inProgress, effectiveSeconds, skipping, secondsElapsed, visible, phase, phaseCount, calibration, savedCalibration, ensureBaseline, start, cancel, resetBaseline]);
 
   return (
     <BaselineContext.Provider value={value}>{children}</BaselineContext.Provider>

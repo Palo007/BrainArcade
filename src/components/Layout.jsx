@@ -104,7 +104,7 @@ export function Layout({ children }) {
 
     // Step 1: issue reset once
     if (!didResetBaseline) {
-      resetBaseline();
+      resetBaseline({ forceFull: true });
       // Proactively show baseline modal; it will render once baseline clears
       try { showBaselineModal(); } catch {}
       setDidResetBaseline(true);
@@ -116,7 +116,7 @@ export function Layout({ children }) {
       setDidStartBaseline(true);
       (async () => {
         try {
-          await ensureBaseline({ seconds: 30 });
+          await ensureBaseline({ seconds: 30, force: true });
         } finally {
           setPendingRecalibrate(false);
           setDidResetBaseline(false);

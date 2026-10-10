@@ -137,12 +137,12 @@ export function GameOverScreen({
 
   const handleRecalibrate = async () => {
     // Reset baseline to trigger recalibration
-    resetBaseline();
+    resetBaseline({ forceFull: true });
     setCheckingReadiness(false);
     setNeedsRecalibration(false);
 
     // Trigger baseline collection - this will show the baseline modal
-    await ensureBaseline({ seconds: 30 });
+    await ensureBaseline({ seconds: 30, force: true });
 
     // After baseline completes, automatically retry the game
     handleRetry();
