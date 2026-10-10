@@ -12,7 +12,10 @@ import train1 from './assets/train1.png';
 import train2 from './assets/train2.png';
 import train3 from './assets/train3.png';
 import villainTrain from './assets/villain.png';
-import cityBackground from './assets/city-background.png';
+import cityBackground from './assets/city-background.jpg';
+import { preloadImages } from '../../lib/preloadImages.js';
+
+preloadImages(train1, train2, train3, villainTrain, cityBackground);
 
 export function TrainOfThoughts() {
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();

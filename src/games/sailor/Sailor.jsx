@@ -12,9 +12,12 @@ import { GameHint } from '../../components/GameHint.jsx';
 import sailorImg from './assets/sailor-right.png';
 import sailorWorriedImg from './assets/sailor-right-worried.png';
 import barrelImg from './assets/barrel.png';
-import sceneImg from './assets/scene.png';
+import sceneImg from './assets/scene.jpg';
+import { preloadImages } from '../../lib/preloadImages';
 import './sailor-animations.css';
 import '../../styles/retro.css';
+
+preloadImages(sailorImg, sailorWorriedImg, barrelImg, sceneImg);
 
 export function Sailor() {
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();

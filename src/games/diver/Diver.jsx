@@ -9,7 +9,7 @@ import { GameOverScreen } from '../../components/GameOverScreen';
 import { GameStartPanel } from '../../components/GameStartPanel';
 import happyDiverImg from './assets/diver-happy.png';
 import sadDiverImg from './assets/diver-sad.png';
-import backgroundSeaImg from './assets/background-sea.png';
+import backgroundSeaImg from './assets/background-sea.jpg';
 
 export function Diver() {
   const canvasRef = useRef(null);
@@ -78,19 +78,22 @@ export function Diver() {
       }
     };
 
-    images.happy.src = happyDiverImg;
-    images.happy.onload = onLoad;
-
-    images.sad.src = sadDiverImg;
-    images.sad.onload = onLoad;
-
-    images.background.src = backgroundSeaImg;
-    images.background.onload = onLoad;
+    // A flaky phone connection can drop one request: retry twice, then start anyway (draw calls skip broken images)
+    const load = (img, src) => {
+      let tries = 0;
+      img.onload = onLoad;
+      img.onerror = () => {
+        if (++tries <= 2) setTimeout(() => { img.src = `${src}?retry=${tries}`; }, 800);
+        else onLoad();
+      };
+      img.src = src;
+    };
+    load(images.happy, happyDiverImg);
+    load(images.sad, sadDiverImg);
+    load(images.background, backgroundSeaImg);
 
     return () => {
-      images.happy.onload = null;
-      images.sad.onload = null;
-      images.background.onload = null;
+      for (const img of Object.values(images)) img.onload = img.onerror = null;
     };
   }, []);
 
@@ -299,7 +302,7 @@ export function Diver() {
         // Draw sprite centered
         const spriteWidth = this.size * 2;
         const spriteHeight = this.size * 1.5;
-        ctx.drawImage(
+        if (currentImage.naturalWidth) ctx.drawImage(
           currentImage,
           -spriteWidth / 2,
           -spriteHeight / 2,
@@ -394,7 +397,7 @@ export function Diver() {
       lastTimestampRef.current = now;
 
       // Draw background
-      ctx.drawImage(imagesRef.current.background, 0, 0, canvas.width, canvas.height);
+      if (imagesRef.current.background.naturalWidth) ctx.drawImage(imagesRef.current.background, 0, 0, canvas.width, canvas.height);
 
       // Update and draw fish
       // Dynamically adjust radii by frustration: closer on success, further on loss

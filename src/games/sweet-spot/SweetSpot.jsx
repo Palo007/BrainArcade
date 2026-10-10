@@ -12,6 +12,9 @@ import { GameHint } from '../../components/GameHint.jsx';
 import chillImg from './assets/chill.png';
 import worriedImg from './assets/worried.png';
 import fallingImg from './assets/falling.png';
+import { preloadImages } from '../../lib/preloadImages.js';
+
+preloadImages(chillImg, worriedImg, fallingImg);
 
 export function SweetSpot() {
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();

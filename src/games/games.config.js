@@ -45,11 +45,11 @@ import glowOrbThumb from "./glow-orb/assets/thumb.svg";
 import focusBallThumb from "./focus-ball/assets/thumb.svg";
 import journalThumb from "./training-journal/assets/thumb.svg";
 import sweetSpotSprite from "./sweet-spot/assets/chill.png";
-import sailorThumb from "./sailor/assets/scene.png";
+import sailorThumb from "./sailor/assets/scene.jpg";
 import blinkThumb from "./blinking-contest/assets/thumb.svg";
-import diverThumb from "./diver/assets/background-sea.png";
+import diverThumb from "./diver/assets/background-sea.jpg";
 import diverSprite from "./diver/assets/diver-happy.png";
-import trainThumb from "./train-of-thoughts/assets/city-background.png";
+import trainThumb from "./train-of-thoughts/assets/city-background.jpg";
 import trainSprite from "./train-of-thoughts/assets/train1.png";
 import visualizerThumb from "./example-game/assets/thumb.svg";
 
