@@ -388,6 +388,10 @@ export function loadCalibration() {
   const c = readPafStore().byChild[getActiveProfileId()];
   return c && typeof c === 'object' ? c : null;
 }
+export function hasCalibration(childId) {
+  const c = readPafStore().byChild[childId];
+  return !!(c && typeof c === "object" && Number.isFinite(Number(c.paf)));
+}
 export function saveCalibration(obj) {
   const childId = getActiveProfileId();
   const store = readPafStore();

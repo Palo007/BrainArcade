@@ -27,6 +27,9 @@ export class RelaySender {
     startRelay();
     this._pending = Array.from({ length: CHANNELS }, () => []);
     this._optics = [];
+    this._imu = null; // latest acc/gyro reading, sent with the next packet
+    this._bat = null; // latest headband battery %, sent with the next packet
+    this._name = null; // headband name (e.g. MuseS-0923), sent with every packet
     this._seq = 0;
     this._dropped = 0;
     this._timer = setInterval(() => this._flush(), FLUSH_MS);
@@ -41,9 +44,26 @@ export class RelaySender {
     if (this._timer) this._optics.push(Array.from(sample, (v) => Math.round(v * 1e5) / 1e5));
   }
 
+  // Latest motion reading {acc, gyro}; the PC recorder only needs the newest one
+  pushAccGyro(r) {
+    if (this._timer && r) this._imu = { acc: r.acc, gyro: r.gyro };
+  }
+
+  pushBattery(pct) {
+    if (this._timer && Number.isFinite(pct)) this._bat = Math.round(pct * 100) / 100;
+  }
+
+  setName(name) {
+    this._name = name || null;
+  }
+
   _flush() {
     if (this._pending.every((p) => p.length === 0) && !this._optics.length) return;
-    const sent = relaySend({ t: 'eeg', from: PAGE_ID, seq: this._seq, ch: this._pending, opt: this._optics });
+    const msg = { t: 'eeg', from: PAGE_ID, seq: this._seq, ch: this._pending, opt: this._optics };
+    if (this._imu) msg.imu = this._imu;
+    if (this._bat !== null) msg.bat = this._bat;
+    if (this._name) msg.name = this._name;
+    const sent = relaySend(msg);
     if (!sent) {
       // Socket down: keep the newest 2 s, so the PC gets a short catch-up after reconnect
       for (const p of this._pending) if (p.length > MAX_BACKLOG) this._dropped += p.splice(0, p.length - MAX_BACKLOG).length;
@@ -57,6 +77,8 @@ export class RelaySender {
     }
     this._pending = Array.from({ length: CHANNELS }, () => []);
     this._optics = [];
+    this._imu = null;
+    this._bat = null;
   }
 
   stop() {
@@ -73,6 +95,9 @@ class PhoneRelayDevice {
     this.profile = 'athena'; // phone sends already-filtered Athena samples
     this.fnirs = new FnirsProcessor();
     this.stalled = false;
+    this.recTap = null; // optional recorder hooks { battery(pct), accGyro({acc, gyro}) }, see RecordingContext
+    this._battery = null; // same shape as the Athena adapter: { values: [pct] }
+    this._device = null; // { name } of the headband on the phone, for the recording header
     this._lastPacket = 0;
     this._lastSeq = null;
     this._stallStart = 0;
@@ -92,6 +117,12 @@ class PhoneRelayDevice {
       this._samples += data.ch[0]?.length || 0;
       data.ch.forEach((samples, ch) => samples.forEach((v) => this.eeg[ch].write(v)));
       if (Array.isArray(data.opt)) data.opt.forEach((sample) => this.fnirs.push(sample));
+      if (data.imu) this.recTap?.accGyro?.(data.imu);
+      if (Number.isFinite(data.bat)) {
+        this._battery = { values: [data.bat] };
+        this.recTap?.battery?.(data.bat);
+      }
+      if (data.name && this._device?.name !== data.name) this._device = { name: data.name };
     };
     this._off = null;
     this._watchdog = null;

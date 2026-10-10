@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PlayerSwitcher } from './PlayerSwitcher.jsx';
 import { Link, useLocation } from 'react-router-dom';
 import { games, categories } from '../games/games.config';
 import '../styles/retro.css';
@@ -124,6 +125,7 @@ export function NavBar({ onActiveGameClick } = {}) {
           </Link>
           <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">SELECT GAME</h2>
           <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
+          <PlayerSwitcher className="ml-auto sm:ml-0 min-w-0" />
         </div>
 
         {/* Category filter (scrolls sideways on phones) */}

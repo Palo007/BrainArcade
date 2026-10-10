@@ -1,10 +1,10 @@
 // Training Journal: session history for all games, per child, with trends, streak, check-ins and CSV backup.
 import React, { useMemo, useRef, useState } from 'react';
 import { loadSessions, clearSessions, dayStreak, sessionsSinceCheckIn, sessionsForChild, exportCsv, importCsv, CHECK_IN_EVERY } from '../../lib/sessionStore.js';
-import { ProfilePicker } from '../../components/ProfilePicker.jsx';
+import { PlayerSwitcher } from '../../components/PlayerSwitcher.jsx';
 import { AlphaPeakReport } from '../../components/AlphaPeakReport.jsx';
 import { loadPafHistory } from '../../lib/paf.js';
-import { loadProfiles } from '../../lib/profiles.js';
+import { useProfiles } from '../../contexts/ProfileContext.jsx';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -180,7 +180,15 @@ function CheckInCard({ sessions }) {
 
 export function TrainingJournal() {
   const [allSessions, setSessions] = useState(loadSessions);
-  const [profiles, setProfiles] = useState(loadProfiles);
+  const profiles = useProfiles();
+  // Player switched / created / deleted anywhere (chip, modal, other tab): re-read the data
+  const profileKey = `${profiles.activeId}|${profiles.list.length}`;
+  const [seenKey, setSeenKey] = useState(profileKey);
+  if (seenKey !== profileKey) {
+    setSeenKey(profileKey);
+    setSessions(loadSessions());
+    setGameFilter('all');
+  }
   const [gameFilter, setGameFilter] = useState('all');
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
@@ -232,7 +240,7 @@ export function TrainingJournal() {
       .then((t) => {
         const r = importCsv(t);
         setSessions(loadSessions());
-        setProfiles(loadProfiles());
+        profiles.refresh();
         setNote(`Imported ${r.sessions}, skipped ${r.skipped}.`);
       })
       .catch(() => setNote('Could not read that file.'));
@@ -248,7 +256,10 @@ export function TrainingJournal() {
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-10 space-y-4">
         <h2 className="text-xl text-[var(--nes-yellow)]">TRAINING JOURNAL</h2>
 
-        <ProfilePicker onChange={(p) => { setProfiles(p); setSessions(loadSessions()); setGameFilter('all'); }} />
+        <div className="border-4 border-white/40 bg-black/60 px-3 py-3 flex items-center gap-3 flex-wrap">
+          <p className="text-[8px] text-gray-300">PLAYER</p>
+          <PlayerSwitcher />
+        </div>
 
         {games.length > 1 && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by game">

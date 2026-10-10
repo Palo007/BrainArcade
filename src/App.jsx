@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { ProfileProvider } from './contexts/ProfileContext.jsx';
 import { MuseProvider } from './contexts/MuseContext';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
 import { QualityProvider } from './contexts/QualityContext.jsx';
@@ -74,6 +75,7 @@ function GamePage() {
  */
 function App() {
   return (
+    <ProfileProvider>
     <MuseProvider>
       <ProcessingProvider>
         <QualityProvider>
@@ -119,6 +121,7 @@ function App() {
         </QualityProvider>
       </ProcessingProvider>
     </MuseProvider>
+    </ProfileProvider>
   );
 }
 

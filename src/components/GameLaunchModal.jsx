@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RetroModal } from './RetroModal.jsx';
+import { PlayerChip, WhoIsPlayingModal } from './PlayerSwitcher.jsx';
 import '../styles/retro.css';
 
 export function GameLaunchModal({ game, onClose }) {
   const navigate = useNavigate();
+  const [choosing, setChoosing] = useState(false);
 
   if (!game) return null;
 
@@ -17,6 +19,11 @@ export function GameLaunchModal({ game, onClose }) {
     <RetroModal title={game.name} onCancel={onClose} showFooter={false}>
       <div style={{ fontFamily: 'var(--font-retro)' }}>
         <p className="text-[10px] mb-4 text-gray-300">{game.description}</p>
+
+        <div className="flex items-center gap-2 text-[10px] text-gray-300">
+          <span>Playing as:</span>
+          <PlayerChip onClick={() => setChoosing(true)} />
+        </div>
 
         <div className="mt-4 flex gap-3 justify-end flex-wrap">
           <button
@@ -33,6 +40,7 @@ export function GameLaunchModal({ game, onClose }) {
           </button>
         </div>
       </div>
+      {choosing && <WhoIsPlayingModal onClose={() => setChoosing(false)} />}
     </RetroModal>
   );
 }

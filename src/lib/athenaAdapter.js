@@ -81,7 +81,8 @@ export class MuseAthenaDevice {
     this._maxGap = 0;
     this._battery = null;
     this._recTap = null; // optional recorder hooks { battery(pct), accGyro({acc, gyro}) }, see RecordingContext
-    this._accSub = null; // accGyro subscription, only alive while recTap is set
+    this._accSub = null; // accGyro subscription, only alive while a recorder (here or on the PC via relay) needs it
+    this._imuCount = 0; // acc/gyro readings since the last heartbeat (diagnostics)
     this._attached = null;
     this._lastGood = new Float64Array(CHANNELS);
     this._wakeLock = null;
@@ -119,13 +120,17 @@ export class MuseAthenaDevice {
     this._syncAccSub();
   }
 
-  // Acc/gyro are only parsed/forwarded while a recording needs them
+  // Acc/gyro are parsed while a recorder needs them: a local one (recTap) or a PC one behind the relay
   _syncAccSub() {
-    if (!this._recTap) {
+    if (!this._recTap && !this._relay) {
       this._accSub?.unsubscribe();
       this._accSub = null;
     } else if (!this._accSub && this._attached) {
-      this._accSub = this._attached.accGyroReadings.subscribe((r) => this._recTap?.accGyro?.(r));
+      this._accSub = this._attached.accGyroReadings.subscribe((r) => {
+        this._imuCount++;
+        this._recTap?.accGyro?.(r);
+        this._relay?.pushAccGyro(r);
+      });
     }
   }
 
@@ -219,6 +224,7 @@ export class MuseAthenaDevice {
       client.batteryData.subscribe((b) => {
         this._battery = b;
         this.recTap?.battery?.(b?.values?.[0]);
+        this._relay?.pushBattery(b?.values?.[0]);
       }),
       client.connectionStatus.subscribe((connected) => {
         if (connected || this._closing || this._reconnecting) return;
@@ -316,8 +322,9 @@ export class MuseAthenaDevice {
           visible: document.visibilityState,
           wakeLock: !!this._wakeLock,
           battery: this._battery ? JSON.stringify(this._battery).slice(0, 80) : undefined,
+          imuPerS: this._accSub ? Math.round(this._imuCount / (HEARTBEAT_MS / 1000)) : undefined,
         });
-        this._samples = this._gaps = this._maxGap = 0;
+        this._samples = this._gaps = this._maxGap = this._imuCount = 0;
       }, HEARTBEAT_MS)
     );
   }
@@ -331,6 +338,7 @@ export class MuseAthenaDevice {
     try {
       const gatt = await this._connectGatt();
       this._relay = new RelaySender();
+      this._relay.setName(this._device?.name);
       await this._startStream(gatt);
       this.state = 2;
       diag('ble-streaming', { name: this._device?.name });

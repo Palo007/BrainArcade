@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { sessionTimeline, meanAlphaByChannel } from '../lib/sessionTimeline.js';
 import { BandTimelineChart } from './BandTimelineChart.jsx';
 import { Topomap } from './Topomap.jsx';
-import { loadProfiles } from '../lib/profiles.js';
+import { useProfiles } from '../contexts/ProfileContext.jsx';
 import { loadSessions } from '../lib/sessionStore.js';
 import { ParentSummary } from './ParentSummary.jsx';
 import '../styles/print.css';
@@ -15,6 +15,7 @@ import '../styles/print.css';
 // eslint-disable-next-line no-unused-vars
 export function ParentReport({ sessionId = null, seconds = 0, game = null, childName = '' }) {
   const [open, setOpen] = useState(false);
+  const profiles = useProfiles();
   // The game is over once the report is shown: stop collecting, keep the points of this session.
   useEffect(() => {
     sessionTimeline.end();
@@ -32,13 +33,13 @@ export function ParentReport({ sessionId = null, seconds = 0, game = null, child
     if (!open) return { date: '', name: childName };
     const rec = sessionId ? loadSessions().find((s) => s.id === sessionId) : null;
     const d = rec?.date ? new Date(rec.date) : new Date();
-    const pr = loadProfiles();
+    const pr = profiles;
     const cid = rec?.childId || pr.activeId;
     return {
       date: Number.isNaN(d.getTime()) ? new Date().toLocaleDateString() : d.toLocaleDateString(),
       name: childName || pr.list.find((c) => c.id === cid)?.name || '',
     };
-  }, [open, sessionId, childName]);
+  }, [open, sessionId, childName, profiles]);
   if (!open) {
     return (
       <div className="mt-4 mb-1 flex justify-center">

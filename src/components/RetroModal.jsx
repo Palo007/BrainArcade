@@ -1,8 +1,11 @@
 import React, { useEffect, useId, useRef } from 'react';
 import '../styles/retro.css';
 
+// Open modals, topmost last: Esc only closes the top one (a modal can open another on top of itself).
+const openStack = [];
+
 // Simple retro-styled modal matching arcade theme
-export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false, leftActions = null, actionsAlign = 'end' }) {
+export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false, leftActions = null, actionsAlign = 'end', wide = false }) {
   const titleId = useId();
   const confirmRef = useRef(null);
   const cancelRef = useRef(null);
@@ -18,13 +21,33 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
     };
   }, []);
 
+  // Esc = cancel (topmost modal only)
+  const cancelFn = useRef(onCancel);
+  cancelFn.current = onCancel;
+  useEffect(() => {
+    const token = {};
+    openStack.push(token);
+    const onKey = (e) => {
+      if (e.key === 'Escape' && openStack[openStack.length - 1] === token && cancelFn.current) {
+        e.stopPropagation();
+        cancelFn.current();
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      const i = openStack.indexOf(token);
+      if (i >= 0) openStack.splice(i, 1);
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 1000 }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black bg-opacity-70" onClick={onCancel}></div>
 
       {/* Panel */}
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined} tabIndex={-1} className="relative w-[92%] max-w-md border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] p-6 phone-port:p-4 text-white shadow-xl max-h-[92vh] overflow-y-auto">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined} tabIndex={-1} className={`relative w-[92%] ${wide ? 'max-w-2xl' : 'max-w-md'} border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] p-6 phone-port:p-4 text-white shadow-xl max-h-[92vh] overflow-y-auto`}>
         {title && (
           <h3 id={titleId} className="text-[var(--nes-yellow)] text-sm mb-4" style={{ fontFamily: 'var(--font-retro)' }}>
             {title}
