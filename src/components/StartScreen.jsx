@@ -204,8 +204,21 @@ export function StartScreen() {
                   CONNECT YOUR MUSE DEVICE 
                   <br />
                   OR SIMULATE BRAIN DATA
-                 
+
                 </p>
+              </div>
+
+              {/* Recording viewer: works without a headset */}
+              <div className="w-full max-w-md mt-6 short-land:mt-2 phone-port:mt-3 phone-port:max-w-none">
+                <button
+                  type="button"
+                  onClick={() => navigate('/viewer')}
+                  className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] hover:bg-[var(--nes-yellow)] hover:text-black bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85"
+                  style={{ fontFamily: 'var(--font-retro)' }}
+                  aria-label="Open the recording viewer"
+                >
+                  VIEW A RECORDING
+                </button>
               </div>
             </>
           ) : (
