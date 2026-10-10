@@ -41,7 +41,7 @@ export function GameOverModal({ finalScore = 0, onRetry, showScore = true }) {
             <div className="text-[var(--nes-gray)] mb-2">FINAL SCORE</div>
             <div
               className="text-4xl text-[var(--nes-yellow)] mb-4"
-              style={{ fontFamily: "'Press Start 2P', cursive" }}
+              style={{ fontFamily: 'var(--font-retro)' }}
             >
               {finalScore.toLocaleString()}
             </div>

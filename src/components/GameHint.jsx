@@ -40,7 +40,7 @@ export function GameHint({
   return (
     <div
       className={`${posClass} ${schemeClasses} px-4 py-2 text-[10px]`}
-      style={{ fontFamily: "'Press Start 2P', cursive", ...posStyle }}
+      style={{ fontFamily: 'var(--font-retro)', ...posStyle }}
     >
       {primary && (
         <div className={textAlign === 'left' ? 'text-left' : textAlign === 'right' ? 'text-right' : 'text-center'}>

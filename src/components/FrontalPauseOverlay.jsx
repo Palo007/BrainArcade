@@ -41,7 +41,7 @@ export function FrontalPauseOverlay() {
 
   return (
     <RetroModal title={adjusting ? 'EVALUATING SETUP…' : 'PAUSED: CHECK ELECTRODES'} showFooter={false}>
-      <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div style={{ fontFamily: 'var(--font-retro)' }}>
         {adjusting ? (
           <div className="text-[10px] flex items-center gap-2">
             <span className="animate-pulse">▮▯▮</span>

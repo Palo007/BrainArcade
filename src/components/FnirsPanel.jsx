@@ -2,7 +2,7 @@
 import React from 'react';
 import { useFnirs } from '../hooks/useFnirs.js';
 
-const FONT = { fontFamily: "'Press Start 2P', cursive" };
+const FONT = { fontFamily: 'var(--font-retro)' };
 const HBO = 'var(--nes-red)';
 const HBR = 'var(--nes-blue)';
 

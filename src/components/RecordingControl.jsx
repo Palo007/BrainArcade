@@ -32,7 +32,7 @@ export function RecordingControl() {
 
   const isGame = pathname.startsWith('/game/');
   const box = 'fixed left-2 bottom-2 z-[60] border-2 border-white bg-black/80 text-white p-2 text-[8px] leading-relaxed max-w-[240px]';
-  const font = { fontFamily: "'Press Start 2P', cursive" };
+  const font = { fontFamily: 'var(--font-retro)' };
   const btn = 'border-2 px-2 py-1.5 mr-1 mt-1 text-[8px] border-white hover:bg-white hover:text-black';
 
   if (status === 'done' && result) {

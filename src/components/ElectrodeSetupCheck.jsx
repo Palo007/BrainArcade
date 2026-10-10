@@ -26,7 +26,7 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
   }, [perChannelBad]);
 
   return (
-    <div className="w-full max-w-lg min-w-[22rem] phone-port:min-w-0 border-4 border-white bg-[var(--nes-dark)] p-4 text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+    <div className="w-full max-w-lg min-w-[22rem] phone-port:min-w-0 border-4 border-white bg-[var(--nes-dark)] p-4 text-white" style={{ fontFamily: 'var(--font-retro)' }}>
       <h4 className="text-[var(--nes-yellow)] text-xs mb-3">ELECTRODE CHECK</h4>
       {adjusting ? (
         <div className="text-[10px] flex items-center gap-2 mb-3">

@@ -22,6 +22,9 @@
  *   kind?: "game" | "page" - Default "game". "page" opens in one click (no launch modal,
  *                           countdown, baseline or device/quality guards); for non-game pages
  *                           that only read local data.
+ *   signal?: "fnirs"     - Game runs on the fNIRS optics, not EEG. Weak EEG electrode contact must
+ *                           not pause it: Layout hides the EEG quality pause overlay for it and the
+ *                           game pauses itself on fNIRS problems only.
  * }
  */
 
@@ -69,6 +72,7 @@ export const games = [
   },
   {
     id: "glow-orb",
+    signal: "fnirs",
     name: "GLOW ORB",
     description: "Think hard to make the orb fly! Uses the fNIRS light sensors of the Muse S Athena.",
     component: GlowOrb,
@@ -78,6 +82,7 @@ export const games = [
   },
   {
     id: "focus-ball",
+    signal: "fnirs",
     name: "FOCUS BALL",
     description: "Keep the ball above the line with steady focus. Mendi-style training with a session report. Needs Muse S Athena (fNIRS).",
     component: FocusBall,
@@ -159,6 +164,14 @@ export const games = [
 
 // True for routes of `kind: "page"` entries (e.g. /game/training-journal): no device/baseline/quality gating.
 export const isPageRoute = (pathname = "") => {
-  const id = pathname.startsWith("/game/") ? pathname.slice(6) : null;
+  const id = pathname.startsWith("/game/") ? pathname.slice(6).split("/")[0] : null;
   return !!id && games.some((g) => g.id === id && g.kind === "page");
 };
+
+const gameForPath = (pathname = "") => {
+  const id = pathname.startsWith("/game/") ? pathname.slice(6).split("/")[0] : null;
+  return id ? games.find((g) => g.id === id) || null : null;
+};
+
+// True for games that run on fNIRS (`signal: "fnirs"`): EEG-quality pauses/modals are suppressed there.
+export const isFnirsRoute = (pathname = "") => gameForPath(pathname)?.signal === "fnirs";

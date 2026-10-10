@@ -6,7 +6,7 @@ export function Joystick({ axis, label, range = 0.4, hintLow, hintHigh }) {
   const { value01 } = useJoystick(axis, { range });
   const pct = Math.round(value01 * 100);
   return (
-    <div className="text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+    <div className="text-white" style={{ fontFamily: 'var(--font-retro)' }}>
       <div className="flex items-center justify-between mb-1 text-[10px]">
         <div className="opacity-80">{label || axis}</div>
         <div className="text-[var(--nes-yellow)]">{pct}</div>

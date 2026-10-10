@@ -7,9 +7,14 @@ import { RetroModal } from '../../components/RetroModal.jsx';
 import '../../styles/retro.css';
 import './eye-animations.css';
 
-// Live blink-detector numbers for tuning. Open any page once with ?debug=1 (remembered; ?debug=0 turns it off).
+// Live blink-detector numbers for tuning. Dev server only: open any page once with ?debug=1
+// (remembered; ?debug=0 turns it off). The published app never shows them and forgets the old flag.
 function blinkDebugEnabled() {
   try {
+    if (!import.meta.env.DEV) {
+      localStorage.removeItem('blinkDebug');
+      return false;
+    }
     const q = new URLSearchParams(window.location.search).get('debug');
     if (q != null) localStorage.setItem('blinkDebug', q === '0' ? '0' : '1');
     return localStorage.getItem('blinkDebug') === '1';
@@ -198,7 +203,7 @@ export function BlinkingContest() {
           confirmVisible={true}
           showFooter={true}
         >
-          <p style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}>
+          <p style={{ fontFamily: 'var(--font-retro)', lineHeight: '1.8' }}>
             Welcome to the blinking contest.<br /><br />
             You have 3 blinks before losing.<br /><br />
             Try to stay as long as possible without blinking!
@@ -211,10 +216,10 @@ export function BlinkingContest() {
         <>
           {/* Title */}
           <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-            <h2 className="text-2xl text-[var(--nes-dark)]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <h2 className="text-2xl text-[var(--nes-dark)]" style={{ fontFamily: 'var(--font-retro)' }}>
               BLINKING CONTEST
             </h2>
-            <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>
               Don't blink!
             </p>
           </div>
@@ -238,7 +243,7 @@ export function BlinkingContest() {
           {/* HUD - Bottom Right */}
           <div
             className="absolute bottom-8 right-8 flex gap-6 text-[var(--nes-dark)] items-end"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             <div className="text-right">
               <div className="text-[8px] opacity-80">BLINKS</div>

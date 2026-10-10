@@ -30,7 +30,7 @@ export function Credits() {
             <button
               onClick={() => navigate(-1)}
               className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 short-land:py-1 short-land:text-[10px] hover:bg-[var(--nes-blue)] hover:text-black"
-              style={{ fontFamily: "'Press Start 2P', cursive" }}
+              style={{ fontFamily: 'var(--font-retro)' }}
               aria-label="Back"
             >
               ← BACK
@@ -40,7 +40,7 @@ export function Credits() {
           {/* Title */}
           <h2
             className="text-2xl sm:text-3xl short-land:text-base rgb-text text-white mb-4 short-land:mb-2"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             ABOUT
           </h2>
@@ -48,7 +48,7 @@ export function Credits() {
       {/* About Text */}
       <div
         className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-10"
-        style={{ fontFamily: "'Press Start 2P', cursive" }}
+        style={{ fontFamily: 'var(--font-retro)' }}
       >
             {/* Original credits content remains */}
             <p>
@@ -73,7 +73,7 @@ export function Credits() {
 
             {/* Why Muse section */}
             <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
-              <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+              <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: 'var(--font-retro)' }}>
                 WHY MUSE?
               </h3>
               <p className="text-[10px] sm:text-xs">
@@ -84,7 +84,7 @@ export function Credits() {
           </div>
           {/* License & Privacy */}
           <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
-            <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: 'var(--font-retro)' }}>
               LICENSE & PRIVACY
             </h3>
             <p className="text-[10px] sm:text-xs">

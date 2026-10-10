@@ -41,11 +41,11 @@ export function ParentReport({ sessionId = null, seconds = 0, game = null, child
   }, [open, sessionId, childName]);
   if (!open) {
     return (
-      <div className="mb-5">
+      <div className="mt-4 mb-1 flex justify-center">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="border-4 border-[var(--nes-blue)] px-4 py-3 text-xs text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-black"
+          className="retro-button border-[var(--nes-cyan)] text-[var(--nes-cyan)] bg-transparent px-4 py-2 hover:bg-[var(--nes-cyan)] hover:text-black phone-port:w-full phone-port:min-h-[44px] compact:min-h-[44px]"
         >
           PARENT REPORT
         </button>

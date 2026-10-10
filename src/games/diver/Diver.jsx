@@ -380,7 +380,7 @@ export function Diver() {
 
     // Utilities for transient text effects
     const pushFloatingText = ({ x, y, text, color = '#FFFFFF', shadow = 'rgba(0,0,0,0.9)',
-      font = "18px 'Press Start 2P', cursive", life = 0.9, vy = -60, vx = 0 }) => {
+      font = "18px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace", life = 0.9, vy = -60, vx = 0 }) => {
       floatingTextsRef.current.push({ x, y, text, color, shadow, font, life, age: 0, vy, vx, opacity: 1 });
     };
 
@@ -451,7 +451,7 @@ export function Diver() {
               text: '+ 1',
               color: '#7CFC00',
               shadow: 'rgba(0,0,0,0.95)',
-              font: "18px 'Press Start 2P', cursive",
+              font: "18px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace",
               life: 0.8,
               vy: -80,
             });
@@ -476,7 +476,7 @@ export function Diver() {
             y: diverRef.current.y - 40,
             text: marks,
             color: newLevel === 3 ? '#ff3b3b' : '#ffd23f',
-            font: `16px 'Press Start 2P', cursive`,
+            font: `16px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace`,
             life: 0.8,
             vy: -40,
           });
@@ -506,7 +506,7 @@ export function Diver() {
           ft.x += (ft.vx || 0) * dt;
           ft.y += (ft.vy || -60) * dt;
           ft.opacity = 1 - ft.age / ft.life;
-          ctx.font = ft.font || "18px 'Press Start 2P', cursive";
+          ctx.font = ft.font || "18px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace";
           // Shadow
           ctx.fillStyle = ft.shadow || 'rgba(0,0,0,0.9)';
           ctx.fillText(ft.text, ft.x + 2, ft.y + 2);
@@ -561,7 +561,7 @@ export function Diver() {
           text: '+ 1',
           color: '#7CFC00',
           shadow: 'rgba(0,0,0,0.95)',
-          font: "18px 'Press Start 2P', cursive",
+          font: "18px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace",
           life: 0.8,
           age: 0,
           vy: -70,
@@ -634,7 +634,7 @@ export function Diver() {
         />
 
         {/* Title & Subtitle */}
-        <div className="absolute top-6 left-6 w-[min(480px,60vw)] z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+        <div className="absolute top-6 left-6 w-[min(480px,60vw)] z-10" style={{ fontFamily: 'var(--font-retro)' }}>
           <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>BAD DIVER</h2>
           <p className="text-xs text-gray-300 mt-2" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.8)' }}>
             Frustration fuels your catch!
@@ -652,7 +652,7 @@ export function Diver() {
         />
 
         {/* HUD */}
-        <div className="absolute bottom-8 right-8 z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+        <div className="absolute bottom-8 right-8 z-10" style={{ fontFamily: 'var(--font-retro)' }}>
           <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-4 py-3">
             <div className="flex gap-6 items-end">
               {/* Frustration */}

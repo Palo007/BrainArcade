@@ -253,7 +253,7 @@ export function Sailor() {
       </div>
 
       {/* HUD */}
-      <div className="absolute bottom-8 right-8 flex gap-6 text-white items-end" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div className="absolute bottom-8 right-8 flex gap-6 text-white items-end" style={{ fontFamily: 'var(--font-retro)' }}>
         <div className="text-right">
           <div className="text-[8px] opacity-60">HEALTH</div>
           <div className="mt-2">

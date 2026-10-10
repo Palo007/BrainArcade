@@ -138,7 +138,7 @@
 
 /* Retro Button */
 .retro-button {
-  font-family: 'Press Start 2P', cursive;
+  font-family: var(--font-retro);
   font-size: 12px;
   padding: 12px 24px;
   border: 4px solid;

@@ -123,17 +123,22 @@ export function QualityProvider({ children }) {
 
   // Compute quality per channel using time-based rule: in last 1s, too many samples above the spike threshold = bad.
   // Athena: a flat channel is also bad (railed/open input looks flat after the adapter's high-pass).
-  const perChannelBad = useMemo(() => {
+  // Per channel: 'good' | 'weak' (some spikes or a nearly flat signal, not yet bad) | 'bad'
+  const perChannelLevel = useMemo(() => {
     const t = now;
     const total1s = sampleTimesRef.current.filter((x) => x >= t - SECOND_MS).length;
     return [0, 1, 2, 3].map((ch) => {
-      if (total1s === 0) return false;
+      if (total1s === 0) return 'good';
       const above1s = aboveTimesRef.current[ch].filter((x) => x >= t - SECOND_MS).length;
       const ratioAbove = above1s / total1s;
-      const flat = flatRmsUv > 0 && recentRef.current[ch].length >= RMS_WINDOW / 2 && channelRms[ch] < flatRmsUv;
-      return ratioAbove > maxBadRatio || flat;
+      const haveRms = recentRef.current[ch].length >= RMS_WINDOW / 2;
+      const flat = flatRmsUv > 0 && haveRms && channelRms[ch] < flatRmsUv;
+      if (ratioAbove > maxBadRatio || flat) return 'bad';
+      const nearlyFlat = flatRmsUv > 0 && haveRms && channelRms[ch] < flatRmsUv * 2;
+      return ratioAbove > maxBadRatio / 3 || nearlyFlat ? 'weak' : 'good';
     });
   }, [now, channelRms, maxBadRatio, flatRmsUv]);
+  const perChannelBad = useMemo(() => perChannelLevel.map((l) => l === 'bad'), [perChannelLevel]);
 
   // Convenience flags
   const frontalBad = perChannelBad[1] || perChannelBad[2];
@@ -224,6 +229,7 @@ export function QualityProvider({ children }) {
     currentAbs,
     channelRms,
     perChannelBad,
+    perChannelLevel,
     anyBad,
     frontalBad,
     adjusting,
@@ -234,7 +240,7 @@ export function QualityProvider({ children }) {
     quality15s,
     recheck15sBad: (quality15s.badRatio >= 0.5),
     lostZero6s,
-  }), [spikeUv, currentAbs, channelRms, perChannelBad, anyBad, frontalBad, adjusting, ready, quality10s, quality15s, lostZero6s]);
+  }), [spikeUv, currentAbs, channelRms, perChannelBad, perChannelLevel, anyBad, frontalBad, adjusting, ready, quality10s, quality15s, lostZero6s]);
 
   return <QualityContext.Provider value={value}>{children}</QualityContext.Provider>;
 }

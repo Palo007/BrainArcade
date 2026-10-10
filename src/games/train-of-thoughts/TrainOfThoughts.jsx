@@ -185,7 +185,7 @@ export function TrainOfThoughts() {
         {/* Background day/night is handled by page bg; keep minimal tint */}
         {!isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
               Waiting for baseline…
             </div>
           </div>
@@ -227,11 +227,11 @@ export function TrainOfThoughts() {
             draggable={false}
             style={{ width: 'min(140px, 14vmin)', height: 'auto', imageRendering: 'pixelated', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))' }}
           />
-          <div className="text-[8px] text-gray-400 mt-2" style={{ fontFamily: "'Press Start 2P', cursive" }}>YOU</div>
+          <div className="text-[8px] text-gray-400 mt-2" style={{ fontFamily: 'var(--font-retro)' }}>YOU</div>
         </div>
 
         {/* HUD */}
-        <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+        <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: 'var(--font-retro)' }}>
           <div className="text-right">
             <div className="text-[8px] opacity-60">LIVES</div>
             <div className="mt-2"><PixelHearts health={heartsHealthPct} maxHearts={MAX_LIVES} size={20} /></div>

@@ -7,7 +7,7 @@ import { useFnirs } from '../../hooks/useFnirs.js';
 import { recordSession } from '../../lib/sessionStore.js';
 import '../../styles/retro.css';
 
-const FONT = { fontFamily: "'Press Start 2P', cursive" };
+const FONT = { fontFamily: 'var(--font-retro)' };
 const ROUND_S = 120;
 const GOAL = 0.62; // orb height (0 bottom … 1 top) that counts as "flying"
 const START_SCALE = 0.35; // µM of oxygenation index that moves the orb from rest to the top
@@ -148,7 +148,7 @@ function draw(c, scene, s, t, dt) {
   c.stroke();
   c.setLineDash([]);
   c.fillStyle = s.flying ? 'rgba(255,230,120,1)' : 'rgba(255,255,255,0.6)';
-  c.font = `${10 * dpr}px 'Press Start 2P', monospace`;
+  c.font = `${10 * dpr}px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace`;
   c.fillText('★ FLY ZONE', 12 * dpr, goalY - 8 * dpr);
 
   // Orb

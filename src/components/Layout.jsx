@@ -7,7 +7,8 @@ import { NavBar } from './NavBar';
 import '../styles/retro.css';
 import { RetroModal } from './RetroModal';
 import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
-import { isPageRoute } from '../games/games.config';
+import { isPageRoute, isFnirsRoute } from '../games/games.config';
+import { ElectrodesButton, ElectrodesModal } from './ElectrodeOverlay.jsx';
 
 /**
  * Layout - Main layout wrapper with responsive handling
@@ -24,7 +25,9 @@ export function Layout({ children }) {
   const isGamePage = location.pathname.startsWith('/game/');
   const isPage = isPageRoute(location.pathname); // kind: "page" -> no device guard
   const [showMenu, setShowMenu] = useState(false);
+  const isFnirsGame = isFnirsRoute(location.pathname); // signal: 'fnirs' -> EEG-quality pauses are suppressed
   const [showMusePopup, setShowMusePopup] = useState(false);
+  const [showElectrodes, setShowElectrodes] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [isGameSwitching, setIsGameSwitching] = useState(false);
@@ -38,12 +41,17 @@ export function Layout({ children }) {
   // Close overlay menu on route change
   useEffect(() => {
     setShowMenu(false);
+    setShowElectrodes(false);
   }, [location.pathname]);
 
   // Close overlays on ESC key (menu and Muse popup)
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
+        if (showElectrodes) {
+          setShowElectrodes(false);
+          return;
+        }
         if (showMusePopup) {
           setShowMusePopup(false);
           return;
@@ -53,7 +61,7 @@ export function Layout({ children }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showMenu, showMusePopup]);
+  }, [showMenu, showMusePopup, showElectrodes]);
 
   // Handle switching countdown flow
   useEffect(() => {
@@ -127,23 +135,26 @@ export function Layout({ children }) {
       <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
         {/* Top-right controls: Pause and Muse status */}
         {isConnected && !isFullScreen && (
-          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex items-center gap-2 sm:gap-4">
+          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex flex-wrap justify-end items-center gap-2 sm:gap-4">
             {/* Pause button (only on game pages) */}
             {isGamePage && isConnected && (
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 aria-label="Pause / Menu"
-                className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 short-land:py-0.5 hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
-                style={{ fontFamily: "'Press Start 2P', cursive" }}
+                className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 short-land:py-0.5 min-h-[44px] min-w-[44px] hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
+                style={{ fontFamily: 'var(--font-retro)' }}
               >
                 ❚❚
               </button>
             )}
 
+            {/* Electrode check: any device page (not on kind: "page" routes), never ends the game */}
+            {!isPage && <ElectrodesButton onClick={() => setShowElectrodes(true)} />}
+
             {/* Muse Connected Icon */}
             {isConnected && (
               <button
-                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 short-land:py-0.5 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
+                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 phone-port:px-2 min-h-[44px] phone-port:min-w-[44px] short-land:py-0.5 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
                 onClick={() => setShowMusePopup(true)}
                 title={`Muse status — ${quality10s?.label || 'Good'} • ${Math.round((quality10s?.stablePct || 1) * 100)}% stable${isMock ? ' • MOCK' : ''}`}
                 style={{ borderColor: `var(${quality10s?.var || '--nes-green'})` }}
@@ -175,7 +186,8 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px] phone-port:text-[9px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
+                <span className="text-[8px] phone-port:hidden" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
+                <span className="hidden phone-port:inline text-xs" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{isMock ? 'MOCK' : 'LIVE'}</span>
               </button>
             )}
           </div>
@@ -185,8 +197,8 @@ export function Layout({ children }) {
         {isFullScreen ? (
           <>{children}</>
         ) : (
-          <div className="w-full h-full px-1 sm:px-4 py-2 sm:py-8 short-land:py-1 overflow-y-auto overscroll-contain">
-            <div className="w-full h-full">
+          <div className={`w-full h-full px-1 sm:px-4 py-2 sm:py-8 short-land:py-1 overflow-y-auto overflow-x-hidden overscroll-contain ${isConnected ? 'phone-port:pt-[64px]' : ''}`}>
+            <div className={`w-full h-full ${isConnected ? 'phone-port:relative' : ''}`}>
               <div className="text-left p-2 sm:p-6 short-land:p-1 space-y-6 h-full">
                 {/* Global not-connected guard for game pages */}
                 {isGamePage && !isPage && !isConnected ? (
@@ -236,6 +248,12 @@ export function Layout({ children }) {
             </div>
           </div>
         )}
+        {showElectrodes && isConnected && (
+          <ElectrodesModal
+            onClose={() => setShowElectrodes(false)}
+            eegNote={isFnirsGame ? 'This game uses the fNIRS light sensors. Weak EEG contact does not pause it.' : null}
+          />
+        )}
         {/* Muse popup for switch/disconnect */}
       {showMusePopup && (
         <RetroModal
@@ -259,7 +277,7 @@ export function Layout({ children }) {
             ) : null
           }
         >
-          <div className="space-y-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="space-y-3" style={{ fontFamily: 'var(--font-retro)' }}>
             <p className="text-[10px] opacity-80">Connected via {isMock ? 'Mock Data' : 'Real Device'}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               {!isMock && (
@@ -307,7 +325,7 @@ export function Layout({ children }) {
       {/* Switching overlay */}
       {isSwitching && (
         <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
-          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: 'var(--font-retro)' }}>
             <div className="text-sm text-[var(--nes-yellow)] mb-2">switching brain...</div>
             <div className="text-center text-3xl">{countdown}</div>
           </div>
@@ -315,14 +333,14 @@ export function Layout({ children }) {
       )}
       {isGameSwitching && (
         <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
-          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: 'var(--font-retro)' }}>
             <div className="text-sm text-[var(--nes-yellow)] mb-2">switching game...</div>
             <div className="text-center text-3xl">{gameCountdown}</div>
           </div>
         </div>
       )}
-      {/* Global frontal quality pause overlay for games */}
-      <FrontalPauseOverlay />
+      {/* Global frontal (EEG) quality pause overlay; not for fNIRS games (signal: 'fnirs') */}
+      {!isFnirsGame && <FrontalPauseOverlay />}
       </div>
     </div>
   );

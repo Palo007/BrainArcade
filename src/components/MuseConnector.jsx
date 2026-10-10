@@ -86,7 +86,7 @@ export function MuseConnector({ onConnected }) {
           onClick={() => handleConnect({ athena: true, preset: 'p1034' })}
           disabled={isConnecting}
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
-          style={{ fontFamily: "'Press Start 2P', cursive" }}
+          style={{ fontFamily: 'var(--font-retro)' }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (ATHENA)'}
         </button>
@@ -95,7 +95,7 @@ export function MuseConnector({ onConnected }) {
           onClick={() => handleConnect()}
           disabled={isConnecting}
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
-          style={{ fontFamily: "'Press Start 2P', cursive" }}
+          style={{ fontFamily: 'var(--font-retro)' }}
         >
           {isConnecting ? 'CONNECTING…' : 'CONNECT MUSE (CLASSIC)'}
         </button>
@@ -105,7 +105,7 @@ export function MuseConnector({ onConnected }) {
             onClick={() => handleConnect({ relay: true })}
             disabled={isConnecting}
             className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             {isConnecting ? 'WAITING FOR PHONE…' : 'CONNECT VIA PHONE'}
           </button>
@@ -115,7 +115,7 @@ export function MuseConnector({ onConnected }) {
           onClick={handleMockConnect}
           disabled={isConnecting}
           className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-white bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 mb-4 short-land:mb-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:mb-0 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85 phone-port:[-webkit-text-stroke:0.3px_#fff] phone-port:[text-shadow:2px_2px_0_#000]"
-          style={{ fontFamily: "'Press Start 2P', cursive" }}
+          style={{ fontFamily: 'var(--font-retro)' }}
         >
           {isConnecting ? 'CONNECTING...' : 'EXPLORE WITHOUT A DEVICE'}
         </button>
@@ -123,7 +123,7 @@ export function MuseConnector({ onConnected }) {
 
       {error && (
         <div className="mt-4 p-4 phone-port:p-3 border-4 border-white bg-red-600 bg-opacity-80 text-white text-xs">
-          <p style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}>
+          <p style={{ fontFamily: 'var(--font-retro)', lineHeight: '1.8' }}>
             ERROR
           </p>
           <p className="mt-2 text-[10px] opacity-90 leading-relaxed break-words">{error}</p>
@@ -142,19 +142,19 @@ export function MuseConnector({ onConnected }) {
           onCancel={() => setShowMockInfo(false)}
           onConfirm={confirmMockConnect}
         >
-          <p className="mb-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <p className="mb-3" style={{ fontFamily: 'var(--font-retro)' }}>
             Uses pre-recorded brain data to simulate real-time EEG.
           </p>
-          <p className="opacity-80 mb-3" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <p className="opacity-80 mb-3" style={{ fontFamily: 'var(--font-retro)' }}>
             Perfect for exploring the arcade without a Muse device.
           </p>
-          <p className="opacity-60" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <p className="opacity-60" style={{ fontFamily: 'var(--font-retro)' }}>
             You can switch to a real device later from the menu.
           </p>
 
           {mockError && (
             <div className="mt-4 p-3 border-4 border-white bg-red-600 bg-opacity-80 text-white text-[10px]">
-              <div style={{ fontFamily: "'Press Start 2P', cursive" }}>ERROR</div>
+              <div style={{ fontFamily: 'var(--font-retro)' }}>ERROR</div>
               <div className="opacity-80 mt-1">{mockError}</div>
             </div>
           )}

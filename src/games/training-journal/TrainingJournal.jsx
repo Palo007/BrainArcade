@@ -5,7 +5,7 @@ import { ProfilePicker } from '../../components/ProfilePicker.jsx';
 import { loadProfiles } from '../../lib/profiles.js';
 import '../../styles/retro.css';
 
-const FONT = { fontFamily: "'Press Start 2P', cursive" };
+const FONT = { fontFamily: 'var(--font-retro)' };
 const YELLOW = '#ffd84a';
 const CYAN = '#5ee0ff';
 const GREEN = '#7dff7d';

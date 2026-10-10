@@ -5,7 +5,7 @@ import { updateSession } from '../lib/sessionStore.js';
 import { ParentReport } from './ParentReport.jsx';
 import '../styles/retro.css';
 
-const FONT = { fontFamily: "'Press Start 2P', cursive" };
+const FONT = { fontFamily: 'var(--font-retro)' };
 
 const FEELINGS = ['😣', '😕', '😐', '🙂', '😄'];
 const GOAL_LINE = 0.62;

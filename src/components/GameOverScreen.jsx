@@ -221,8 +221,9 @@ export function GameOverScreen({
       onCancel={handleMenu}
       confirmVisible={true}
       confirmDisabled={confirmDisabled}
+      actionsAlign="center"
     >
-      <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div style={{ fontFamily: 'var(--font-retro)' }}>
         {/* Score display */}
         <div className="text-center mb-4">
           <div className="text-[var(--nes-gray)] mb-2 text-[8px]">FINAL SCORE</div>

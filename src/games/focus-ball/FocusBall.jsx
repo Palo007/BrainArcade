@@ -5,10 +5,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
 import { recordSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
+import { SignalCheck } from '../../components/ElectrodeOverlay.jsx';
 import { SessionReport } from '../../components/SessionReport.jsx';
 import '../../styles/retro.css';
 
-const FONT = { fontFamily: "'Press Start 2P', cursive" };
+const FONT = { fontFamily: 'var(--font-retro)' };
 const GOAL = 0.62;
 const REST = 0.3;
 const START_SCALE = 0.35; // µM of oxygenation index that moves the ball from rest to the top
@@ -735,6 +736,10 @@ export function FocusBall() {
                   {LENGTHS.map((m) => (
                     <button key={m} type="button" className={chip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
                   ))}
+                </div>
+                {/* Informative only: fNIRS needs no EEG electrodes, so weak EEG contact never blocks START */}
+                <div className="text-left border-2 border-white/30 bg-black/40 p-3 mb-5">
+                  <SignalCheck compact eegNote="Only the fNIRS sensors matter here." />
                 </div>
                 <button type="button" onClick={startNormal} className={btn}>START</button>
                 {best > 0 && <p className="text-[9px] text-gray-400 mt-3">BEST {best}</p>}

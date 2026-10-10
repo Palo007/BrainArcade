@@ -8,9 +8,10 @@
   @media (orientation: landscape) and (max-height: 500px) { @slot; }
   @media (orientation: portrait) and (max-width: 480px) { @slot; }
 }
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
+  /* Retro terminal look, made for low vision / reading difficulties. Loaded in main.jsx (self-hosted, offline). */
+  --font-retro: 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace;
   --nes-red: #FC8080;
   --nes-blue: #40C0FF;
   --nes-purple: #8040FF;
@@ -32,7 +33,7 @@ body {
   min-height: 100vh;
   background-color: #181818;
   color: white;
-  font-family: 'Press Start 2P', cursive;
+  font-family: var(--font-retro);
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;

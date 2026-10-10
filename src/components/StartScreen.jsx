@@ -112,7 +112,7 @@ export function StartScreen() {
           <h1
             ref={titleRef}
             className="text-4xl sm:text-5xl short-land:text-xl phone-port:text-xl font-bold rgb-text type-effect text-white"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             BRAIN ARCADE
           </h1>
@@ -122,7 +122,7 @@ export function StartScreen() {
         <div className="absolute right-20 top-20 short-land:right-4 short-land:top-3 phone-port:right-4 phone-port:top-12">
           <div
             className="text-2xl sm:text-3xl short-land:text-sm phone-port:text-xs rgb-text-fast text-white"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             {time}
           </div>
@@ -132,7 +132,7 @@ export function StartScreen() {
         <div className="absolute left-20 bottom-20 short-land:hidden phone-port:hidden">
           <div
             className="text-sm sm:text-base rgb-text-fast text-white"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             {isConnected ? 'REC ●' : 'STANDBY'}
           </div>
@@ -143,7 +143,7 @@ export function StartScreen() {
           <button
             onClick={() => navigate('/about')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
             aria-label="Open About"
           >
             ABOUT
@@ -153,7 +153,7 @@ export function StartScreen() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
             aria-label="Open GitHub Repository"
           >
             GITHUB
@@ -161,7 +161,7 @@ export function StartScreen() {
           <button
             onClick={() => navigate('/privacy')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
             aria-label="Open Privacy Policy"
           >
             PRIVACY POLICY
@@ -176,7 +176,7 @@ export function StartScreen() {
               <div className="mb-12-center">
                 <p
                   className="text-xl short-land:text-[10px] phone-port:text-[11px] phone-port:leading-relaxed phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white rgb-text uppercase"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
+                  style={{ fontFamily: 'var(--font-retro)' }}
                 >
                   Use your thoughts as a joystick
                 </p>
@@ -191,7 +191,7 @@ export function StartScreen() {
               <div className="mt-8 short-land:mt-2 phone-port:mt-3">
                 <p
                   className="text-md short-land:text-[8px] phone-port:text-[10px] phone-port:opacity-90 phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white opacity-60"
-                  style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.8' }}
+                  style={{ fontFamily: 'var(--font-retro)', lineHeight: '1.8' }}
                 >
                   CONNECT YOUR MUSE DEVICE 
                   <br />
@@ -207,7 +207,7 @@ export function StartScreen() {
                 <div className="text-center">
                   <p
                     className="text-xl text-white rgb-text"
-                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    style={{ fontFamily: 'var(--font-retro)' }}
                   >
                     loading quality check...
                   </p>
@@ -217,7 +217,7 @@ export function StartScreen() {
                   <div className="mb-8 short-land:mb-1">
                     <div
                       className="text-6xl sm:text-8xl short-land:text-4xl rgb-text text-white mb-8 short-land:mb-2 blink"
-                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                      style={{ fontFamily: 'var(--font-retro)' }}
                     >
                       ▶
                     </div>
@@ -226,14 +226,14 @@ export function StartScreen() {
                   <button
                     onClick={handleStart}
                     className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12 short-land:mt-2"
-                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    style={{ fontFamily: 'var(--font-retro)' }}
                   >
                     START
                   </button>
 
                   <p
                     className="text-xs text-white opacity-60 mt-8 short-land:mt-2 blink"
-                    style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    style={{ fontFamily: 'var(--font-retro)' }}
                   >
                     PRESS START
                   </p>

@@ -15,7 +15,7 @@ function AxisTile({ axis }) {
   const pct = Math.round(value01 * 100);
 
   return (
-    <div className="p-3 border-2 border-[var(--nes-blue)]/70 bg-black text-white" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+    <div className="p-3 border-2 border-[var(--nes-blue)]/70 bg-black text-white" style={{ fontFamily: 'var(--font-retro)' }}>
       <div className="flex items-center justify-between mb-2 text-[10px]">
         <div className="opacity-80 uppercase text-[var(--nes-blue)]">{axis}</div>
         <div className="text-[var(--nes-blue)]">{pct}</div>
@@ -51,7 +51,7 @@ export function BrainCommandCenter() {
     <div className="absolute inset-0 bg-black text-white overflow-auto">
       {!isBaselineReady && anyNeedsBaseline && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
             Waiting for baseline…
           </div>
         </div>

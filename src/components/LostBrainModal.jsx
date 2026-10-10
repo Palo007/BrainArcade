@@ -58,7 +58,7 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
       title="SIGNAL LOST"
       showFooter={false}
     >
-      <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div style={{ fontFamily: 'var(--font-retro)' }}>
         <p className="text-[10px] text-[var(--nes-red)] mb-3">We lost your brain.</p>
         <p className="text-[10px] mb-4">Redirecting in {count}…</p>
         <div className="w-full bg-black border border-[var(--nes-gray)] h-3 relative">

@@ -30,7 +30,7 @@ export function Privacy() {
             <button
               onClick={() => navigate(-1)}
               className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 short-land:py-1 short-land:text-[10px] hover:bg-[var(--nes-blue)] hover:text-black"
-              style={{ fontFamily: "'Press Start 2P', cursive" }}
+              style={{ fontFamily: 'var(--font-retro)' }}
               aria-label="Back"
             >
               ← BACK
@@ -40,7 +40,7 @@ export function Privacy() {
           {/* Title */}
           <h2
             className="text-2xl sm:text-3xl short-land:text-base rgb-text text-white mb-4 short-land:mb-2"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             PRIVACY POLICY
           </h2>
@@ -48,7 +48,7 @@ export function Privacy() {
           {/* Privacy Text */}
           <div
             className="text-[10px] sm:text-xs leading-relaxed text-white opacity-90 space-y-3 pr-6"
-            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            style={{ fontFamily: 'var(--font-retro)' }}
           >
             <p>
               This project is open‑source. You can inspect the source code

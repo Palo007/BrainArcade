@@ -38,7 +38,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
       <div
         role="status"
         onClick={() => setNoteOpen(false)}
-        style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, width: 'min(420px, calc(100vw - 24px))', maxWidth: 420, cursor: 'pointer', fontFamily: "'Press Start 2P', cursive" }}
+        style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, width: 'min(420px, calc(100vw - 24px))', maxWidth: 420, cursor: 'pointer', fontFamily: 'var(--font-retro)' }}
         className="bg-black border-2 border-[var(--nes-yellow)] p-3 text-[9px] leading-relaxed"
       >
         {calibration.fitWarning
@@ -76,7 +76,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
         </button>
       ) : null}
     >
-      <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div style={{ fontFamily: 'var(--font-retro)' }}>
         {/* Fixation cross area */}
         <div className="flex items-center justify-center mb-4">
           <div className="relative w-40 h-40">

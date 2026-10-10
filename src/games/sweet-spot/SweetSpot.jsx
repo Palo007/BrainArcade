@@ -131,7 +131,7 @@ export function SweetSpot() {
           `}</style>
         {!isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
               Waiting for baseline…
             </div>
           </div>
@@ -184,7 +184,7 @@ export function SweetSpot() {
         </div>
 
         {/* Bottom right HUD */}
-        <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+        <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: 'var(--font-retro)' }}>
           <div className="text-right">
             <div className="text-[8px] opacity-60">HEALTH</div>
             <div className="mt-2">

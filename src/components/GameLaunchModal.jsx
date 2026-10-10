@@ -15,7 +15,7 @@ export function GameLaunchModal({ game, onClose }) {
 
   return (
     <RetroModal title={game.name} onCancel={onClose} showFooter={false}>
-      <div style={{ fontFamily: "'Press Start 2P', cursive" }}>
+      <div style={{ fontFamily: 'var(--font-retro)' }}>
         <p className="text-[10px] mb-4 text-gray-300">{game.description}</p>
 
         <div className="mt-4 flex gap-3 justify-end flex-wrap">
