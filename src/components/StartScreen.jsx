@@ -166,6 +166,14 @@ export function StartScreen() {
           >
             PRIVACY POLICY
           </button>
+          <button
+            onClick={() => navigate('/viewer')}
+            className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
+            style={{ fontFamily: 'var(--font-retro)' }}
+            aria-label="Open the recording viewer"
+          >
+            VIEWER
+          </button>
         </div>
 
         {/* Center - Main UI */}

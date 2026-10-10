@@ -16,7 +16,11 @@
 //   Accelerometer / Gyro  from the Athena acc/gyro stream when present, else empty.
 //   HSI_*           1 good / 4 bad (the app has no "medium" level). HeadBandOn 1/0.
 //   Battery         percent as reported by the headband.
-//   AUX_1..4, Mellow, Concentration, Heart_Rate: always empty.
+//   Heart_Rate      BPM (integer) from the optics pulse (inner IR channels, see heartRate.js);
+//                   empty until the first reliable estimate and while the signal is poor.
+//   AUX_1..4, Mellow, Concentration: always empty.
+
+import { HeartRateEstimator } from './heartRate.js';
 
 export const FS = 256;
 export const COLUMNS = [
@@ -141,6 +145,8 @@ export class MMRecorder {
     this.ring = Array.from({ length: 4 }, () => new Float64Array(WIN));
     this.bandStr = emptyCells(20);
     this.optStr = emptyCells(16);
+    this.hr = new HeartRateEstimator(); // pulse -> Heart_Rate column
+    this.hrStr = '';
     this.optQ = []; // optics rows not yet written (see setOptics)
     this.accStr = emptyCells(3);
     this.gyroStr = emptyCells(3);
@@ -193,7 +199,7 @@ export class MMRecorder {
     if (this.optQ.length) this.optStr = this.optQ.shift(); // next queued optics sample, else hold the last
     const head = formatTimestamp(t);
     const tail =`${num(s[0], 3)},${num(s[1], 3)},${num(s[2], 3)},${num(s[3], 3)},` +
-      `,,,,,,${this.accStr},${this.gyroStr},${this.optStr},,${this.headOn},${this.hsiStr},${this.battStr}`; // 60 fields: no Elements cell, like Mind Monitor
+      `,,,,,,${this.accStr},${this.gyroStr},${this.optStr},${this.hrStr},${this.headOn},${this.hsiStr},${this.battStr}`; // 60 fields: no Elements cell, like Mind Monitor
     if (this.nSamples < WIN) {
       // No band powers yet. The Chart.php viewer reads a row with an empty Delta_TP9 as an event row,
       // so hold the first second and write it with the first band values (see _updateBands).
@@ -224,8 +230,10 @@ export class MMRecorder {
   }
 
   /** @param {number[]} v optics samples (8 channels for p1034) -> Optics1..8, 9..16 empty */
-  setOptics(v) {
+  setOptics(v, nowMs = Date.now()) {
     if (!v) return;
+    const bpm = this.hr.push(v, nowMs);
+    this.hrStr = bpm === null ? '' : String(Math.round(bpm));
     const cells = [];
     for (let i = 0; i < 16; i++) cells.push(i < 8 && i < v.length ? num(v[i], 4) : '');
     // Optics arrive in BLE bursts (~4 samples at once, 64 Hz). Queue them and let each EEG row take

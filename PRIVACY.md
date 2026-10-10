@@ -52,6 +52,7 @@ Brain Arcade can save a session as a Mind Monitor compatible CSV file (raw EEG, 
 - The file is written only on the device you are using (browser private storage / OPFS, in chunks), never sent anywhere. It stays there until you save it, share it or delete it.
 - When you stop, you choose to save it, share it yourself, or delete it. If one is left unsaved, the app offers it back next time; starting a new recording deletes older leftover files except that one.
 - Nothing from a recording is uploaded.
+- The Recording Viewer (`/viewer`) opens a CSV file you choose and reads it in your browser. The file is not uploaded. Only your view settings are saved on the device.
 - Treat a saved file like any other personal neural data: it is yours to keep or delete.
 
 ### What is stored on this device

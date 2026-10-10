@@ -126,6 +126,13 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
             ← HOME
           </Link>
           <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">SELECT GAME</h2>
+          <Link
+            to="/viewer"
+            className="text-[9px] sm:text-[10px] border-2 border-[var(--nes-gray)] px-2 py-1 text-gray-300 hover:border-[var(--nes-yellow)] hover:text-[var(--nes-yellow)] whitespace-nowrap phone-port:min-h-[36px] phone-port:inline-flex phone-port:items-center"
+            title="Open a recorded session (Mind Monitor CSV)"
+          >
+            VIEWER
+          </Link>
           <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
           <PlayerSwitcher className="ml-auto sm:ml-0 short-land:ml-auto min-w-0" />
           {/* Layout puts Electrodes + Muse status here (see topBarSlot.js) */}

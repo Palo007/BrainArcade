@@ -14,6 +14,8 @@
 //
 // Optics 16ch mode (p1041) is ignored: its channel order is disputed (OpenMuse issue #24).
 
+import { HeartRateEstimator } from './heartRate.js';
+
 export const OPTICS_FS = 64;
 
 // Molar extinction coefficients, 1/(mM·cm), log10 basis (Prahl, OMLC tables)
@@ -84,6 +86,7 @@ export class FnirsProcessor {
     this.fs = fs; // nominal until measured (see _measureRate)
     this.samples = 0;
     this.channels = 0;
+    this.hr = new HeartRateEstimator({ fs }); // pulse from the inner IR channels, see heartRate.js
     this.history = []; // [{ t, l: {hbo,hbr}, r: {hbo,hbr} }]
     this._rateT0 = null;
     this._rateN = 0;
@@ -139,6 +142,7 @@ export class FnirsProcessor {
     if (!sample || sample.length < 4 || sample.length > 8) return;
     this.channels = sample.length;
     this.samples++;
+    this.hr.push(sample, nowMs);
     this._measureRate(nowMs);
     const dt = 1 / this.fs;
     const motionAlpha = 1 - Math.exp(-dt / MOTION_TAU_S);
@@ -246,11 +250,14 @@ export function startMockOptics(processor) {
     while (n / OPTICS_FS < now) {
       const t = n / OPTICS_FS;
       const act = Math.sin((2 * Math.PI * t) / 30) * 0.004; // ±ΔOD-ish activation, 30 s period
-      const pulse = Math.sin(2 * Math.PI * 1.1 * t) * 0.002;
+      // ~70 BPM with slow variability (respiratory sinus arrhythmia) and a second harmonic
+      const ph = 2 * Math.PI * (70 / 60) * t + 0.4 * Math.sin(2 * Math.PI * 0.25 * t);
+      const pulse = (Math.sin(ph) + 0.3 * Math.sin(2 * ph + 1)) * 0.0018;
       const noise = () => (Math.random() - 0.5) * 0.001;
       const i730 = 8 * 10 ** -(-0.6 * act + pulse + noise()); // HbR falls → 730 nm brightens
       const i850 = 9 * 10 ** -(0.9 * act + pulse + noise()); // HbO rises → 850 nm darkens
-      processor.push([i730, i730 * 0.97, i850, i850 * 1.02, 12, 12, 13, 13]);
+      const inner = (b) => b * 10 ** -(pulse * 2 + noise()); // short path: stronger pulse
+      processor.push([i730, i730 * 0.97, i850, i850 * 1.02, inner(12), inner(12.1), inner(13), inner(13.1)]);
       n++;
     }
   }, 100);

@@ -17,6 +17,7 @@ Thought-controlled minigames in your browser. This fork adds full support for th
 | **Training Journal** | Score over time, day streak and check-ins, per child. | <img src="./docs/screenshots/06-journal.png" width="200" alt="Training Journal"> |
 | **Two-phase calibration** | Peak Alpha Frequency from eyes closed, then eyes open. Personal frequency bands for each child. | <img src="./docs/screenshots/04-calibration.png" width="200" alt="Calibration"> |
 | **Session recording** | Opt-in, on-device, crash-safe CSV. Mind Monitor compatible, with Athena optics. Opens in [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php). See [where the file goes](#session-recordings-where-the-file-goes). | <img src="./docs/screenshots/05-recording.png" width="200" alt="Recording"> |
+| **Recording Viewer** | Open a saved recording on the `/viewer` page: band power, raw EEG, signal quality, markers, topomaps, spectrogram, fNIRS, heart rate and more. Everything stays on your device. See [Viewing a recording](#viewing-a-recording). | (no screenshot yet) |
 | **Child profiles and history** | One profile per child. Session history, trends, CSV export and import. | [Journal](./docs/screenshots/06-journal.png) |
 | **Parent report** | Band timeline, topomap and a plain-language summary. Print or save as PDF. | (in game over screen) |
 | **Phone first** | Installable PWA. Fullscreen, rotation, portrait and landscape layouts. No desktop-only block. | <img src="./docs/screenshots/02-start-phone.png" width="100" alt="Phone"> |
@@ -89,7 +90,7 @@ The headset needs Web Bluetooth. Safari (Mac) and all browsers on iPhone/iPad do
 
 `mindMonitor_YYYY-MM-DD--HH-MM-SS_brainarcade.csv`, for example `mindMonitor_2026-10-10--10-21-02_brainarcade.csv`.
 
-The file is one CSV in the [Mind Monitor](https://mind-monitor.com/) format. You can open it at [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php), in a spreadsheet, or in Python. Athena fNIRS (optics) data is in the columns `Optics1` to `Optics16`. Game start and end are marked as `/Marker/1` and `/Marker/2`.
+The file is one CSV in the [Mind Monitor](https://mind-monitor.com/) format. You can open it at [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php), in a spreadsheet, or in Python. Athena fNIRS (optics) data is in the columns `Optics1` to `Optics16`. Game start and end are marked as `/Marker/1` and `/Marker/2`. The `Heart_Rate` column holds a whole number of beats per minute, estimated from the inner infrared optics channels. It is empty when the estimate is not reliable (no contact, flat signal, movement).
 
 ### If you forget to save
 
@@ -141,6 +142,17 @@ Open **Training Journal** (in the game list) and pick the player. The panel **AL
 
 The history is stored only in this browser on this device (up to 60 calibrations per player).
 Clearing the browser data deletes it. Use EXPORT CSV to keep a copy.
+
+## Viewing a recording
+
+Open `/viewer` (the **VIEWER** link on the start screen and in the top bar). Pick a Mind Monitor CSV file or drop it on the page. The file is read in your browser. Nothing is uploaded. A 45 MB file loads in 1 to 2 seconds on a PC.
+
+- **Panels:** session summary, band power, raw EEG, signal quality, markers and events (with stats between two markers), band topomaps that follow the cursor, peak alpha frequency, spectrum and spectrogram, band ratios and frontal alpha asymmetry, theta/beta, fNIRS, heart rate, motion and battery. Mellow and Concentration show if the file has them.
+- **Heart rate:** uses the `Heart_Rate` column. If it is empty, the viewer estimates it from the optics ("estimated from optics").
+- **Moving around:** the mouse wheel scrolls the page. Ctrl + wheel or pinch zooms. Shift + wheel pans. There is an overview strip and there are keyboard shortcuts.
+- **Stats:** shown for the visible range and for the whole session.
+- **Export:** summary JSON, a CSV with one row per second, an events CSV, and a PNG of each chart. Your view settings are saved on the device.
+- **Not yet:** ZIP or JSONL input, comparing several files, heart rate variability.
 
 ## Privacy
 

@@ -19,18 +19,21 @@ function spectralColor(t) {
 }
 
 // values: 4 relative alpha powers (0..1) in TP9, AF7, AF8, TP10 order; null = no data
-export function Topomap({ values, title = 'Alpha (relative)' }) {
+// Optional (recording viewer): range = [lo, hi] fixed colour scale (e.g. session-wide), format = value -> label,
+// size = px. Without them the scale follows the 4 values and labels are percentages.
+export function Topomap({ values, title = 'Alpha (relative)', range = null, format = null, size = 170 }) {
   const ref = useRef(null);
   const vals = (values || []).map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null));
   const ok = vals.filter((v) => v !== null);
-  const min = ok.length ? Math.min(...ok) : 0;
-  const spread = ok.length ? Math.max(...ok) - min : 0;
+  const fixed = Array.isArray(range) && range[1] > range[0];
+  const min = fixed ? range[0] : ok.length ? Math.min(...ok) : 0;
+  const spread = fixed ? range[1] - range[0] : ok.length ? Math.max(...ok) - min : 0;
   // Under 5 points apart: only small differences, so pale colours over the real range (they must not look
   // like big differences). Otherwise full colours over a span of at least 10 points.
-  const flat = spread < 0.05;
-  const span = ok.length ? (flat ? Math.max(0.001, spread) : Math.max(0.1, spread)) : 1;
+  const flat = !fixed && spread < 0.05;
+  const span = fixed ? spread : ok.length ? (flat ? Math.max(0.001, spread) : Math.max(0.1, spread)) : 1;
   const tint = (rgb) => (flat ? rgb.map((c) => Math.round(c + (255 - c) * PALE)) : rgb);
-  const key = vals.join(',');
+  const key = `${vals.join(',')}|${min}|${span}`;
 
   useEffect(() => {
     const canvas = ref.current;
@@ -65,11 +68,11 @@ export function Topomap({ values, title = 'Alpha (relative)' }) {
   }, [key, flat]);
 
   if (!ok.length) return <p className="text-xs">Not enough data for the head map.</p>;
-  const pct = (v) => `${Math.round(v * 100)}%`;
+  const pct = format || ((v) => `${Math.round(v * 100)}%`);
   const sensor = (s) => ({ left: `${(POS[s][0] * 0.5 + 0.5) * 100}%`, top: `${(-POS[s][1] * 0.5 + 0.5) * 100}%` });
   return (
-    <figure className="inline-block text-center m-0" style={{ width: 170 }}>
-      <div className="relative" style={{ width: 170, height: 170 }}>
+    <figure className="inline-block text-center m-0" style={{ width: size }}>
+      <div className="relative" style={{ width: size, height: size }}>
         <canvas ref={ref} className="w-full h-full" role="img" aria-label={`${title} on the head`} style={{ imageRendering: 'auto' }} />
         <svg viewBox="-1.12 -1.12 2.24 2.24" className="absolute inset-0 w-full h-full" aria-hidden="true" fill="none" stroke="#222" strokeWidth="0.03">
           <circle cx="0" cy="0" r="1" />

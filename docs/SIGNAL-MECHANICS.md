@@ -201,6 +201,20 @@ A later recording showed that the headband sends the full **64 Hz**. The low cou
 
 ---
 
+## 8b. Heart rate from the optics
+
+`src/lib/heartRate.js` (`HeartRateEstimator`) finds the pulse in the infrared optics. It is used live (`muse.fnirs.hr.value`), in the recording (`Heart_Rate` column) and in the viewer.
+
+- **Channels:** the inner IR channels 6 (LI_IR) and 7 (RI_IR). The 4-channel p1035 has no inner pair, so it uses the outer IR channels 2 and 3. Each channel is divided by its own slow level, then they are summed.
+- **Filter:** band-pass 0.7 to 3.5 Hz. The window is 10 s and the value updates about once per second.
+- **Two methods:** autocorrelation and peak detection. The value is kept only if both agree (within 12 %).
+- **No value (null)** when the signal is flat, there is no contact, the pulse is weak or irregular, the methods disagree, or the result is outside 40 to 200 BPM. The recorder then writes an empty `Heart_Rate`.
+- **Sample rate:** the estimator measures the real optics rate (for example 16 Hz through the phone relay) and rebuilds its filters.
+
+Limits: tested on 4 real recordings (52 to 92 BPM), and some files were only partly covered. It has not been checked against a chest strap or a pulse oximeter. The Athena optics differ from the Muse 2 PPG, so Mind Monitor may treat the column differently. Do not use it for medical purposes. Test with `node tools/test-heartRate.mjs`.
+
+---
+
 ## 9. How to check these mechanics yourself
 
 - **Mock mode:** on the start screen, tap **EXPLORE WITHOUT A DEVICE**, then **USE SIMULATED REAL-TIME DATA**. All games run on synthetic EEG and fNIRS data.

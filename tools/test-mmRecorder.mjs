@@ -53,7 +53,8 @@ check('alpha dominates for 10 Hz sine', +cells[ci('Alpha_TP9')] > +cells[ci('Bet
 check('RAW values', cells[ci('RAW_TP9')] !== '' && cells[ci('RAW_TP10')] !== '');
 check('optics 1-8 held, 9-16 empty', cells[ci('Optics8')] === '8.0000' && cells[ci('Optics9')] === '' && cells[ci('Optics16')] === '');
 check('acc/gyro/battery held', cells[ci('Accelerometer_Z')] === '0.900000' && cells[ci('Gyro_Y')] === '2.000000' && cells[ci('Battery')] === '91.50');
-check('empty columns', ['AUX_1', 'AUX_4', 'Mellow', 'Concentration', 'Heart_Rate', 'Elements'].every((n) => (cells[ci(n)] ?? '') === ''));
+check('empty columns', ['AUX_1', 'AUX_4', 'Mellow', 'Concentration', 'Elements'].every((n) => (cells[ci(n)] ?? '') === ''));
+check('Heart_Rate empty without a pulse signal (optics test values are not a heartbeat)', (cells[ci('Heart_Rate')] ?? '') === '');
 check('HSI/HeadBandOn defaults', cells[ci('HeadBandOn')] === '1' && cells[ci('HSI_AF7')] === '1');
 check('no exponent notation', !/\de[-+]?\d/i.test(data.join('\n')));
 // Band-power scale: 50 µV amplitude sine ~ 1250 µV² power at 10 Hz -> ~3.1 Bels

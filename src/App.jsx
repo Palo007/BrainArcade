@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ProfileProvider } from './contexts/ProfileContext.jsx';
 import { MuseProvider } from './contexts/MuseContext';
@@ -21,6 +21,9 @@ import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
 import { LostBrainModal } from './components/LostBrainModal.jsx';
 import { GameTimelineCollector } from './components/GameTimelineCollector.jsx';
+
+// Recording viewer (Mind Monitor CSV) - loaded on demand, it is not needed for playing
+const ViewerPage = lazy(() => import('./viewer/ViewerPage.jsx'));
 
 /**
  * GamesPage - Main games listing and selection page
@@ -98,6 +101,12 @@ function App() {
 
               {/* Privacy Policy */}
               <Route path="/privacy" element={<Privacy />} />
+
+              {/* Recording viewer (Mind Monitor CSV) */}
+              <Route
+                path="/viewer"
+                element={<Suspense fallback={<p className="text-xs text-gray-400">LOADING VIEWER…</p>}><ViewerPage /></Suspense>}
+              />
 
               {/* Individual Game Routes */}
               <Route path="/game/:gameId" element={<GamePage />} />
