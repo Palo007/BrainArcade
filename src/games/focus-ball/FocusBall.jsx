@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
 import { recordSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
-import { SignalCheck } from '../../components/ElectrodeOverlay.jsx';
+import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
 import { SessionReport } from '../../components/SessionReport.jsx';
 import '../../styles/retro.css';
 
@@ -707,8 +707,6 @@ export function FocusBall() {
 
   const panel = 'border-4 border-[var(--nes-yellow)] bg-black/75 px-6 py-5 text-center text-white max-w-lg';
   const btn = 'border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black';
-  const chip = (on) =>
-    `border-2 px-3 py-2 text-[10px] ${on ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : 'border-white/60 text-white'}`;
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" style={FONT}>
@@ -784,45 +782,44 @@ export function FocusBall() {
         )}
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
-        {phase === 'intro' && (
-          <div className={`${panel} pointer-events-auto`}>
-            {!supported ? (
-              <p className="text-xs leading-relaxed">This game needs a Muse S Athena (fNIRS light sensors).</p>
-            ) : (
-              <>
-                {checkInDue && (
-                  <div className="border-4 border-[var(--nes-green)] bg-[var(--nes-green)]/15 px-3 py-3 mb-4">
-                    <p className="text-xs text-[var(--nes-green)] mb-2">CHECK-IN DUE</p>
-                    <p className="text-[9px] text-gray-200 leading-relaxed mb-3">A short re-test to see how your focus is growing.</p>
-                    <button type="button" onClick={startCheckIn} className={btn}>Start check-in (2 min)</button>
-                  </div>
-                )}
-                <p className="text-sm leading-relaxed mb-3">Focus on the ball and keep it above the line.</p>
-                <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
-                <p className="text-[9px] text-gray-300 mb-2">PICK YOUR FOCUS TRICK</p>
-                <div className="flex flex-wrap gap-2 justify-center mb-4">
-                  {CUES.map((cc) => (
-                    <button key={cc} type="button" className={chip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
-                  ))}
+      {phase === 'intro' && (
+        <GameStartPanel
+          title="FOCUS BALL"
+          onStart={supported ? startNormal : undefined}
+          best={best}
+          signalNote="Only the fNIRS sensors matter here."
+        >
+          {!supported ? (
+            <p className="text-xs leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
+          ) : (
+            <>
+              {checkInDue && (
+                <div className="border-4 border-[var(--nes-green)] bg-[var(--nes-green)]/15 px-3 py-3 mb-4">
+                  <p className="text-xs text-[var(--nes-green)] mb-2">CHECK-IN DUE</p>
+                  <p className="text-[9px] text-gray-200 leading-relaxed mb-3">A short re-test to see how your focus is growing.</p>
+                  <button type="button" onClick={startCheckIn} className={btn}>Start check-in (2 min)</button>
                 </div>
-                <p className="text-[9px] text-gray-300 mb-2">SESSION LENGTH</p>
-                <div className="flex gap-2 justify-center mb-5">
-                  {LENGTHS.map((m) => (
-                    <button key={m} type="button" className={chip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
-                  ))}
-                </div>
-                {/* Informative only: fNIRS needs no EEG electrodes, so weak EEG contact never blocks START */}
-                <div className="text-left border-2 border-white/30 bg-black/40 p-3 mb-5">
-                  <SignalCheck compact eegNote="Only the fNIRS sensors matter here." />
-                </div>
-                <button type="button" onClick={startNormal} className={btn}>START</button>
-                {best > 0 && <p className="text-[9px] text-gray-400 mt-3">BEST {best}</p>}
-              </>
-            )}
-          </div>
-        )}
+              )}
+              <p className="text-sm leading-relaxed mb-3">Focus on the ball and keep it above the line.</p>
+              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
+              <OptionLabel>PICK YOUR FOCUS TRICK</OptionLabel>
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                {CUES.map((cc) => (
+                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
+                ))}
+              </div>
+              <OptionLabel>SESSION LENGTH</OptionLabel>
+              <div className="flex gap-2 justify-center mb-5">
+                {LENGTHS.map((m) => (
+                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
+                ))}
+              </div>
+            </>
+          )}
+        </GameStartPanel>
+      )}
 
+      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
         {phase === 'calibrate' && (
           <div className={`${panel} absolute bottom-24 left-1/2 -translate-x-1/2`}>
             <p className="text-sm text-[var(--nes-yellow)] mb-3">{breathLabel}</p>

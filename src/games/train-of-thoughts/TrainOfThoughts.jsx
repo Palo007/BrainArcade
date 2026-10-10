@@ -4,6 +4,7 @@ import { useJoystick } from '../../contexts/JoystickContext.jsx';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { RetroModal } from '../../components/RetroModal.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
+import { GameStartPanel } from '../../components/GameStartPanel.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
 import '../../styles/retro.css';
 
@@ -14,7 +15,8 @@ import villainTrain from './assets/villain.png';
 import cityBackground from './assets/city-background.png';
 
 export function TrainOfThoughts() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
+  const [started, setStarted] = useState(false); // START screen gate
 
   // Joystick: stress (0..1), normalized vs baseline with adaptive centering
   const { value01: stress01 } = useJoystick('stress', {
@@ -47,13 +49,13 @@ export function TrainOfThoughts() {
 
   // Require baseline before playing
   useEffect(() => {
-    ensureBaseline({ seconds: 30 });
-  }, [ensureBaseline]);
+    if (started) ensureBaseline({ seconds: 30 });
+  }, [started, ensureBaseline]);
 
   // Game loop: update train position and time-based score
   useEffect(() => {
     // Pause when modal is open or after game over
-    if (!roundRunning || showLostLife || lives <= 0) return;
+    if (!started || !isBaselineReady || !roundRunning || showLostLife || lives <= 0) return;
 
     // Width is measured for collision separately; keep logic focused here
     const BASE_SPEED = 40; // px/s minimal speed when fully calm (slower)
@@ -75,7 +77,7 @@ export function TrainOfThoughts() {
 
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [roundRunning, showLostLife, stress01, lives]);
+  }, [started, isBaselineReady, roundRunning, showLostLife, stress01, lives]);
 
   // Detect collision (train reaches character on right)
   useEffect(() => {
@@ -114,6 +116,7 @@ export function TrainOfThoughts() {
       setTrainX(-600);
       lastTsRef.current = null;
       setRoundRunning(true);
+      setStarted(false);
     };
     return (
       <GameOverScreen
@@ -128,6 +131,12 @@ export function TrainOfThoughts() {
   }
 
   const seconds = Math.round(scoreMs / 1000);
+  const best = parseInt(localStorage.getItem('highscore_train-of-thoughts') || '0', 10);
+  const recal = () => {
+    resetBaseline({ forceFull: true });
+    setStarted(true);
+    ensureBaseline({ seconds: 30, force: true });
+  };
   const heartsHealthPct = Math.max(0, Math.min(100, (lives / MAX_LIVES) * 100));
 
   return (
@@ -183,7 +192,15 @@ export function TrainOfThoughts() {
         `}</style>
 
         {/* Background day/night is handled by page bg; keep minimal tint */}
-        {!isBaselineReady && (
+        {!started && (
+          <GameStartPanel title="TRAIN OF THOUGHTS" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+            <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
+              Stay calm to slow down the train. Don't get swept away by your racing thoughts!
+            </p>
+            <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+          </GameStartPanel>
+        )}
+        {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
               Waiting for baseline…

@@ -5,11 +5,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { recordSession } from '../../lib/sessionStore.js';
-import { ParentReport } from '../../components/ParentReport.jsx';
+import { GameEndActions } from '../../components/GameEndActions.jsx';
+import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
-const ROUND_S = 120;
+const ROUND_S = 120; // default round length
+const LENGTHS = [2, 3, 5];
+const CUES = ['Count back by 3s', 'Name animals A to Z', 'Picture a math puzzle'];
 const GOAL = 0.62; // orb height (0 bottom … 1 top) that counts as "flying"
 const START_SCALE = 0.35; // µM of oxygenation index that moves the orb from rest to the top
 const BEST_KEY = 'glowOrbBest';
@@ -228,6 +231,8 @@ export function GlowOrb() {
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(readBest);
   const [savedId, setSavedId] = useState(null);
+  const [cue, setCue] = useState(CUES[0]);
+  const [minutes, setMinutes] = useState(ROUND_S / 60);
 
   const canvasRef = useRef(null);
   const dataRef = useRef(null);
@@ -246,11 +251,11 @@ export function GlowOrb() {
     if (phase !== 'calibrate' || !data) return;
     if (!data.baselineReady) sawResetRef.current = true;
     else if (sawResetRef.current) {
-      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0 };
+      stateRef.current = { orbY: 0.3, scale: START_SCALE, score: 0, flyTime: 0, elapsed: 0, flying: false, chimeStep: 0, lastChime: 0, roundS: minutes * 60, cue };
       audioRef.current?.chime(mutedRef.current, 0);
       setPhase('play');
     }
-  }, [phase, data]);
+  }, [phase, data, minutes, cue]);
 
   // Render + game loop
   useEffect(() => {
@@ -306,12 +311,12 @@ export function GlowOrb() {
         }
       }
       audioRef.current?.set(s.orbY, mutedRef.current || s.paused);
-      const done = s.elapsed >= ROUND_S;
+      const done = s.elapsed >= s.roundS;
       if ((hudTick += dt) > 0.25 || done) {
         hudTick = 0;
         setHud({
           score: Math.round(s.score),
-          timeLeft: Math.max(0, Math.ceil(ROUND_S - s.elapsed)),
+          timeLeft: Math.max(0, Math.ceil(s.roundS - s.elapsed)),
           flyPct: Math.round((s.flyTime / Math.max(1, s.elapsed)) * 100),
           paused: s.paused,
         });
@@ -346,7 +351,7 @@ export function GlowOrb() {
   useEffect(() => {
     if (phase !== 'done') return;
     const score = Math.round(stateRef.current?.score || 0);
-    if (!recordedRef.current) setSavedId(recordSession('glow-orb', { score, durationSec: ROUND_S, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available }));
+    if (!recordedRef.current) setSavedId(recordSession('glow-orb', { score, durationSec: stateRef.current?.roundS || ROUND_S, cue: stateRef.current?.cue, playedSec: Math.round(stateRef.current?.elapsed || 0), timeAbovePct: Math.round((stateRef.current?.flyTime || 0) / Math.max(1, stateRef.current?.elapsed || 1) * 100), fnirsUsed: !!dataRef.current?.available }));
     recordedRef.current = true;
     if (score > best) {
       setBest(score);
@@ -361,7 +366,13 @@ export function GlowOrb() {
     audioRef.current?.ctx.resume();
     resetBaseline();
     sawResetRef.current = false;
+    setHud({ score: 0, timeLeft: minutes * 60, flyPct: 0, paused: false });
     setPhase('calibrate');
+  };
+  const stop = () => {
+    stateRef.current = null; // abandon without saving
+    audioRef.current?.set(0, true);
+    setPhase('intro');
   };
 
   const stars = hud.flyPct >= 60 ? 3 : hud.flyPct >= 35 ? 2 : hud.flyPct >= 15 ? 1 : 0;
@@ -374,7 +385,7 @@ export function GlowOrb() {
       <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
         <div>
           <h2 className="text-2xl text-[var(--nes-yellow)]">GLOW ORB</h2>
-          <p className="text-[10px] text-gray-200 mt-2">Think hard to make the orb fly!</p>
+          <p className="text-[10px] text-gray-200 mt-2">{phase === 'play' ? stateRef.current?.cue : 'Think hard to make the orb fly!'}</p>
         </div>
         {phase === 'play' && (
           <div className="text-right text-[10px] space-y-2 mt-16">
@@ -393,34 +404,55 @@ export function GlowOrb() {
         {muted ? 'SOUND OFF' : 'SOUND ON'}
       </button>
 
+      {(phase === 'calibrate' || phase === 'play') && (
+        <button
+          type="button"
+          onClick={stop}
+          className="absolute bottom-6 left-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white hover:bg-white hover:text-black"
+        >
+          STOP
+        </button>
+      )}
+
       {phase === 'play' && hud.paused && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-[10px] text-[var(--nes-yellow)]">
           HOLD STILL — FIX THE HEADBAND
         </div>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {phase === 'intro' && (
-          <div className={`${panel} pointer-events-auto`}>
-            {!supported ? (
-              <p className="text-[10px] leading-relaxed">This game needs a Muse S Athena (fNIRS light sensors).</p>
-            ) : (
-              <>
-                <p className="text-[10px] leading-relaxed mb-3">
-                  When you think hard, fresh-oxygen blood rushes to your brain. The orb feels it and flies up!
-                </p>
-                <p className="text-[8px] text-gray-300 leading-relaxed mb-4">
-                  Try: count back from 100 by 3s, name animals A to Z, or picture a math puzzle. Keep your head still.
-                </p>
-                <button type="button" onClick={start} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black">
-                  START
-                </button>
-                {best > 0 && <p className="text-[8px] text-gray-400 mt-3">BEST {best}</p>}
-              </>
-            )}
-          </div>
-        )}
+      {phase === 'intro' && (
+        <GameStartPanel
+          title="GLOW ORB"
+          onStart={supported ? start : undefined}
+          best={best}
+          signalNote="Only the fNIRS sensors matter here."
+        >
+          {!supported ? (
+            <p className="text-[10px] leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
+          ) : (
+            <>
+              <p className="text-[10px] leading-relaxed mb-3">
+                When you think hard, fresh-oxygen blood rushes to your brain. The orb feels it and flies up!
+              </p>
+              <p className="text-[8px] text-gray-300 leading-relaxed mb-4">Keep your head still. Your brain is slow to show change: wait 3-6 seconds.</p>
+              <OptionLabel>PICK YOUR THINKING TRICK</OptionLabel>
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                {CUES.map((cc) => (
+                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
+                ))}
+              </div>
+              <OptionLabel>SESSION LENGTH</OptionLabel>
+              <div className="flex gap-2 justify-center mb-5">
+                {LENGTHS.map((m) => (
+                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
+                ))}
+              </div>
+            </>
+          )}
+        </GameStartPanel>
+      )}
 
+      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
         {phase === 'calibrate' && (
           <div className={panel}>
             <p className="text-[10px] mb-3">Relax and breathe slowly…</p>
@@ -437,11 +469,8 @@ export function GlowOrb() {
             <p className="text-2xl mb-3 text-[var(--nes-yellow)]">{'★'.repeat(stars)}<span className="text-gray-600">{'★'.repeat(3 - stars)}</span></p>
             <p className="text-[10px] mb-1">SCORE {hud.score}</p>
             <p className="text-[10px] mb-4">FLYING {hud.flyPct}% OF THE TIME</p>
-            <button type="button" onClick={start} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black">
-              PLAY AGAIN
-            </button>
-            <p className="text-[8px] text-gray-400 mt-3">BEST {best}</p>
-            <ParentReport sessionId={savedId} game="glow-orb" seconds={ROUND_S} />
+            {best > 0 && <p className="text-[8px] text-gray-400 mb-4">BEST {best}</p>}
+            <GameEndActions onPlayAgain={() => setPhase('intro')} sessionId={savedId} game="glow-orb" />
           </div>
         )}
       </div>

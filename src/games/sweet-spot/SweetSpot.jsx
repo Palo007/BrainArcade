@@ -6,6 +6,7 @@ import { useGameHealth } from '../../hooks/useGameHealth.js';
 import { useGameScore } from '../../hooks/useGameScore.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
+import { GameStartPanel } from '../../components/GameStartPanel.jsx';
 import '../../styles/retro.css';
 import { GameHint } from '../../components/GameHint.jsx';
 import chillImg from './assets/chill.png';
@@ -13,7 +14,8 @@ import worriedImg from './assets/worried.png';
 import fallingImg from './assets/falling.png';
 
 export function SweetSpot() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
+  const [started, setStarted] = useState(false); // START screen gate
   // Level 1: Cognitive joystick (0..1) for relaxation, built from biomarker vs baseline
   const { value01 } = useJoystick('relaxation', {
     range: 0.4,
@@ -34,7 +36,7 @@ export function SweetSpot() {
   // Game mechanics: health and scoring
   const { health, isDead, reset: resetHealth } = useGameHealth({
     initialHealth: 100,
-    drainWhen: score < 40,
+    drainWhen: started && isBaselineReady && score < 40,
     drainRate: 5,
   });
 
@@ -45,7 +47,7 @@ export function SweetSpot() {
     dropThreshold: 0.1,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
-    frozen: isDead, // Freeze score when game is over
+    frozen: isDead || !started || !isBaselineReady, // Freeze score on game over and before START
   });
 
   // Generate random stars once
@@ -63,13 +65,13 @@ export function SweetSpot() {
   }, []);
 
   useEffect(() => {
-    // Require baseline at start (game decides this)
-    ensureBaseline({ seconds: 30 });
-  }, [ensureBaseline]);
+    // Require baseline once the player pressed START
+    if (started) ensureBaseline({ seconds: 30 });
+  }, [started, ensureBaseline]);
 
   useEffect(() => {
-    if (isBaselineReady) roundStartRef.current = Date.now();
-  }, [isBaselineReady]);
+    if (started && isBaselineReady) roundStartRef.current = Date.now();
+  }, [started, isBaselineReady]);
 
   useEffect(() => {
     // Extra smooth easing to joystick value
@@ -89,6 +91,7 @@ export function SweetSpot() {
       resetScore();
       setHeight(0.5);
       roundStartRef.current = Date.now();
+      setStarted(false);
     };
     return (
       <GameOverScreen
@@ -105,6 +108,13 @@ export function SweetSpot() {
       />
     );
   }
+
+  const best = parseInt(localStorage.getItem('highscore_sweet-spot') || '0', 10);
+  const recal = () => {
+    resetBaseline({ forceFull: true });
+    setStarted(true);
+    ensureBaseline({ seconds: 30, force: true });
+  };
 
   // Layout metrics
   const imgSize = 280; // base size in px (responsive via CSS width below)
@@ -129,7 +139,15 @@ export function SweetSpot() {
               pointer-events: none;
             }
           `}</style>
-        {!isBaselineReady && (
+        {!started && (
+          <GameStartPanel title="SWEET SPOT" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+            <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
+              Keep calm to keep your brain on a cloud. It falls if you are not relaxed.
+            </p>
+            <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+          </GameStartPanel>
+        )}
+        {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
               Waiting for baseline…

@@ -2,7 +2,7 @@
 // Reusable end-of-session screen: Focus Score, stars, three bars, insight.
 import React, { useState } from 'react';
 import { updateSession } from '../lib/sessionStore.js';
-import { ParentReport } from './ParentReport.jsx';
+import { GameEndActions } from './GameEndActions.jsx';
 import '../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -77,7 +77,7 @@ function Bar({ label, value, note, color }) {
   );
 }
 
-export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = false, onPlayAgain, onExit, samples, sessionId = null, insufficient = false }) {
+export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = false, onPlayAgain, samples, sessionId = null, insufficient = false }) {
   const m = metrics || {};
   const stars = m.stars || 0;
   const flowSec = Math.round(m.flowSec || 0);
@@ -93,23 +93,7 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
       <div className={shell} style={FONT}>
         <p className="text-sm text-[var(--nes-yellow)] mb-4">NOT ENOUGH SIGNAL</p>
         <p className="text-[10px] leading-relaxed mb-5 text-gray-100">Not enough signal — check the headband and try again.</p>
-        <div className="mb-5">
-          <ParentReport sessionId={sessionId} game="focus-ball" />
-        </div>
-        <div className="flex gap-3 justify-center">
-          <button
-            type="button"
-            onClick={onPlayAgain}
-            className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black"
-          >
-            PLAY AGAIN
-          </button>
-          {onExit && (
-            <button type="button" onClick={onExit} className="border-4 border-white/70 px-4 py-3 text-xs text-white hover:bg-white hover:text-black">
-              EXIT
-            </button>
-          )}
-        </div>
+        <GameEndActions onPlayAgain={onPlayAgain} sessionId={sessionId} game="focus-ball" />
       </div>
     );
   }
@@ -167,29 +151,7 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
 
       {m.insight && <p className="text-[10px] leading-relaxed mb-5 text-gray-100">{m.insight}</p>}
 
-      <div className="mb-5">
-        <ParentReport sessionId={sessionId} game="focus-ball" seconds={samples?.length ? samples[samples.length - 1].t : 0} />
-      </div>
-
-      <div className="flex gap-3 justify-center">
-        <button
-          type="button"
-          onClick={onPlayAgain}
-          className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black"
-        >
-          PLAY AGAIN
-        </button>
-        {onExit && (
-          <button
-            type="button"
-            onClick={onExit}
-            className="border-4 border-white/70 px-4 py-3 text-xs text-white hover:bg-white hover:text-black"
-          >
-            EXIT
-          </button>
-        )}
-      </div>
-
+      <GameEndActions onPlayAgain={onPlayAgain} sessionId={sessionId} game="focus-ball" seconds={samples?.length ? samples[samples.length - 1].t : 0} />
     </div>
   );
 }

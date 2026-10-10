@@ -3,7 +3,7 @@ import { useBlinkDetector, useBlink } from '../../contexts/BlinkContext.jsx';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
-import { RetroModal } from '../../components/RetroModal.jsx';
+import { GameStartPanel } from '../../components/GameStartPanel.jsx';
 import '../../styles/retro.css';
 import './eye-animations.css';
 
@@ -178,6 +178,8 @@ export function BlinkingContest() {
     };
   }, []);
 
+  const best = parseInt(localStorage.getItem('highscore_blinking-contest') || '0', 10);
+
   // Show game over screen if dead
   if (isDead) {
     return (
@@ -194,21 +196,15 @@ export function BlinkingContest() {
   return (
     <div className="absolute inset-0" style={{ backgroundColor: '#EA9AB2' }}>
       {SHOW_BLINK_DEBUG && <BlinkDebug />}
-      {/* Welcome Modal */}
+      {/* START screen */}
       {showWelcome && (
-        <RetroModal
-          title="BLINKING CONTEST"
-          confirmLabel="START"
-          onConfirm={handleStart}
-          confirmVisible={true}
-          showFooter={true}
-        >
-          <p style={{ fontFamily: 'var(--font-retro)', lineHeight: '1.8' }}>
+        <GameStartPanel title="BLINKING CONTEST" onStart={handleStart} best={best} signalNote="Blinks are read from the front electrodes.">
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">
             Welcome to the blinking contest.<br /><br />
             You have 3 blinks before losing.<br /><br />
             Try to stay as long as possible without blinking!
           </p>
-        </RetroModal>
+        </GameStartPanel>
       )}
 
       {/* Main Game Area */}

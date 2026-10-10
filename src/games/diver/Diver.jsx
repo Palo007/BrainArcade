@@ -6,6 +6,7 @@ import { useGameHealth } from '../../hooks/useGameHealth';
 import { PixelHearts } from '../../components/PixelHearts';
 import { GameHint } from '../../components/GameHint';
 import { GameOverScreen } from '../../components/GameOverScreen';
+import { GameStartPanel } from '../../components/GameStartPanel';
 import happyDiverImg from './assets/diver-happy.png';
 import sadDiverImg from './assets/diver-sad.png';
 import backgroundSeaImg from './assets/background-sea.png';
@@ -28,7 +29,8 @@ export function Diver() {
   const scoreHappyUntilRef = useRef(0); // force diver happy until timestamp (ms)
 
   // Baseline and joystick
-  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
+  const [started, setStarted] = useState(false); // START screen gate
   const { value01: frustration } = useJoystick('frustration', {
     range: 0.6,
     autoAdjustBaseline: true
@@ -49,13 +51,13 @@ export function Diver() {
     minThreshold: 0.3,
     maxVelocity: 5,
     velocityBuildRate: 0.15,
-    frozen: isDead, // Freeze score when game is over
+    frozen: isDead || !started || !isBaselineReady, // Freeze score on game over and before START
   });
 
   // Initialize baseline
   useEffect(() => {
-    ensureBaseline({ seconds: 30 });
-  }, [ensureBaseline]);
+    if (started) ensureBaseline({ seconds: 30 });
+  }, [started, ensureBaseline]);
 
   // Load images
   useEffect(() => {
@@ -99,12 +101,12 @@ export function Diver() {
   }, [frustration]);
 
   useEffect(() => {
-    if (isBaselineReady && imagesLoaded) roundStartRef.current = Date.now();
-  }, [isBaselineReady, imagesLoaded]);
+    if (started && isBaselineReady && imagesLoaded) roundStartRef.current = Date.now();
+  }, [started, isBaselineReady, imagesLoaded]);
 
   // Initialize and animate canvas (only once when ready)
   useEffect(() => {
-    if (!isBaselineReady || !imagesLoaded || isDead) return;
+    if (!started || !isBaselineReady || !imagesLoaded || isDead) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -543,7 +545,7 @@ export function Diver() {
       window.removeEventListener('resize', handleResize);
       lastTimestampRef.current = null;
     };
-  }, [isBaselineReady, imagesLoaded, isDead]); // Removed frustration to prevent reinitialization
+  }, [started, isBaselineReady, imagesLoaded, isDead]); // Removed frustration to prevent reinitialization
 
   // Show +1 when the visible fish count (score) increases
   useEffect(() => {
@@ -578,7 +580,29 @@ export function Diver() {
     resetScore();
     resetHealth();
     roundStartRef.current = Date.now();
+    setStarted(false);
   };
+
+  const best = parseInt(localStorage.getItem('highscore_diver') || '0', 10);
+  const recal = () => {
+    resetBaseline({ forceFull: true });
+    setStarted(true);
+    ensureBaseline({ seconds: 30, force: true });
+  };
+
+  // START screen
+  if (!started) {
+    return (
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-900 to-blue-950">
+        <GameStartPanel title="BAD DIVER" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
+            Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.
+          </p>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+        </GameStartPanel>
+      </div>
+    );
+  }
 
   // Show waiting screen during baseline
   if (!isBaselineReady) {

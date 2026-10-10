@@ -6,6 +6,7 @@ import { useGameHealth } from '../../hooks/useGameHealth.js';
 import { useGameScore } from '../../hooks/useGameScore.js';
 import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
+import { GameStartPanel } from '../../components/GameStartPanel.jsx';
 import { Animations } from './components/Animations.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
 import sailorImg from './assets/sailor-right.png';
@@ -16,7 +17,8 @@ import './sailor-animations.css';
 import '../../styles/retro.css';
 
 export function Sailor() {
-  const { ensureBaseline, isBaselineReady } = useBaseline();
+  const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
+  const [started, setStarted] = useState(false); // START screen gate
   // EEG engagement blended with fNIRS oxygenation on Muse S Athena (EEG only on classic Muse)
   const { value01 } = useJoystick('focus-plus', {
     range: 0.4,
@@ -68,7 +70,7 @@ export function Sailor() {
     minThreshold: LOW_THRESHOLD,
     maxVelocity: 5,
     velocityBuildRate: 0.1,
-    frozen: isDead || hasWon,
+    frozen: isDead || hasWon || !started,
   });
 
   // Choose sailor sprite based on engagement tier (lowest level -> worried)
@@ -76,16 +78,16 @@ export function Sailor() {
 
   // Ensure baseline is ready
   useEffect(() => {
-    ensureBaseline({ seconds: 30 });
-  }, [ensureBaseline]);
+    if (started) ensureBaseline({ seconds: 30 });
+  }, [started, ensureBaseline]);
 
   useEffect(() => {
-    if (isBaselineReady) roundStartRef.current = Date.now();
-  }, [isBaselineReady]);
+    if (started && isBaselineReady) roundStartRef.current = Date.now();
+  }, [started, isBaselineReady]);
 
   // Game loop
   useEffect(() => {
-    if (!isBaselineReady || isDead || hasWon) return;
+    if (!started || !isBaselineReady || isDead || hasWon) return;
 
     const LOW_PENALTY_THRESHOLD = 0.1; // 10%
     const LOW_PENALTY_DURATION = 2; // seconds to lose a heart
@@ -140,7 +142,28 @@ export function Sailor() {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isBaselineReady, isDead, hasWon]);
+  }, [started, isBaselineReady, isDead, hasWon]);
+
+  const best = parseInt(localStorage.getItem('highscore_sailor') || '0', 10);
+  const recal = () => {
+    resetBaseline({ forceFull: true });
+    setStarted(true);
+    ensureBaseline({ seconds: 30, force: true });
+  };
+
+  // START screen
+  if (!started) {
+    return (
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-blue-400">
+        <GameStartPanel title="SAILOR" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
+            Navigate the ocean of your mind and recollect your lost train of thought by staying engaged.
+          </p>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+        </GameStartPanel>
+      </div>
+    );
+  }
 
   // Waiting for baseline
   if (!isBaselineReady) {
@@ -163,6 +186,7 @@ export function Sailor() {
       setHasWon(false);
       lastTimeRef.current = Date.now();
       roundStartRef.current = Date.now();
+      setStarted(false);
     };
 
     const message = hasWon
