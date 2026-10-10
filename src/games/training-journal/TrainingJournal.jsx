@@ -2,6 +2,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { loadSessions, clearSessions, dayStreak, sessionsSinceCheckIn, sessionsForChild, exportCsv, importCsv, CHECK_IN_EVERY } from '../../lib/sessionStore.js';
 import { ProfilePicker } from '../../components/ProfilePicker.jsx';
+import { AlphaPeakReport } from '../../components/AlphaPeakReport.jsx';
+import { loadPafHistory } from '../../lib/paf.js';
 import { loadProfiles } from '../../lib/profiles.js';
 import '../../styles/retro.css';
 
@@ -265,6 +267,7 @@ export function TrainingJournal() {
         )}
 
         {sessions.length === 0 ? (
+          <>
           <div className={`${panel} text-center text-xs leading-relaxed`}>No sessions yet — play a game to start your journal.
             <div className="mt-3">
               <button type="button" onClick={() => fileRef.current?.click()} className={`${smallBtn} border-[var(--nes-blue)] text-[var(--nes-blue)]`}>Import CSV</button>
@@ -272,6 +275,8 @@ export function TrainingJournal() {
               {note && <p className="text-[9px] text-gray-300 mt-2">{note}</p>}
             </div>
           </div>
+          <AlphaPeakReport panelClass={panel} childKey={profiles.activeId} />
+          </>
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -316,7 +321,9 @@ export function TrainingJournal() {
             </div>
             )}
 
-            {withPaf.length > 0 && (
+            <AlphaPeakReport panelClass={panel} childKey={profiles.activeId} />
+
+            {withPaf.length > 0 && !loadPafHistory(profiles.activeId).length && (
               <div className={panel}>
                 <h3 className="text-xs text-[var(--nes-yellow)] mb-2">PEAK ALPHA FREQUENCY (Hz)</h3>
                 <TrendChart list={withPaf} label="Peak alpha frequency per session" series={[['paf', PINK]]} />
