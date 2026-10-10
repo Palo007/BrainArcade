@@ -4,7 +4,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFnirs } from '../../hooks/useFnirs.js';
 import { computeSessionMetrics } from '../../lib/sessionMetrics.js';
-import { recordSession, loadSessions, isCheckInDue } from '../../lib/sessionStore.js';
+import { recordSession, loadSessions, isCheckInDue, sessionsForChild } from '../../lib/sessionStore.js';
+import { useProfiles } from '../../contexts/ProfileContext.jsx';
 import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
 import { SessionReport } from '../../components/SessionReport.jsx';
 import '../../styles/retro.css';
@@ -461,7 +462,9 @@ export function FocusBall() {
   const phaseRef = useRef(phase);
   const audioRef = useRef(null);
   const stateRef = useRef(null);
-  const checkInDue = useMemo(() => phase === 'intro' && isCheckInDue(loadSessions()), [phase]);
+  const { activeId } = useProfiles();
+  // Due after CHECK_IN_EVERY of this player's own Focus Ball sessions
+  const checkInDue = useMemo(() => phase === 'intro' && isCheckInDue(sessionsForChild(loadSessions(), activeId)), [phase, activeId]);
   const sessionRef = useRef({ cue, minutes, checkIn: false });
   const sawResetRef = useRef(false);
 

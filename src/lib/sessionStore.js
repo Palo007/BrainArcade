@@ -95,9 +95,13 @@ export function dayStreak(sessions, now = new Date()) {
   return n;
 }
 
-// Normal (non-check-in) sessions since the last check-in (all of them if none yet).
+// Check-ins are a Focus Ball test: only Focus Ball rows count (old rows without a game are Focus Ball).
+const focusBallOnly = (sessions) => (sessions || []).filter((s) => (s.game || 'focus-ball') === 'focus-ball');
+
+// Normal (non-check-in) Focus Ball sessions since the last check-in (all of them if none yet).
+// Pass one child's sessions (sessionsForChild) so other players do not count.
 export function sessionsSinceCheckIn(sessions) {
-  const list = sessions || [];
+  const list = focusBallOnly(sessions);
   let n = 0;
   for (let i = list.length - 1; i >= 0; i -= 1) {
     if (list[i].checkIn) break;
@@ -107,7 +111,7 @@ export function sessionsSinceCheckIn(sessions) {
 }
 
 export function isCheckInDue(sessions) {
-  return !(sessions || []).some((s) => s.checkIn) || sessionsSinceCheckIn(sessions) >= CHECK_IN_EVERY;
+  return !focusBallOnly(sessions).some((s) => s.checkIn) || sessionsSinceCheckIn(sessions) >= CHECK_IN_EVERY;
 }
 
 // ---- Calibration (PAF) -------------------------------------------------------

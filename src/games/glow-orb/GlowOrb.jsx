@@ -11,8 +11,8 @@ import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 const ROUND_S = 120; // default round length
-const LENGTHS = [2, 3, 5];
-const CUES = ['Count back by 3s', 'Name animals A to Z', 'Picture a math puzzle'];
+const LENGTHS = [2, 3, 5, 10]; // same choices as Focus Ball
+const CUES = ['Count back by 3s', 'Stay calm and focused'];
 const GOAL = 0.62; // orb height (0 bottom … 1 top) that counts as "flying"
 const START_SCALE = 0.35; // µM of oxygenation index that moves the orb from rest to the top
 const BEST_KEY = 'glowOrbBest';
@@ -428,14 +428,12 @@ export function GlowOrb() {
           signalNote="Only the fNIRS sensors matter here."
         >
           {!supported ? (
-            <p className="text-[10px] leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
+            <p className="text-xs leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
           ) : (
             <>
-              <p className="text-[10px] leading-relaxed mb-3">
-                When you think hard, fresh-oxygen blood rushes to your brain. The orb feels it and flies up!
-              </p>
-              <p className="text-[8px] text-gray-300 leading-relaxed mb-4">Keep your head still. Your brain is slow to show change: wait 3-6 seconds.</p>
-              <OptionLabel>PICK YOUR THINKING TRICK</OptionLabel>
+              <p className="text-sm leading-relaxed mb-3">Think hard to make the orb fly up.</p>
+              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
+              <OptionLabel>PICK YOUR FOCUS TRICK</OptionLabel>
               <div className="flex flex-wrap gap-2 justify-center mb-4">
                 {CUES.map((cc) => (
                   <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
