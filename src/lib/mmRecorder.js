@@ -130,6 +130,7 @@ export class MMRecorder {
   constructor({ onChunk }) {
     this.onChunk = onChunk;
     this.rows = []; // pending lines
+    this.pendingRows = []; // first second: [head, tail] data rows and event lines, until band powers exist
     this.nSamples = 0; // EEG rows written
     this.nEvents = 0;
     this.t0 = 0; // wall-clock ms of sample 0 (shifted on data gaps)
@@ -182,15 +183,27 @@ export class MMRecorder {
     const slot = n % WIN;
     for (let c = 0; c < 4; c++) this.ring[c][slot] = Number.isFinite(s[c]) ? s[c] : 0;
     this.nSamples = n + 1;
-    if (this.nSamples >= WIN && ++this.sinceBand >= BAND_EVERY) {
+    if (this.nSamples === WIN || (this.nSamples > WIN && ++this.sinceBand >= BAND_EVERY)) {
       this.sinceBand = 0;
       this._updateBands();
     }
-    this.rows.push(
-      `${formatTimestamp(t)},${this.bandStr},${num(s[0], 3)},${num(s[1], 3)},${num(s[2], 3)},${num(s[3], 3)},` +
-      `,,,,,,${this.accStr},${this.gyroStr},${this.optStr},,${this.headOn},${this.hsiStr},${this.battStr}`
-    );
+    const head = formatTimestamp(t);
+    const tail = `${num(s[0], 3)},${num(s[1], 3)},${num(s[2], 3)},${num(s[3], 3)},` +
+      `,,,,,,${this.accStr},${this.gyroStr},${this.optStr},,${this.headOn},${this.hsiStr},${this.battStr}`; // 60 fields: no Elements cell, like Mind Monitor
+    if (this.nSamples < WIN) {
+      // No band powers yet. The Chart.php viewer reads a row with an empty Delta_TP9 as an event row,
+      // so hold the first second and write it with the first band values (see _updateBands).
+      this.pendingRows.push([head, tail]);
+      return;
+    }
+    if (this.pendingRows.length) this._flushPending();
+    this.rows.push(`${head},${this.bandStr},${tail}`);
     if (this.rows.length >= CHUNK_ROWS) this.flush();
+  }
+
+  _flushPending() {
+    for (const r of this.pendingRows) this.rows.push(typeof r === 'string' ? r : `${r[0]},${this.bandStr},${r[1]}`);
+    this.pendingRows = [];
   }
 
   _updateBands() {
@@ -236,7 +249,8 @@ export class MMRecorder {
     const clean = String(text).replace(/[\r\n,"]/g, ' ');
     // Never earlier than the last sample (mock replay can run ahead of the wall clock)
     const t = this.nSamples ? Math.max(nowMs, this.t0 + ((this.nSamples - 1) * 1000) / FS) : nowMs;
-    this.rows.push(`${formatTimestamp(t)}${','.repeat(COLUMNS.length - 2)},${clean}`);
+    const line = `${formatTimestamp(t)}${','.repeat(COLUMNS.length - 2)},${clean}`;
+    (this.pendingRows.length ? this.pendingRows : this.rows).push(line); // keep time order
     this.nEvents++;
   }
 
@@ -247,6 +261,7 @@ export class MMRecorder {
   }
 
   stop() {
+    if (this.pendingRows.length) this._flushPending(); // < 1 s recorded: written without band powers
     this.flush();
     this.started = false;
   }

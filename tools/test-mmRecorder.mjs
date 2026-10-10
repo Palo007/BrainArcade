@@ -23,6 +23,7 @@ for (let i = 0; i < N; i++) {
   if (i === 100) rec.setOptics([1, 2, 3, 4, 5, 6, 7, 8]);
   if (i === 100) rec.setAccGyro({ acc: { x: 0.1, y: 0.2, z: 0.9 }, gyro: { x: 1, y: 2, z: 3 } });
   if (i === 100) rec.setBattery(91.5);
+  if (i === 100) rec.event('/Marker/1', t); // inside the first second (rows held back)
   if (i === 300) rec.event('/muse/elements/blink', t);
   rec.pushEeg(x, t);
 }
@@ -35,15 +36,19 @@ check('61 columns', COLUMNS.length === 61);
 const rows = lines.slice(1);
 const events = rows.filter((r) => r.split(',').length === 61 && r.split(',').slice(1, -1).every((c) => c === ''));
 const data = rows.filter((r) => !events.includes(r));
-check('data rows have 60 fields (no trailing comma), event rows 61', data.every((r) => r.split(',').length === 60) && events.every((r) => r.split(',').length === 61));
-check('event rows: 2 (connected, blink)', events.length === 2, `got ${events.length}`);
+check('data rows have 60 fields (no trailing comma, like Mind Monitor), event rows 61', data.every((r) => r.split(',').length === 60) && events.every((r) => r.split(',').length === 61));
+check('event rows: 3 (connected, marker, blink)', events.length === 3, `got ${events.length}`);
+// Chart.php: a row with empty Delta_TP9 is an event row and must have a non-empty Elements cell
+check('Chart.php: every data row has Delta_TP9', data.every((r) => r.split(',')[1] !== ''));
+const tsMs = rows.map((r) => new Date(r.slice(0, 23).replace(' ', 'T')).getTime());
+check('timestamps never go back', tsMs.every((v, i) => i === 0 || v >= tsMs[i - 1]));
 check('event row shape (ts + 59 empty + text)', events.every((r) => /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3},{60}[^,]+$/.test(r) || /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}(,){60}\S.*$/.test(r)));
 check('256 data rows per simulated second', data.length === N && data.length / SECONDS === 256, `${data.length} rows`);
 check('timestamp format', /^2026-10-10 12:00:00\.000,/.test(data[0]) && /^2026-10-10 12:00:00\.0\d\d,/.test(data[1]));
 check('timestamps span ~4 s', data[N - 1].startsWith('2026-10-10 12:00:03.99'), data[N - 1].slice(0, 23));
 const cells = data[N - 1].split(',');
 const ci = (n) => COLUMNS.indexOf(n);
-check('bands filled after 1 s', cells[ci('Alpha_TP9')] !== '' && data[10].split(',')[ci('Alpha_TP9')] === '');
+check('first-second rows get the first band values', data[10].split(',')[ci('Alpha_TP9')] === data[0].split(',')[ci('Alpha_TP9')] && data[0].split(',')[ci('Alpha_TP9')] !== '');
 check('alpha dominates for 10 Hz sine', +cells[ci('Alpha_TP9')] > +cells[ci('Beta_TP9')] + 1 && +cells[ci('Alpha_TP9')] > +cells[ci('Delta_TP9')] + 1);
 check('RAW values', cells[ci('RAW_TP9')] !== '' && cells[ci('RAW_TP10')] !== '');
 check('optics 1-8 held, 9-16 empty', cells[ci('Optics8')] === '8.0000' && cells[ci('Optics9')] === '' && cells[ci('Optics16')] === '');
