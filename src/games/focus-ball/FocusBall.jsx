@@ -113,7 +113,6 @@ function createAudio() {
 }
 
 const SCROLL_PX_S = 60; // world scroll speed (css px/s)
-const TERRAIN = [58, 66, 80];
 const STAR_LIFE = 6; // seconds a spawned star stays visible
 const BRAIN = ['01100110', '11011011', '11111111', '11011011', '11111111', '01111110', '00011000'];
 const STAR_GLYPH = ['00100', '01110', '11111', '01110', '01010'];
@@ -156,11 +155,44 @@ function buildFx(w, h, dpr) {
   return { haloOn: halo('rgba(210,235,255,0.5)'), haloOff: halo('rgba(150,150,170,0.35)'), glow, refBr };
 }
 
-// Cached colour strings (no per-frame string building)
-const SKY = Array.from({ length: 8 }, (_, k) => rgb(mix([43, 58, 77], [61, 74, 92], k / 7)));
-const TERRAIN_FILL = rgb(TERRAIN);
+// Two looks, picked from the local clock when the game opens (day 7:00-19:00).
+// Colour strings are cached here (no per-frame string building).
+const skyBands = (a, b) => Array.from({ length: 8 }, (_, k) => rgb(mix(a, b, k / 7)));
+const THEMES = {
+  night: {
+    sky: skyBands([43, 58, 77], [61, 74, 92]),
+    stars: true,
+    moon: true,
+    cloud: 'rgba(150,165,190,0.28)',
+    mountain: 'rgb(31,41,58)',
+    snow: 'rgba(200,210,230,0.45)',
+    hills: 'rgb(22,30,44)',
+    hillTop: 'rgb(30,42,58)',
+    flowers: null,
+    trail: Array.from({ length: 20 }, (_, i) => `rgba(255,255,255,${(i / 19).toFixed(3)})`),
+    goal: 'rgba(255,255,255,0.22)',
+  },
+  day: {
+    sky: skyBands([92, 164, 230], [196, 228, 246]),
+    sun: true,
+    cloud: 'rgba(255,255,255,0.9)',
+    mountain: 'rgb(124,146,178)',
+    snow: 'rgb(245,248,255)',
+    hills: 'rgb(86,160,82)',
+    hillTop: 'rgb(122,190,96)',
+    flowers: ['rgb(255,236,110)', 'rgb(255,255,255)', 'rgb(240,120,160)', 'rgb(170,140,240)'],
+    trail: Array.from({ length: 20 }, (_, i) => `rgba(255,255,255,${(0.35 + (0.65 * i) / 19).toFixed(3)})`),
+    trailEdge: 'rgba(30,50,80,0.55)',
+    goal: 'rgba(30,40,60,0.35)',
+  },
+};
+const sceneTheme = () => {
+  const hr = new Date().getHours();
+  return hr >= 7 && hr < 19 ? THEMES.day : THEMES.night;
+};
+// Triangle wave 0..1..0 (sharp pixel mountain peaks)
+const tri = (x) => 1 - 2 * Math.abs((x - Math.floor(x)) - 0.5);
 const STAR_ALPHA = Array.from({ length: 16 }, (_, i) => `rgba(255,255,255,${(0.15 + (0.65 * i) / 15).toFixed(3)})`);
-const TRAIL_ALPHA = Array.from({ length: 20 }, (_, i) => `rgba(255,255,255,${(i / 19).toFixed(3)})`);
 const GOLD_ALPHA = Array.from({ length: 20 }, (_, i) => `rgba(255,216,74,${(i / 19).toFixed(3)})`);
 const plateauCache = new Map();
 function plateauStyle(v) {
@@ -181,6 +213,7 @@ function makeScene(w, h, dpr) {
   const rand = (a, b) => a + Math.random() * (b - a);
   return {
     dpr,
+    theme: sceneTheme(),
     fx: buildFx(w, h, dpr),
     stars: Array.from({ length: 60 }, () => ({ x: Math.floor(rand(0, w)), y: Math.floor(rand(0, h * 0.6)), big: Math.random() < 0.2, p: rand(0, 6.28) })),
     clouds: [
@@ -240,56 +273,98 @@ function draw(c, scene, s, t) {
   const bx = Math.round(w / 2);
   const by = Math.round(ballScreenY(lift, h));
 
-  // Sky (calm, banded): dark slate-blue
+  const th = scene.theme;
+  // Sky (calm, banded)
   const bands = 8;
   for (let k = 0; k < bands; k += 1) {
-    c.fillStyle = SKY[k];
+    c.fillStyle = th.sky[k];
     c.fillRect(0, Math.floor((k * h) / bands), w, Math.ceil(h / bands) + 1);
   }
-  scene.stars.forEach((st) => {
-    c.fillStyle = STAR_ALPHA[Math.round(Math.sin(t * 1.5 + st.p) ** 2 * 15)];
-    const z = (st.big ? 3 : 2) * dpr;
-    c.fillRect(st.x, st.y, z, z);
-  });
-  // Faint moon, partly off the right edge
-  c.fillStyle = 'rgba(225,230,200,0.2)';
-  pixelDisc(c, w - 8 * dpr, h * 0.2, 40 * dpr, 4 * dpr);
-  c.fillStyle = 'rgba(120,130,110,0.18)';
-  c.fillRect(w - 40 * dpr, h * 0.2 - 12 * dpr, 8 * dpr, 8 * dpr);
-  c.fillRect(w - 28 * dpr, h * 0.2 + 8 * dpr, 4 * dpr, 4 * dpr);
+  if (th.stars) {
+    scene.stars.forEach((st) => {
+      c.fillStyle = STAR_ALPHA[Math.round(Math.sin(t * 1.5 + st.p) ** 2 * 15)];
+      const z = (st.big ? 3 : 2) * dpr;
+      c.fillRect(st.x, st.y, z, z);
+    });
+  }
+  if (th.moon) {
+    // Faint moon, partly off the right edge
+    c.fillStyle = 'rgba(225,230,200,0.2)';
+    pixelDisc(c, w - 8 * dpr, h * 0.2, 40 * dpr, 4 * dpr);
+    c.fillStyle = 'rgba(120,130,110,0.18)';
+    c.fillRect(w - 40 * dpr, h * 0.2 - 12 * dpr, 8 * dpr, 8 * dpr);
+    c.fillRect(w - 28 * dpr, h * 0.2 + 8 * dpr, 4 * dpr, 4 * dpr);
+  }
+  if (th.sun) {
+    // Pixel sun with a soft rim, upper right (clear of the HUD)
+    c.fillStyle = 'rgba(255,240,170,0.45)';
+    pixelDisc(c, w * 0.82, h * 0.24, 34 * dpr, 4 * dpr);
+    c.fillStyle = 'rgb(255,226,110)';
+    pixelDisc(c, w * 0.82, h * 0.24, 24 * dpr, 4 * dpr);
+  }
 
   // Clouds (drift slowly)
   scene.clouds.forEach((cl) => {
     const u = cl.u * dpr;
     const span = w + 16 * u;
     const x = ((((cl.x + t * cl.v * dpr - worldX * 0.1 * dpr) % span) + span) % span) - 8 * u;
-    c.fillStyle = 'rgba(150,165,190,0.28)';
+    c.fillStyle = th.cloud;
     CLOUD.forEach(([dx, dy, cw, ch]) => c.fillRect(Math.round(x + dx * u), Math.round(cl.y + dy * u), cw * u, ch * u));
   });
 
-  // Far parallax hills (0.3x scroll)
+  // Snowy mountains, far away (0.1x scroll): sharp pixel peaks, white caps
+  const ms = 6 * dpr;
+  const moff = ((worldX * 0.1) % 6) * dpr;
+  const snowLine = h * 0.4;
+  for (let x = -moff; x < w; x += ms) {
+    const wx = Math.floor((x / dpr + worldX * 0.1) / 6) * 6;
+    const peak = Math.max(tri(wx / 300), 0.75 * tri(wx / 190 + 0.35));
+    const y = Math.round((h * 0.56 - h * 0.34 * peak) / ms) * ms;
+    c.fillStyle = th.mountain;
+    c.fillRect(Math.round(x), y, ms + 1, h - y);
+    if (y < snowLine) {
+      c.fillStyle = th.snow;
+      c.fillRect(Math.round(x), y, ms + 1, Math.min(3 * ms, Math.round(((snowLine - y) * 0.45) / ms) * ms + ms));
+    }
+  }
+
+  // Rolling hills / meadow (0.3x scroll), lighter grass edge and a few flowers by day
   const hs = 6 * dpr;
   const off = ((worldX * 0.3) % 6) * dpr;
-  c.fillStyle = 'rgb(33,44,61)';
   for (let x = -off; x < w; x += hs) {
     const wx = Math.floor((x / dpr + worldX * 0.3) / 6) * 6;
     const y = Math.round((h * 0.6 + Math.sin(wx * 0.004) * h * 0.06 + Math.sin(wx * 0.011 + 1) * h * 0.03) / hs) * hs;
+    c.fillStyle = th.hills;
     c.fillRect(Math.round(x), y, hs + 1, h - y);
+    c.fillStyle = th.hillTop;
+    c.fillRect(Math.round(x), y, hs + 1, hs);
+    if (th.flowers) {
+      const k = ((wx * 7919) % 97 + 97) % 97; // stable per world column
+      if (k < 14) {
+        c.fillStyle = th.flowers[k % th.flowers.length];
+        c.fillRect(Math.round(x + hs / 4), y + hs * (2 + (k % 5)), Math.round(3 * dpr), Math.round(3 * dpr));
+      }
+    }
   }
 
-  // Past: terrain from history + fading white trail
+  // Past: only a fading white trail line (the scenery stays visible below it)
   let prevY = null;
   for (let wc = Math.floor(worldX / 4) * 4; ; wc -= 4) {
     const sx = Math.round(bx - (worldX - wc) * dpr);
     if (sx < -step) break;
     const y = Math.round(ballScreenY(surfaceY(hist, wc), h) / step) * step;
-    c.fillStyle = TERRAIN_FILL;
-    c.fillRect(sx, y, step + 1, h - y);
     const a = clamp(1 - (bx - sx) / bx, 0.05, 1);
-    c.fillStyle = TRAIL_ALPHA[Math.round(a * 19)];
+    c.fillStyle = th.trail[Math.round(a * 19)];
     const top = prevY === null ? y : Math.min(y, prevY);
     const bot = prevY === null ? y : Math.max(y, prevY);
-    c.fillRect(sx, top, step + 1, bot - top + 2 * dpr);
+    if (th.trailEdge) {
+      // dark edge under the white line so it reads on a bright sky
+      const fill = c.fillStyle;
+      c.fillStyle = th.trailEdge;
+      c.fillRect(sx, top + 2 * dpr, step + 1, bot - top + 2 * dpr);
+      c.fillStyle = fill;
+    }
+    c.fillRect(sx, top - dpr, step + 1, bot - top + 3 * dpr);
     prevY = y;
   }
 
@@ -320,7 +395,7 @@ function draw(c, scene, s, t) {
   c.restore();
 
   // Goal line (faint)
-  c.fillStyle = 'rgba(255,255,255,0.22)';
+  c.fillStyle = th.goal;
   c.fillRect(0, Math.round(ballScreenY(GOAL, h)), w, Math.max(1, Math.round(1.5 * dpr)));
 
   // Stars earned (attached to world x, sitting on the terrain surface)
@@ -641,8 +716,8 @@ export function FocusBall() {
 
       <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
         <div>
-          <h2 className="text-2xl text-[var(--nes-yellow)]">FOCUS BALL</h2>
-          {phase === 'play' && <p className="text-[10px] text-gray-200 mt-2">{session?.cue}</p>}
+          <h2 className="text-2xl text-[var(--nes-yellow)] [text-shadow:2px_2px_0_#000]">FOCUS BALL</h2>
+          {phase === 'play' && <p className="text-xs text-white mt-2 [text-shadow:1px_1px_0_#000]">{session?.cue}</p>}
         </div>
       </div>
 
