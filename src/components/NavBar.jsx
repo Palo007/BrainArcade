@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { PlayerSwitcher } from './PlayerSwitcher.jsx';
+import { TopBarSlotContext } from './topBarSlot.js';
 import { Link, useLocation } from 'react-router-dom';
 import { games, categories } from '../games/games.config';
 import '../styles/retro.css';
@@ -84,7 +85,8 @@ function GameCard({ game, isActive, onClick }) {
  * NavBar - Game selection menu
  * Automatically displays games from games.config.js, grouped by category
  */
-export function NavBar({ onActiveGameClick } = {}) {
+export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
+  const setTopBarSlot = useContext(TopBarSlotContext);
   const location = useLocation();
   const [filter, setFilter] = useState(ALL);
 
@@ -116,7 +118,7 @@ export function NavBar({ onActiveGameClick } = {}) {
     <nav className="mb-8 pb-4">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-[var(--nes-dark)] border-b-4 border-[var(--nes-gray)] pt-4 sm:pt-6 short-land:pt-1 pb-3 short-land:pb-1 -mx-1 px-1">
-        <div className="flex items-center gap-3 sm:gap-6 mb-3 short-land:mb-1 short-land:pr-44">
+        <div className={`flex items-center gap-3 sm:gap-6 mb-3 short-land:mb-1 ${noTopBar ? 'short-land:pr-44' : ''}`}>
           <Link
             to="/"
             className="text-sm sm:text-xl short-land:text-xs text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2 short-land:py-0 phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center"
@@ -125,7 +127,9 @@ export function NavBar({ onActiveGameClick } = {}) {
           </Link>
           <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">SELECT GAME</h2>
           <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
-          <PlayerSwitcher className="ml-auto sm:ml-0 min-w-0" />
+          <PlayerSwitcher className="ml-auto sm:ml-0 short-land:ml-auto min-w-0" />
+          {/* Layout puts Electrodes + Muse status here (see topBarSlot.js) */}
+          {!noTopBar && setTopBarSlot && <div ref={setTopBarSlot} className="contents" />}
         </div>
 
         {/* Category filter (scrolls sideways on phones) */}

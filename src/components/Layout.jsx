@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEEG } from '../contexts/MuseContext';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
@@ -9,6 +10,21 @@ import { RetroModal } from './RetroModal';
 import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
 import { isPageRoute, isFnirsRoute } from '../games/games.config';
 import { ElectrodesButton, ElectrodesModal } from './ElectrodeOverlay.jsx';
+import { TopBarSlotContext } from './topBarSlot.js';
+
+// Portrait phones keep the floating controls (the header row has no room for them)
+const PHONE_PORT = '(orientation: portrait) and (max-width: 480px)';
+function usePhonePortrait() {
+  const [match, setMatch] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(PHONE_PORT).matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.(PHONE_PORT);
+    if (!mq) return;
+    const on = () => setMatch(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return match;
+}
 
 /**
  * Layout - Main layout wrapper with responsive handling
@@ -28,6 +44,9 @@ export function Layout({ children }) {
   const isFnirsGame = isFnirsRoute(location.pathname); // signal: 'fnirs' -> EEG-quality pauses are suppressed
   const [showMusePopup, setShowMusePopup] = useState(false);
   const [showElectrodes, setShowElectrodes] = useState(false);
+  const [topBarSlot, setTopBarSlot] = useState(null); // header row offered by the page (NavBar)
+  const phonePortrait = usePhonePortrait();
+  const inSlot = !!topBarSlot && !phonePortrait;
   const [isSwitching, setIsSwitching] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [isGameSwitching, setIsGameSwitching] = useState(false);
@@ -130,12 +149,14 @@ export function Layout({ children }) {
   }, [pendingRecalibrate, didResetBaseline, didStartBaseline, isBaselineReady, ensureBaseline, resetBaseline]);
 
   // Unified layout (applies to all routes); content varies per route
-  return (
-    <div className="arcade-frame">
-      <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
-        {/* Top-right controls: Pause and Muse status */}
-        {isConnected && !isFullScreen && (
-          <div className="absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex flex-wrap justify-end items-center gap-2 sm:gap-4">
+  const topControls = isConnected && !isFullScreen && (
+          <div
+            className={
+              inSlot
+                ? 'flex items-center gap-2 sm:gap-4 short-land:gap-2'
+                : 'absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex flex-wrap justify-end items-center gap-2 sm:gap-4'
+            }
+          >
             {/* Pause button (only on game pages) */}
             {isGamePage && isConnected && (
               <button
@@ -191,7 +212,14 @@ export function Layout({ children }) {
               </button>
             )}
           </div>
-        )}
+  );
+
+  return (
+    <TopBarSlotContext.Provider value={setTopBarSlot}>
+    <div className="arcade-frame">
+      <div className={`arcade-window ${isFullScreen ? '' : 'bg-[#181818]'}`}>
+        {/* Top-right controls: Pause and Muse status (in the page header row when it offers a slot) */}
+        {inSlot ? createPortal(topControls, topBarSlot) : topControls}
 
         {/* Main Container */}
         {isFullScreen ? (
@@ -236,6 +264,7 @@ export function Layout({ children }) {
               onClick={(e) => e.stopPropagation()}
             >
               <NavBar
+                noTopBar
                 onActiveGameClick={(game) => {
                   const nextPath = `/game/${game.id}`;
                   const current = location.pathname;
@@ -343,6 +372,7 @@ export function Layout({ children }) {
       {!isFnirsGame && <FrontalPauseOverlay />}
       </div>
     </div>
+    </TopBarSlotContext.Provider>
   );
 }
 /* SPDX-License-Identifier: AGPL-3.0-or-later
