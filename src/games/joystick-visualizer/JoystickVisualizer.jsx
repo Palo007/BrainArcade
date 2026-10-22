@@ -7,17 +7,22 @@ import brainCommandCenterImg from './assets/brain_command_center.png';
 import { FnirsPanel } from '../../components/FnirsPanel.jsx';
 import { useFnirs } from '../../hooks/useFnirs.js';
 
+// Slow drift fix (10 min): tiles show change since the baseline, not change in the last minute.
+// Log mapping: x1.5 and /1.5 move a tile the same distance. Each axis keeps its own default range.
+const TILE_OPTIONS = { driftTauS: 600, mapping: 'log' };
+
 function AxisTile({ axis }) {
-  const { value01 } = useJoystick(axis, {
-    range: 0.6,
-    autoAdjustBaseline: true,
-  });
+  const { value01 } = useJoystick(axis, TILE_OPTIONS);
   const pct = Math.round(value01 * 100);
+  const experimental = JOYSTICK_AXES[axis]?.experimental;
 
   return (
     <div className="p-3 border-2 border-[var(--nes-blue)]/70 bg-black text-white" style={{ fontFamily: 'var(--font-retro)' }}>
       <div className="flex items-center justify-between mb-2 text-[10px]">
-        <div className="opacity-80 uppercase text-[var(--nes-blue)]">{axis}</div>
+        <div className="opacity-80 uppercase text-[var(--nes-blue)]">
+          {axis}
+          {experimental && <span className="ml-2 text-[var(--nes-yellow)]" title="Experimental: no published method">EXP</span>}
+        </div>
         <div className="text-[var(--nes-blue)]">{pct}</div>
       </div>
       <div className="relative h-4 w-full bg-black border border-[var(--nes-blue)]/40">
