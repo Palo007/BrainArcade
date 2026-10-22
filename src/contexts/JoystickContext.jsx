@@ -134,7 +134,7 @@ export function JoystickProvider({ children }) {
       const relOf = (key) => {
         const { value, baseline } = getBiomarker(key);
         if (!baseline || baseline <= 0 || !(value > 0)) return null;
-        const id = `${axis}|${key}|${tauS}`; // a game (90 s) and the Command Center (600 s) must not share one
+        const id = `${axis}|${key}|${tauS}`; // calls with different driftTauS must not share one
         const level = driftRef.current[id] || (driftRef.current[id] = createDriftLevel());
         return level(value / baseline, baseline, performance.now(), tau);
       };

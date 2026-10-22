@@ -128,7 +128,8 @@ Source: `REVIEW-command-center-metrics.html` (outside the repo).
 - **Half-open band edges**: a bin on a shared edge counts in the upper band only. An 8 Hz bin used to count fully in theta and alpha.
 - **Blink segments skipped** (`src/contexts/ProcessingContext.jsx`): the processing layer runs its own `BlinkDetector`, marks ±0.4 s around each blink, and Welch skips segments that touch a mark. Recordings showed 2–2.7× forehead delta in blink segments.
 - **Per-axis drift state** (`src/contexts/JoystickContext.jsx`, `src/lib/axisMath.js`): two tiles no longer share one drift tracker. One-sided axes (`restsAt` 0 or 1: alertness, drowsiness, frustration) never use the 20 s fast mode; they used to trigger it just by resting.
-- **Options** `driftTauS` (default 90 s) and `mapping` (`'linear'` default, `'log'`). The Command Center uses 600 s and log, so tiles show change since the baseline and ×k / ÷k move a tile equally. Games are unchanged.
+- **Options** `driftTauS` (default 90 s) and `mapping` (`'linear'` default, `'log'`). The Command Center uses log mapping with range 1.5 (edges at ×2.5 / ÷2.5) and the default 90 s drift, so ×k and ÷k move a tile equally. Games are unchanged.
+- **Why not a slow drift for the Command Center**: a 600 s drift was tried to show change since the baseline. A replay of the demo recording (`web-muse/assets/resting-state.csv`) showed band power falling to 35–45 % of the baseline as the electrodes settle, and the tiles then sat at 0 or 100 up to 74 % of the time (old code: 18–31 %; log 1.5 with 90 s: 17–26 %). Change since baseline cannot be told apart from electrode settling with these sensors.
 - **Frontal bad channel**: a flagged-bad AF7 or AF8 drops out of frontal values (live and baseline); both bad → the axis holds.
 - **Tests**: `node tools/test-signal.mjs`, `node tools/test-axisMath.mjs`. Measurement: `node tools/measure-blink-leak.mjs <recording.csv> athena`.
 

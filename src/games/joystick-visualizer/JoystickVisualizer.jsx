@@ -7,9 +7,10 @@ import brainCommandCenterImg from './assets/brain_command_center.png';
 import { FnirsPanel } from '../../components/FnirsPanel.jsx';
 import { useFnirs } from '../../hooks/useFnirs.js';
 
-// Slow drift fix (10 min): tiles show change since the baseline, not change in the last minute.
-// Log mapping: x1.5 and /1.5 move a tile the same distance. Each axis keeps its own default range.
-const TILE_OPTIONS = { driftTauS: 600, mapping: 'log' };
+// Log mapping: x2 and /2 move a tile the same distance; range 1.5 puts the edges at x2.5 and /2.5.
+// Default 90 s drift: a 600 s drift kept electrode settling on screen (demo replay: tiles at 0/100
+// up to 74 % of the time vs 17-26 % with these settings, old linear 0.6: 18-31 %).
+const TILE_OPTIONS = { mapping: 'log', range: 1.5 };
 
 function AxisTile({ axis }) {
   const { value01 } = useJoystick(axis, TILE_OPTIONS);
