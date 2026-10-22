@@ -15,6 +15,8 @@ export function BiomarkerProvider({ children }) {
   // All-channel averages skip channels flagged bad (a loose ear sensor must not skew them); same set for the baseline
   const badKey = (perChannelBad || []).map((b) => (b ? 1 : 0)).join('');
   const okChannels = useMemo(() => [0, 1, 2, 3].filter((ch) => badKey[ch] !== '1'), [badKey]);
+  // Frontal values: AF7/AF8 minus any flagged bad. One bad → the other alone; both bad → null (axes hold)
+  const frontalOk = useMemo(() => [1, 2].filter((ch) => badKey[ch] !== '1'), [badKey]);
 
   const compute = useMemo(() => {
     const helpers = {
@@ -26,11 +28,11 @@ export function BiomarkerProvider({ children }) {
         return sum / okChannels.length;
       },
       bandFrontal: (band) => {
-        // Average of frontal channels AF7 (1) and AF8 (2)
-        if (!bandPowers || !bandPowers[1] || !bandPowers[2]) return null;
-        const l = bandPowers[1][band] || 0;
-        const r = bandPowers[2][band] || 0;
-        return (l + r) / 2;
+        // Average of the usable frontal channels AF7 (1) and AF8 (2)
+        if (!bandPowers || frontalOk.length === 0 || frontalOk.some((ch) => !bandPowers[ch])) return null;
+        let sum = 0;
+        for (const ch of frontalOk) sum += bandPowers[ch][band] || 0;
+        return sum / frontalOk.length;
       },
       bandLeft: (band) => {
         if (!bandPowers || !bandPowers[0]) return null;
@@ -44,18 +46,15 @@ export function BiomarkerProvider({ children }) {
         for (const ch of rightChannels) sum += bandPowers[ch][band] || 0;
         return sum / rightChannels.length;
       },
-      frontalMidlineTheta: () => {
-        if (!bandPowers || !bandPowers[1] || !bandPowers[2]) return null;
-        // Approximate with frontal electrodes AF7 (1) + AF8 (2)
-        return ((bandPowers[1].theta || 0) + (bandPowers[2].theta || 0)) / 2;
-      },
+      // Frontal theta at AF7/AF8. Muse has no midline (Fz) electrode; the key name is kept for the games
+      frontalMidlineTheta: () => helpers.bandFrontal('theta'),
       frontalAlphaAsymmetry: () => {
-        if (!bandPowers || !bandPowers[1] || !bandPowers[2]) return null;
+        if (!bandPowers || !bandPowers[1] || !bandPowers[2] || frontalOk.length < 2) return null;
         // FA = Left (AF7 alpha) - Right (AF8 alpha)
         return (bandPowers[1].alpha || 0) - (bandPowers[2].alpha || 0);
       },
       thetaAsymmetry: () => {
-        if (!bandPowers || !bandPowers[1] || !bandPowers[2]) return null;
+        if (!bandPowers || !bandPowers[1] || !bandPowers[2] || frontalOk.length < 2) return null;
         const left = bandPowers[1].theta || 0;
         const right = bandPowers[2].theta || 0;
         const sum = left + right;
@@ -104,33 +103,27 @@ export function BiomarkerProvider({ children }) {
       // Flow/Frustration high-level indices built from above components and baselines when available
     };
     return helpers;
-  }, [bandPowers, leftChannels, rightChannels, okChannels]);
+  }, [bandPowers, leftChannels, rightChannels, okChannels, frontalOk]);
 
   const baselineValues = useMemo(() => {
     if (!baseline) return null;
     const base = baseline.channels; // per-channel band powers
+    // Same channel sets as the live values, so a flagged channel drops out of both
+    const avgOf = (chs, band) => {
+      if (chs.length === 0) return null;
+      let sum = 0;
+      for (const ch of chs) sum += base[ch][band] || 0;
+      return sum / chs.length;
+    };
+    const bf = (band) => avgOf(frontalOk, band);
+    const ratio = (num, den) => (num != null && den > 0 ? num / den : 0);
     return {
-      bandAvg: (band) => {
-        if (okChannels.length === 0) return null;
-        let sum = 0; for (const ch of okChannels) sum += base[ch][band] || 0; return sum / okChannels.length;
-      },
-      bandFrontal: (band) => {
-        const l = base[1][band] || 0;
-        const r = base[2][band] || 0;
-        return (l + r) / 2;
-      },
-      bandLeft: (band) => {
-        let sum = 0; for (const ch of leftChannels) sum += base[ch][band] || 0; return sum / leftChannels.length;
-      },
-      bandRight: (band) => {
-        let sum = 0; for (const ch of rightChannels) sum += base[ch][band] || 0; return sum / rightChannels.length;
-      },
-      frontalMidlineTheta: () => {
-        return ((base[1].theta || 0) + (base[2].theta || 0)) / 2;
-      },
-      frontalAlphaAsymmetry: () => {
-        return (base[1].alpha || 0) - (base[2].alpha || 0);
-      },
+      bandAvg: (band) => avgOf(okChannels, band),
+      bandFrontal: bf,
+      bandLeft: (band) => avgOf(leftChannels, band),
+      bandRight: (band) => avgOf(rightChannels, band),
+      frontalMidlineTheta: () => bf('theta'),
+      frontalAlphaAsymmetry: () => (base[1].alpha || 0) - (base[2].alpha || 0),
       thetaAsymmetry: () => {
         const left = base[1].theta || 0;
         const right = base[2].theta || 0;
@@ -138,42 +131,14 @@ export function BiomarkerProvider({ children }) {
         if (sum <= 0) return 0;
         return (right - left) / sum;
       },
-      betaAlphaRatio: () => {
-        const beta = ((base[1].beta || 0) + (base[2].beta || 0)) / 2;
-        const alpha = ((base[1].alpha || 0) + (base[2].alpha || 0)) / 2;
-        if (alpha <= 0) return 0;
-        return beta / alpha;
-      },
-      thetaAlphaRatio: () => {
-        const th = ((base[1].theta || 0) + (base[2].theta || 0)) / 2;
-        const al = ((base[1].alpha || 0) + (base[2].alpha || 0)) / 2;
-        if (al <= 0) return 0;
-        return th / al;
-      },
-      thetaBetaRatio: () => {
-        const th = ((base[1].theta || 0) + (base[2].theta || 0)) / 2;
-        const be = ((base[1].beta || 0) + (base[2].beta || 0)) / 2;
-        if (be <= 0) return 0;
-        return th / be;
-      },
-      engagementIndex: () => {
-        const be = ((base[1].beta || 0) + (base[2].beta || 0)) / 2;
-        const al = ((base[1].alpha || 0) + (base[2].alpha || 0)) / 2;
-        const th = ((base[1].theta || 0) + (base[2].theta || 0)) / 2;
-        const denom = al + th;
-        if (denom <= 0) return 0;
-        return be / denom;
-      },
-      relaxationIndex: () => {
-        const be = ((base[1].beta || 0) + (base[2].beta || 0)) / 2;
-        const al = ((base[1].alpha || 0) + (base[2].alpha || 0)) / 2;
-        const th = ((base[1].theta || 0) + (base[2].theta || 0)) / 2;
-        if (be <= 0) return 0;
-        return (al + th) / be;
-      },
-      frontalDelta: () => ((base[1].delta || 0) + (base[2].delta || 0)) / 2,
+      betaAlphaRatio: () => ratio(bf('beta'), bf('alpha')),
+      thetaAlphaRatio: () => ratio(bf('theta'), bf('alpha')),
+      thetaBetaRatio: () => ratio(bf('theta'), bf('beta')),
+      engagementIndex: () => ratio(bf('beta'), (bf('alpha') ?? 0) + (bf('theta') ?? 0)),
+      relaxationIndex: () => ratio((bf('alpha') ?? 0) + (bf('theta') ?? 0), bf('beta')),
+      frontalDelta: () => bf('delta'),
     };
-  }, [baseline, leftChannels, rightChannels, okChannels]);
+  }, [baseline, leftChannels, rightChannels, okChannels, frontalOk]);
 
   const getBiomarker = (name) => {
     if (!compute) return { value: null, baseline: null };
