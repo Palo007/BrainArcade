@@ -23,6 +23,20 @@ function hann(N) {
   return w;
 }
 
+// Remove the least-squares line (DC offset + slow drift) in place. Without this the Hann window
+// leaks the offset into the lowest bins: a 20 µV offset made delta power 3.7x too big (classic Muse).
+function detrend(seg) {
+  const N = seg.length;
+  const xm = (N - 1) / 2;
+  let ym = 0;
+  for (let i = 0; i < N; i++) ym += seg[i];
+  ym /= N;
+  let sxy = 0, sxx = 0;
+  for (let i = 0; i < N; i++) { const dx = i - xm; sxy += dx * (seg[i] - ym); sxx += dx * dx; }
+  const b = sxy / sxx;
+  for (let i = 0; i < N; i++) seg[i] -= ym + b * (i - xm);
+}
+
 // Naive DFT magnitude squared (sufficient for small windows like 512)
 function periodogram(samples) {
   const N = samples.length;
@@ -43,11 +57,14 @@ function periodogram(samples) {
   return out;
 }
 
+// isBad(start, end): optional; true when samples[start..end) hold an artifact (e.g. a blink).
+// Such segments are skipped and older clean ones used instead (the buffer holds up to 8 s).
 export function computeWelchPSD(
   samples,
   sampleRate = SAMPLE_RATE,
   windowSec = 2,
-  overlapSec = 1
+  overlapSec = 1,
+  isBad = null
 ) {
   // Returns { psd: Float32Array, freqRes: number }
   const Nw = Math.floor(windowSec * sampleRate);
@@ -56,19 +73,28 @@ export function computeWelchPSD(
   }
   const step = Math.max(1, Math.floor((windowSec - overlapSec) * sampleRate));
   const window = hann(Nw);
+  // Up to 3 most recent segments (bounds the cost); clean ones first
+  const starts = [];
+  for (let start = samples.length - Nw; start >= 0 && starts.length < 3; start -= step) {
+    if (!isBad || !isBad(start, start + Nw)) starts.push(start);
+  }
+  // Every segment has an artifact: use the newest ones anyway rather than no spectrum
+  if (starts.length === 0) {
+    for (let start = samples.length - Nw; start >= 0 && starts.length < 3; start -= step) starts.push(start);
+  }
   let count = 0;
   let acc;
-  for (let start = samples.length - Nw; start >= 0; start -= step) {
+  for (const start of starts) {
     const seg = new Float32Array(Nw);
-    for (let i = 0; i < Nw; i++) seg[i] = samples[start + i] * window[i];
+    for (let i = 0; i < Nw; i++) seg[i] = samples[start + i];
+    detrend(seg);
+    for (let i = 0; i < Nw; i++) seg[i] *= window[i];
     const p = periodogram(seg);
     if (!acc) {
       acc = new Float32Array(p.length);
     }
     for (let i = 0; i < p.length; i++) acc[i] += p[i];
     count++;
-    // Only a few most recent segments needed; break after 3 averages to bound cost
-    if (count >= 3) break;
   }
   if (!acc) {
     acc = new Float32Array(Math.floor(Nw / 2));
@@ -82,9 +108,10 @@ export function bandPowersFromPSD(psd, freqRes, bands = BANDS) {
   const powers = {};
   const nBins = psd.length;
   for (const [name, [lo, hi]] of Object.entries(bands)) {
-    // skip DC bin (k=0) by starting at 1
-    const i0 = Math.max(1, Math.floor(lo / freqRes));
-    const i1 = Math.min(nBins - 1, Math.ceil(hi / freqRes));
+    // Half-open [lo, hi): a bin on a shared edge belongs to the upper band only, so no bin is
+    // counted twice (an 8 Hz bin used to count fully as theta AND alpha). DC bin (k=0) skipped.
+    const i0 = Math.max(1, Math.ceil(lo / freqRes - 1e-9));
+    const i1 = Math.min(nBins - 1, Math.ceil(hi / freqRes - 1e-9) - 1);
     let sum = 0;
     for (let i = i0; i <= i1; i++) sum += psd[i];
     powers[name] = sum;
