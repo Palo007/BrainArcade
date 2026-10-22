@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useEEG } from './MuseContext.jsx';
 import { SAMPLE_RATE, computeWelchPSD, bandPowersFromPSD, BANDS } from '../lib/signal.js';
+import { BlinkDetector } from '../lib/blinkDetector.js';
 
 const ProcessingContext = createContext(null);
 
@@ -9,12 +10,18 @@ export const useProcessing = () => useContext(ProcessingContext);
 const CHANNEL_LABELS = ['TP9', 'AF7', 'AF8', 'TP10'];
 const LEFT_CHANNELS = [0, 1];
 const RIGHT_CHANNELS = [2, 3];
+// Samples marked before and after a detected blink. Spectrum segments that touch a mark are skipped,
+// because a blink adds slow-wave power to AF7/AF8 (measured on Athena recordings: delta ~2-2.7x).
+const BLINK_PAD = Math.round(SAMPLE_RATE * 0.4);
 
 export function ProcessingProvider({ children }) {
   const { subscribeEEG, isConnected, profile } = useEEG();
   const smoothing = profile.bandSmoothing;
   const smoothedRef = useRef(null); // EMA of band powers (athena: calms jumpy ratios)
   const buffersRef = useRef([[], [], [], []]);
+  const blinkMaskRef = useRef([]); // per buffered sample: 1 = near a blink (same length as each buffer)
+  const blinkPadAheadRef = useRef(0); // samples still to mark after the last blink
+  const blinkCfg = profile.blink;
   const maxBufferSamples = SAMPLE_RATE * 8; // keep last 8 seconds
   const bandsRef = useRef(BANDS); // personal bands (PAF calibration) or the standard ones
   const [bands, setBandsState] = useState(BANDS);
@@ -28,6 +35,8 @@ export function ProcessingProvider({ children }) {
   useEffect(() => {
     if (!isConnected) {
       buffersRef.current = [[], [], [], []];
+      blinkMaskRef.current = [];
+      blinkPadAheadRef.current = 0;
       smoothedRef.current = null;
       setBands(null);
       setPsd([null, null, null, null]);
@@ -39,6 +48,7 @@ export function ProcessingProvider({ children }) {
   // Push every incoming sample into buffers
   useEffect(() => {
     if (!isConnected) return;
+    const blinks = new BlinkDetector(blinkCfg); // own instance: BlinkContext sits below this provider
     return subscribeEEG((sample) => {
       const bufs = buffersRef.current;
       for (let ch = 0; ch < 4; ch++) {
@@ -46,8 +56,16 @@ export function ProcessingProvider({ children }) {
         // Trim in 1 s chunks, not one element per sample (2048-element shift x 4 ch x 256 Hz)
         if (bufs[ch].length > maxBufferSamples + SAMPLE_RATE) bufs[ch].splice(0, bufs[ch].length - maxBufferSamples);
       }
+      const mask = blinkMaskRef.current;
+      mask.push(blinkPadAheadRef.current > 0 ? 1 : 0);
+      if (blinkPadAheadRef.current > 0) blinkPadAheadRef.current--;
+      if (blinks.push(sample)) {
+        for (let i = Math.max(0, mask.length - BLINK_PAD); i < mask.length; i++) mask[i] = 1;
+        blinkPadAheadRef.current = BLINK_PAD;
+      }
+      if (mask.length > maxBufferSamples + SAMPLE_RATE) mask.splice(0, mask.length - maxBufferSamples);
     });
-  }, [subscribeEEG, isConnected, maxBufferSamples]);
+  }, [subscribeEEG, isConnected, maxBufferSamples, blinkCfg]);
 
   // Periodically compute PSD and band powers from recent buffer content
   useEffect(() => {
@@ -58,9 +76,14 @@ export function ProcessingProvider({ children }) {
       const nextPSD = [];
       const nextBands = [];
       let localFreqRes = null;
+      const mask = blinkMaskRef.current;
+      const nearBlink = (a, b) => {
+        for (let i = a; i < b; i++) if (mask[i]) return true;
+        return false;
+      };
       for (let ch = 0; ch < 4; ch++) {
         const arr = bufs[ch];
-        const { psd, freqRes } = computeWelchPSD(arr, SAMPLE_RATE, 2, 1);
+        const { psd, freqRes } = computeWelchPSD(arr, SAMPLE_RATE, 2, 1, nearBlink);
         nextPSD[ch] = psd;
         localFreqRes = freqRes;
         nextBands[ch] = bandPowersFromPSD(psd, freqRes, bandsRef.current);
