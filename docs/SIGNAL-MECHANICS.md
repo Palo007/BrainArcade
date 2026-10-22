@@ -120,6 +120,18 @@ The baseline is the band power from calibration and stays the same for the whole
 | A bad ear channel (TP9/TP10) | Still averaged into flow/frustration | Left out. If all channels are bad, the axis holds its last value |
 | Jump from −300 to +300 µV | Compared absolute values, so it was not seen | Compares signed values, so it triggers "adjusting" |
 
+### 3.5 Command Center review fixes (2026-10-22)
+
+Source: `REVIEW-command-center-metrics.html` (outside the repo).
+
+- **Detrend before the spectrum** (`src/lib/signal.js`): each 2 s segment loses its straight-line trend before the Hann window. A 20 µV DC offset used to make delta 3.7× too big on classic Muse.
+- **Half-open band edges**: a bin on a shared edge counts in the upper band only. An 8 Hz bin used to count fully in theta and alpha.
+- **Blink segments skipped** (`src/contexts/ProcessingContext.jsx`): the processing layer runs its own `BlinkDetector`, marks ±0.4 s around each blink, and Welch skips segments that touch a mark. Recordings showed 2–2.7× forehead delta in blink segments.
+- **Per-axis drift state** (`src/contexts/JoystickContext.jsx`, `src/lib/axisMath.js`): two tiles no longer share one drift tracker. One-sided axes (`restsAt` 0 or 1: alertness, drowsiness, frustration) never use the 20 s fast mode; they used to trigger it just by resting.
+- **Options** `driftTauS` (default 90 s) and `mapping` (`'linear'` default, `'log'`). The Command Center uses 600 s and log, so tiles show change since the baseline and ×k / ÷k move a tile equally. Games are unchanged.
+- **Frontal bad channel**: a flagged-bad AF7 or AF8 drops out of frontal values (live and baseline); both bad → the axis holds.
+- **Tests**: `node tools/test-signal.mjs`, `node tools/test-axisMath.mjs`. Measurement: `node tools/measure-blink-leak.mjs <recording.csv> athena`.
+
 ---
 
 ## 4. Reports and history (fork features)
