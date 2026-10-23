@@ -81,7 +81,9 @@ export class MuseAthenaDevice {
     this._maxGap = 0;
     this._battery = null;
     this._recTap = null; // optional recorder hooks { battery(pct), accGyro({acc, gyro}) }, see RecordingContext
-    this._accSub = null; // accGyro subscription, only alive while a recorder (here or on the PC via relay) needs it
+    this._accSub = null; // accGyro subscription, alive while a headband is attached
+    this._motionListeners = new Set(); // onMotion() callbacks (MotionContext)
+    this.motionDiag = null; // set by MotionContext: returns the motion summary since the last heartbeat
     this._imuCount = 0; // acc/gyro readings since the last heartbeat (diagnostics)
     this._attached = null;
     this._lastGood = new Float64Array(CHANNELS);
@@ -120,16 +122,22 @@ export class MuseAthenaDevice {
     this._syncAccSub();
   }
 
-  // Acc/gyro are parsed while a recorder needs them: a local one (recTap) or a PC one behind the relay
+  // Acc/gyro readings { timestamp, acc, gyro } (~52/s) for MotionContext; returns the unsubscribe function
+  onMotion(cb) {
+    this._motionListeners.add(cb);
+    return () => this._motionListeners.delete(cb);
+  }
+
+  // Acc/gyro are parsed whenever a headband is attached (recorder, PC relay, MotionContext).
+  // The headband sends them in every preset anyway: the 10 Oct logs show the same battery drain
+  // with and without this subscription (15-17 vs 16-23 %/h).
   _syncAccSub() {
-    if (!this._recTap && !this._relay) {
-      this._accSub?.unsubscribe();
-      this._accSub = null;
-    } else if (!this._accSub && this._attached) {
+    if (!this._accSub && this._attached) {
       this._accSub = this._attached.accGyroReadings.subscribe((r) => {
         this._imuCount++;
         this._recTap?.accGyro?.(r);
         this._relay?.pushAccGyro(r);
+        this._motionListeners.forEach((cb) => cb(r));
       });
     }
   }
@@ -323,6 +331,7 @@ export class MuseAthenaDevice {
           wakeLock: !!this._wakeLock,
           battery: this._battery ? JSON.stringify(this._battery).slice(0, 80) : undefined,
           imuPerS: this._accSub ? Math.round(this._imuCount / (HEARTBEAT_MS / 1000)) : undefined,
+          motion: this.motionDiag?.() || undefined,
         });
         this._samples = this._gaps = this._maxGap = this._imuCount = 0;
       }, HEARTBEAT_MS)

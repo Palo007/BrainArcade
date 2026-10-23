@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { ProfileProvider } from './contexts/ProfileContext.jsx';
 import { PlaySetupProvider } from './contexts/PlaySetupContext.jsx';
 import { MuseProvider } from './contexts/MuseContext';
+import { MotionProvider } from './contexts/MotionContext.jsx';
 import { ProcessingProvider } from './contexts/ProcessingContext.jsx';
 import { QualityProvider } from './contexts/QualityContext.jsx';
 import { BaselineProvider } from './contexts/BaselineContext.jsx';
@@ -82,6 +83,7 @@ function App() {
     <ProfileProvider>
     <PlaySetupProvider>
     <MuseProvider>
+    <MotionProvider>
       <ProcessingProvider>
         <QualityProvider>
         <BaselineProvider>
@@ -131,6 +133,7 @@ function App() {
         </BaselineProvider>
         </QualityProvider>
       </ProcessingProvider>
+    </MotionProvider>
     </MuseProvider>
     </PlaySetupProvider>
     </ProfileProvider>

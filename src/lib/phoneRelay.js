@@ -96,6 +96,7 @@ class PhoneRelayDevice {
     this.fnirs = new FnirsProcessor();
     this.stalled = false;
     this.recTap = null; // optional recorder hooks { battery(pct), accGyro({acc, gyro}) }, see RecordingContext
+    this._motionListeners = new Set(); // onMotion() callbacks, same as the Athena adapter (max 20 readings/s here)
     this._battery = null; // same shape as the Athena adapter: { values: [pct] }
     this._device = null; // { name } of the headband on the phone, for the recording header
     this._lastPacket = 0;
@@ -117,7 +118,11 @@ class PhoneRelayDevice {
       this._samples += data.ch[0]?.length || 0;
       data.ch.forEach((samples, ch) => samples.forEach((v) => this.eeg[ch].write(v)));
       if (Array.isArray(data.opt)) data.opt.forEach((sample) => this.fnirs.push(sample));
-      if (data.imu) this.recTap?.accGyro?.(data.imu);
+      if (data.imu) {
+        this.recTap?.accGyro?.(data.imu);
+        const r = { ...data.imu, timestamp: now };
+        this._motionListeners.forEach((cb) => cb(r));
+      }
       if (Number.isFinite(data.bat)) {
         this._battery = { values: [data.bat] };
         this.recTap?.battery?.(data.bat);
@@ -127,6 +132,12 @@ class PhoneRelayDevice {
     this._off = null;
     this._watchdog = null;
     this._rateTimer = null;
+  }
+
+  // Acc/gyro readings { timestamp, acc, gyro } from the phone; returns the unsubscribe function
+  onMotion(cb) {
+    this._motionListeners.add(cb);
+    return () => this._motionListeners.delete(cb);
   }
 
   async connect() {
