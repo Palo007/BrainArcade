@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import { driftFloor } from '../lib/fnirs.js';
 import { clamp01, centered01, rise01, createDriftLevel } from '../lib/axisMath.js';
 import { useBiomarkers } from './BiomarkerContext.jsx';
 import { useQuality } from './QualityContext.jsx';
 import { useEEG } from './MuseContext.jsx';
+import { useBaseline } from './BaselineContext.jsx';
 
 const JoystickContext = createContext(null);
 
@@ -99,7 +100,8 @@ const FOCUS_PLUS_FNIRS_WEIGHT = 0.4;
 export function JoystickProvider({ children }) {
   const { getBiomarker } = useBiomarkers();
   const { hasRecentExtreme, adjusting } = useQuality();
-  const { muse } = useEEG();
+  const { muse, isConnected } = useEEG();
+  const { baseline } = useBaseline();
   const fnirs = muse?.fnirs || null;
   const fnirsScaleRef = useRef(FNIRS_START_SCALE);
   const fnirsDriftRef = useRef(null); // driftFloor() for the current fNIRS baseline
@@ -107,6 +109,12 @@ export function JoystickProvider({ children }) {
   const lastStableRef = useRef({}); // per-axis last stable output
   const driftRef = useRef({}); // per axis, biomarker AND drift time ("axis|key|tauS"): createDriftLevel() trackers
   const pinnedRef = useRef({}); // per-axis time the output reached 0 or 1
+
+  // New connection or new baseline: forget held values, so tiles start at rest, not at the last session's numbers
+  useEffect(() => {
+    lastStableRef.current = {};
+    pinnedRef.current = {};
+  }, [isConnected, baseline]);
 
   const get = useMemo(() => ({
     meta: (axis) => JOYSTICK_AXES[axis] || null,

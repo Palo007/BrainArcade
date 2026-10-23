@@ -190,6 +190,7 @@ export function BubbleHippo() {
   const roundRef = useRef(null);
   const baseRef = useRef(null); // baseline used by the round (the warm-up one)
   const dailyRef = useRef(null); // { day, base }: the 60 s baseline of today
+  const roosterRef = useRef(null); // pending rooster call, cleared on leave
   const collectRef = useRef({ frames: [], t: 0, lastAt: 0, minS: 0, maxS: 0, minFrames: 0 });
   const checksRef = useRef(createChecks());
   const lastBlinkRef = useRef(0);
@@ -224,8 +225,10 @@ export function BubbleHippo() {
     if (started) ensureBaseline({ seconds: 30 });
   }, [started, ensureBaseline]);
 
-  useEffect(() => { if (phase === 'menu') stopMusic(); }, [phase]);
-  useEffect(() => () => { stopMusic(); try { window.speechSynthesis?.cancel(); } catch { /* none */ } }, []);
+  useEffect(() => {
+    if (phase === 'menu' || phase === 'result') { stopMusic(); clearTimeout(roosterRef.current); }
+  }, [phase]);
+  useEffect(() => () => { stopMusic(); clearTimeout(roosterRef.current); try { window.speechSynthesis?.cancel(); } catch { /* none */ } }, []);
 
   // ---- stage size: the 800 x 380 scene fits the stage, drawn sharp on HiDPI screens
   useEffect(() => {
@@ -423,7 +426,8 @@ export function BubbleHippo() {
           r.giggleUntil = now + GIGGLE_GAP_MS; // the rooster call comes with a toot
           triggerToot(sceneNow);
           playSfx('toot');
-          setTimeout(() => playSfx('rooster'), 500);
+          clearTimeout(roosterRef.current);
+          roosterRef.current = setTimeout(() => playSfx('rooster'), 500);
           say('Splash time! Count the ducks!');
           r.msg = 'Splash time!';
         }
