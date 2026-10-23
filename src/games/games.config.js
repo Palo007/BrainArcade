@@ -136,7 +136,7 @@ export const games = [
   {
     id: "train-of-thoughts",
     name: "TRAIN OF THOUGHTS",
-    description: "Stay calm to slow down the train. Don't get swept away by your racing thoughts!",
+    description: "Stay calm to slow down the train. 5 seconds of calm lets one busy-thought wagon go. New train lines open over the weeks.",
     component: TrainOfThoughts,
     category: "calm",
     thumb: trainThumb,
