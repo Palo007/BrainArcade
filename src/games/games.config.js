@@ -13,6 +13,9 @@
  * {
  *   id: string           - Unique identifier (use kebab-case)
  *   name: string         - Display name
+ *   nameKey?: string      - i18n key of the display name (components show t(nameKey); `name` stays as English fallback)
+ *   descKey?: string      - i18n key of the description (same rule)
+ *   badgeKey?: string     - i18n key of the badge
  *   description: string  - Short description (1-2 sentences)
  *   component: Component - Your game's React component
  *   category: string     - Menu section id (see `categories` below)
@@ -59,17 +62,19 @@ import visualizerThumb from "./example-game/assets/thumb.svg";
 
 // Menu sections, in display order
 export const categories = [
-  { id: "fnirs", name: "fNIRS TRAINING", color: "var(--nes-yellow)" },
-  { id: "calm", name: "CALM & FOCUS", color: "var(--nes-blue)" },
-  { id: "challenge", name: "CHALLENGES", color: "var(--nes-red)" },
-  { id: "tools", name: "BRAIN TOOLS", color: "var(--nes-green)" },
+  { id: "fnirs", name: "fNIRS TRAINING", nameKey: "core.cat.fnirs", color: "var(--nes-yellow)" },
+  { id: "calm", name: "CALM & FOCUS", nameKey: "core.cat.calm", color: "var(--nes-blue)" },
+  { id: "challenge", name: "CHALLENGES", nameKey: "core.cat.challenge", color: "var(--nes-red)" },
+  { id: "tools", name: "BRAIN TOOLS", nameKey: "core.cat.tools", color: "var(--nes-green)" },
 ];
 
 export const games = [
   {
     id: "brain-command-center",
     name: "BRAIN COMMAND CENTER",
+    nameKey: "core.games.brain-command-center.name",
     description: "Monitor all of your cognitive traits in real time",
+    descKey: "core.games.brain-command-center.desc",
     component: BrainCommandCenter,
     category: "tools",
     thumb: commandCenterThumb,
@@ -78,36 +83,47 @@ export const games = [
     id: "glow-orb",
     signal: "fnirs",
     name: "GLOW ORB",
+    nameKey: "core.games.glow-orb.name",
     description: "Think hard to make the orb fly! Uses the fNIRS light sensors of the Muse S Athena.",
+    descKey: "core.games.glow-orb.desc",
     component: GlowOrb,
     category: "fnirs",
     thumb: glowOrbThumb,
     badge: "ATHENA",
+    badgeKey: "core.badge.athena",
   },
   {
     id: "focus-ball",
     signal: "fnirs",
     name: "FOCUS BALL",
+    nameKey: "core.games.focus-ball.name",
     description: "Keep the ball above the line with steady focus. Mendi-style training with a session report. Needs Muse S Athena (fNIRS).",
+    descKey: "core.games.focus-ball.desc",
     component: FocusBall,
     category: "fnirs",
     thumb: focusBallThumb,
     badge: "ATHENA",
+    badgeKey: "core.badge.athena",
   },
   {
     id: "training-journal",
     name: "TRAINING JOURNAL",
+    nameKey: "core.games.training-journal.name",
     description: "Your Focus Ball history: score over time, day streak and check-ins.",
+    descKey: "core.games.training-journal.desc",
     component: TrainingJournal,
     category: "fnirs",
     thumb: journalThumb,
     badge: "JOURNAL",
+    badgeKey: "core.badge.journal",
     kind: "page",
   },
   {
     id: "sweet-spot",
     name: "SWEET SPOT",
+    nameKey: "core.games.sweet-spot.name",
     description: "Keep calm to keep your brain on a cloud. Your brain is chilling on a cloud and will fall if you aren't relaxed.",
+    descKey: "core.games.sweet-spot.desc",
     component: SweetSpot,
     category: "calm",
     sprite: sweetSpotSprite,
@@ -115,7 +131,9 @@ export const games = [
   {
     id: "sailor",
     name: "SEA OF THOUGHTS",
+    nameKey: "core.games.sailor.name",
     description: "Navigate the ocean of your mind and recollect your lost train of thought by staying engaged",
+    descKey: "core.games.sailor.desc",
     component: Sailor,
     category: "calm",
     thumb: sailorThumb,
@@ -123,7 +141,9 @@ export const games = [
   {
     id: "blinking-contest",
     name: "BLINKING CONTEST",
+    nameKey: "core.games.blinking-contest.name",
     description: "Keep your eyes open! You have 3 blinks before losing. Try to last as long as possible.",
+    descKey: "core.games.blinking-contest.desc",
     component: BlinkingContest,
     category: "challenge",
     thumb: blinkThumb,
@@ -131,7 +151,9 @@ export const games = [
   {
     id: "diver",
     name: "BAD DIVER",
+    nameKey: "core.games.diver.name",
     description: "Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.",
+    descKey: "core.games.diver.desc",
     component: Diver,
     category: "challenge",
     thumb: diverThumb,
@@ -140,7 +162,9 @@ export const games = [
   {
     id: "train-of-thoughts",
     name: "TRAIN OF THOUGHTS",
+    nameKey: "core.games.train-of-thoughts.name",
     description: "Stay calm to slow down the train. 5 seconds of calm lets one busy-thought wagon go. New train lines open over the weeks.",
+    descKey: "core.games.train-of-thoughts.desc",
     component: TrainOfThoughts,
     category: "calm",
     thumb: trainThumb,
@@ -149,7 +173,9 @@ export const games = [
   {
     id: "bubble-hippo",
     name: "BUBBLE HIPPO",
+    nameKey: "core.games.bubble-hippo.name",
     description: "Stay calm and the hippo's bubble grows. A full bubble floats away with a silly new friend!",
+    descKey: "core.games.bubble-hippo.desc",
     component: BubbleHippo,
     category: "calm",
     thumb: hippoThumb,
@@ -157,7 +183,9 @@ export const games = [
   {
     id: "turbo-rex",
     name: "TURBO REX",
+    nameKey: "core.games.turbo-rex.name",
     description: "Your focus is Rex's fuel! Keep the bar up and Rex zooms on his skateboard. Tap the pizzas and he burps.",
+    descKey: "core.games.turbo-rex.desc",
     component: TurboRex,
     category: "calm",
     thumb: rexThumb,
@@ -165,7 +193,9 @@ export const games = [
   {
     id: "example-game",
     name: "BRAINWAVE VISUALIZER",
+    nameKey: "core.games.example-game.name",
     description: "See your brainwaves in real-time with EEG visualization",
+    descKey: "core.games.example-game.desc",
     component: ExampleGame,
     category: "tools",
     thumb: visualizerThumb,

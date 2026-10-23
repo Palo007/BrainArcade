@@ -2,11 +2,13 @@
 // Whole-recording strip with the visible range as a brush: drag the box to move it, drag elsewhere to
 // select a new range, tap to centre the view there.
 import React, { useEffect, useRef } from 'react';
+import { useT } from '../../lib/i18n.js';
 import { THEME, EVENT_STYLE, useWidth, padLeft } from './theme.js';
 
 const H = 44;
 
 export function Overview({ series, duration, view, cursor, onView, onCursor, events }) {
+  const t = useT();
   const wrap = useRef(null);
   const cv = useRef(null);
   const W = useWidth(wrap);
@@ -25,7 +27,7 @@ export function Overview({ series, duration, view, cursor, onView, onCursor, eve
     ctx.fillStyle = THEME.bg; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = THEME.frame; ctx.strokeRect(x0 + 0.5, 0.5, pw - 1, H - 1);
     ctx.fillStyle = THEME.axis; ctx.font = '9px ui-monospace, monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
-    ctx.fillText('ALL', x0 - 4, H / 2);
+    ctx.fillText(t('viewer.overview.all'), x0 - 4, H / 2);
     if (series?.t && series.y) {
       // min/max envelope per column
       const mn = new Float32Array(pw).fill(Infinity), mx = new Float32Array(pw).fill(-Infinity);
@@ -69,7 +71,7 @@ export function Overview({ series, duration, view, cursor, onView, onCursor, eve
       const x = Math.round(X(cursor)) + 0.5;
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
     }
-  }, [W, series, duration, view, cursor, events]);
+  }, [W, series, duration, view, cursor, events, t]);
 
   const tAt = (clientX) => {
     const r = cv.current.getBoundingClientRect();
@@ -106,7 +108,7 @@ export function Overview({ series, duration, view, cursor, onView, onCursor, eve
       <canvas
         ref={cv}
         style={{ touchAction: 'pan-y' }}
-        aria-label="Whole recording overview; drag to choose the visible range"
+        aria-label={t('viewer.overview.aria')}
         role="slider"
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}

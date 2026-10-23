@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useEEG } from '../../contexts/MuseContext';
 import '../../styles/retro.css';
 import { FnirsPanel } from '../../components/FnirsPanel.jsx';
+import { useT } from '../../lib/i18n.js';
 
 /**
  * ExampleGame - Demo game showing how to access Muse EEG data
@@ -9,6 +10,7 @@ import { FnirsPanel } from '../../components/FnirsPanel.jsx';
  */
 export function ExampleGame() {
   const { rawEEG } = useEEG();
+  const t = useT();
   const [eegHistory, setEegHistory] = useState([]);
   const [maxValue, setMaxValue] = useState(100);
 
@@ -34,8 +36,8 @@ export function ExampleGame() {
     <div className="relative space-y-6 pt-6">
       {/* Title in the page flow, so it never covers the plot on a narrow phone screen */}
       <div className="max-w-[480px]">
-        <h2 className="text-xl sm:text-2xl text-[var(--nes-yellow)]">BRAINWAVE VISUALIZER</h2>
-        <p className="text-xs text-gray-400 mt-2">Real-time EEG visualization from your Muse device</p>
+        <h2 className="text-xl sm:text-2xl text-[var(--nes-yellow)]">{t('core.games.example-game.name')}</h2>
+        <p className="text-xs text-gray-400 mt-2">{t('core.example.sub')}</p>
       </div>
 
       {/* Layout: plot left and values right; on a phone in portrait, plot on top and values in a row below */}
@@ -43,7 +45,7 @@ export function ExampleGame() {
         {/* EEG Waveform Visualization (Left - main column) */}
         <div className="flex-1 min-w-0 min-h-[320px] border-4 border-[var(--nes-blue)] p-4 bg-black">
           <div className="flex flex-col h-full">
-            <div className="text-xs text-[var(--nes-blue)] mb-2">WAVEFORM</div>
+            <div className="text-xs text-[var(--nes-blue)] mb-2">{t('core.example.waveform')}</div>
             <div className="flex flex-col gap-4 flex-1">
               {channels.map((channel, channelIdx) => (
                 <div key={channel} className="relative flex-1">

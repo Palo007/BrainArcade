@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { updateSession } from '../lib/sessionStore.js';
 import { GameEndActions } from './GameEndActions.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -12,6 +13,7 @@ const GOAL_LINE = 0.62;
 
 // Inline SVG of v over time; goal line dashed, above-goal area tinted.
 function ActivityGraph({ samples }) {
+  const t = useT();
   const pts = (samples || []).filter((s) => s && Number.isFinite(s.t) && Number.isFinite(s.v));
   if (pts.length < 2) return null;
   const W = 300;
@@ -49,8 +51,8 @@ function ActivityGraph({ samples }) {
   const polys = above.done.map((poly) => poly.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
   return (
     <div className="my-4">
-      <p className="text-xs text-gray-300 mb-1 text-left">ACTIVITY</p>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24 border-2 border-white/70 bg-black/50" preserveAspectRatio="none" role="img" aria-label="Activity over time">
+      <p className="text-xs text-gray-300 mb-1 text-left">{t('report.session.activity')}</p>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24 border-2 border-white/70 bg-black/50" preserveAspectRatio="none" role="img" aria-label={t('report.session.activityAria')}>
         {polys.map((pp, i) => (
           <polygon key={i} points={pp} fill="rgba(255,216,74,0.30)" />
         ))}
@@ -62,13 +64,14 @@ function ActivityGraph({ samples }) {
 }
 
 function Bar({ label, value, note, color }) {
+  const t = useT();
   const na = value == null;
   const pct = na ? 0 : Math.round(Math.max(0, Math.min(100, value)));
   return (
     <div className="text-left">
       <div className="flex justify-between text-xs mb-1">
         <span style={{ color }}>{label}</span>
-        <span>{na ? 'n/a' : pct}</span>
+        <span>{na ? t('report.session.na') : pct}</span>
       </div>
       <div className="h-4 border-2 border-white/70 bg-black/50">
         <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
@@ -79,6 +82,7 @@ function Bar({ label, value, note, color }) {
 }
 
 export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = false, onPlayAgain, samples, sessionId = null, insufficient = false, invalidReason = null, stuckSide = null }) {
+  const t = useT();
   const m = metrics || {};
   const stars = m.stars || 0;
   const flowSec = Math.round(m.flowSec || 0);
@@ -93,13 +97,13 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
   if (reason) {
     const stuck = reason === 'stuck';
     const text = stuck
-      ? `The signal was stuck at the ${stuckSide === 'high' ? 'top' : 'bottom'}, so these numbers do not show your focus. Check the headband fit and try again.`
+      ? t(stuckSide === 'high' ? 'report.session.stuckTop' : 'report.session.stuckBottom')
       : reason === 'bad-quality'
-        ? 'The signal quality was too low, so these numbers do not show your focus. Check the headband fit and try again.'
-        : 'Not enough signal — check the headband and try again.';
+        ? t('report.session.badQuality')
+        : t('report.session.tooLittleText');
     return (
       <div className={shell} style={FONT}>
-        <p className="text-sm text-[var(--nes-yellow)] mb-4">{stuck ? 'SIGNAL STUCK' : 'NOT ENOUGH SIGNAL'}</p>
+        <p className="text-sm text-[var(--nes-yellow)] mb-4">{stuck ? t('report.session.stuckTitle') : t('report.session.tooLittleTitle')}</p>
         <p className="text-[10px] leading-relaxed mb-5 text-gray-100">{text}</p>
         <GameEndActions onPlayAgain={onPlayAgain} sessionId={sessionId} game="focus-ball" />
       </div>
@@ -107,31 +111,31 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
   }
   return (
     <div className={shell} style={FONT}>
-      <p className="text-xs text-gray-300 mb-1">FOCUS SCORE</p>
+      <p className="text-xs text-gray-300 mb-1">{t('report.session.score')}</p>
       <p className="text-6xl text-[var(--nes-yellow)] leading-none mb-2">{Math.round(m.score || 0)}</p>
-      <p className="text-3xl mb-1 text-[var(--nes-yellow)]" aria-label={`${stars} of 3 stars`}>
+      <p className="text-3xl mb-1 text-[var(--nes-yellow)]" aria-label={t('report.session.starsAria', { stars })}>
         {'★'.repeat(stars)}
         <span className="text-gray-600">{'★'.repeat(3 - stars)}</span>
       </p>
-      {isNewBest && <p className="text-xs text-[var(--nes-green)] mb-2">NEW BEST!</p>}
+      {isNewBest && <p className="text-xs text-[var(--nes-green)] mb-2">{t('report.session.newBest')}</p>}
 
       <div className="space-y-4 my-4">
-        <Bar label="ENERGY" value={m.energy || 0} color="#ffd84a" note="How high your focus was on average" />
-        <Bar label="INCREASE" value={m.increase} color="#5ee0ff" note={m.increase == null ? "Not measured: the ball never reached the goal line" : "How fast you got focus back after a drop"} />
-        <Bar label="FLOW" value={m.flow || 0} color="#7dff7d" note={`Your longest time with the ball up: ${flowSec} s`} />
+        <Bar label={t('report.session.energy')} value={m.energy || 0} color="#ffd84a" note={t('report.session.energyNote')} />
+        <Bar label={t('report.session.increase')} value={m.increase} color="#5ee0ff" note={m.increase == null ? t('report.session.increaseNone') : t('report.session.increaseNote')} />
+        <Bar label={t('report.session.flow')} value={m.flow || 0} color="#7dff7d" note={t('report.session.flowNote', { sec: flowSec })} />
       </div>
 
       <div className="flex justify-around text-xs mb-4">
         <div>
-          <p className="text-gray-300 text-[9px] mb-1">BALL UP</p>
+          <p className="text-gray-300 text-[9px] mb-1">{t('report.session.ballUp')}</p>
           <p className="text-[var(--nes-yellow)]">{Math.round(m.timeAbovePct || 0)}%</p>
         </div>
         <div>
-          <p className="text-gray-300 text-[9px] mb-1">POINTS</p>
+          <p className="text-gray-300 text-[9px] mb-1">{t('report.session.points')}</p>
           <p className="text-[var(--nes-yellow)]">{Math.round(points)}</p>
         </div>
         <div>
-          <p className="text-gray-300 text-[9px] mb-1">BEST</p>
+          <p className="text-gray-300 text-[9px] mb-1">{t('report.session.best')}</p>
           <p className="text-[var(--nes-yellow)]">{Math.round(bestScore)}</p>
         </div>
       </div>
@@ -139,14 +143,14 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
       <ActivityGraph samples={samples} />
 
       <div className="mb-5">
-        <p className="text-xs text-gray-300 mb-2">HOW DID YOU FEEL?</p>
+        <p className="text-xs text-gray-300 mb-2">{t('report.session.feel')}</p>
         <div className="flex gap-2 justify-center">
           {FEELINGS.map((e, i) => (
             <button
               key={e}
               type="button"
               onClick={() => pick(i + 1)}
-              aria-label={`Feeling ${i + 1} of 5`}
+              aria-label={t('report.session.feelingAria', { n: i + 1 })}
               aria-pressed={feeling === i + 1}
               className={`border-4 px-2 py-1 text-xl ${feeling === i + 1 ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)]/20' : 'border-white/60'}`}
             >
@@ -154,7 +158,7 @@ export function SessionReport({ metrics, points = 0, bestScore = 0, isNewBest = 
             </button>
           ))}
         </div>
-        {saved && <p className="text-[9px] text-[var(--nes-green)] mt-2">Saved</p>}
+        {saved && <p className="text-[9px] text-[var(--nes-green)] mt-2">{t('report.session.saved')}</p>}
       </div>
 
       {m.insight && <p className="text-[10px] leading-relaxed mb-5 text-gray-100">{m.insight}</p>}

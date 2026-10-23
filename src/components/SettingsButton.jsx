@@ -4,11 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { RetroModal } from './RetroModal.jsx';
 import { LANGUAGES, useSetting } from '../lib/settings.js';
 import { hasVoice, phrase, speak } from '../lib/phrases.js';
+import { useT } from '../lib/i18n.js';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 
 function SettingsModal({ onClose }) {
   const [language, setLanguage] = useSetting('language');
+  const t = useT();
   // Voices load late on some phones: null = still loading (no warning yet), look again when the list changes
   const [voiceOk, setVoiceOk] = useState(() => hasVoice(language));
   useEffect(() => {
@@ -20,10 +22,10 @@ function SettingsModal({ onClose }) {
   }, [language]);
 
   return (
-    <RetroModal title="SETTINGS" onCancel={onClose} cancelLabel="CLOSE" showFooter>
+    <RetroModal title={t('settings.title')} onCancel={onClose} cancelLabel={t('common.close')} showFooter>
       <div className="text-left space-y-3" style={FONT}>
         <p className="text-[10px] text-[var(--nes-yellow)]">LANGUAGE / JAZYK</p>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Language">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('settings.language')}>
           {LANGUAGES.map((l) => (
             <button
               key={l.id}
@@ -42,17 +44,17 @@ function SettingsModal({ onClose }) {
           onClick={() => speak(phrase('rex.great'), { pitch: 1.2 })}
           className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] px-3 py-2 min-h-[40px] text-[9px]"
         >
-          ▶ TEST VOICE
+          {t('settings.testVoice')}
         </button>
         <p className="text-[9px] leading-relaxed text-gray-300">
-          Changes what Bubble Hippo and Turbo Rex say and show as hints. Menus stay in English for now.
+          {t('settings.languageNote')}
         </p>
         {voiceOk === false && (
           <p className="text-[9px] leading-relaxed text-[var(--nes-red)]">
-            This device has no {LANGUAGES.find((l) => l.id === language)?.label} voice, so the games speak English. Android: Settings → Text-to-speech → Google → Install voice data.
+            {t('settings.noVoice', { language: LANGUAGES.find((l) => l.id === language)?.label })}
           </p>
         )}
-        <p className="text-[8px] text-gray-500">Saved on this device for all players.</p>
+        <p className="text-[8px] text-gray-500">{t('settings.savedHere')}</p>
       </div>
     </RetroModal>
   );
@@ -60,13 +62,14 @@ function SettingsModal({ onClose }) {
 
 export function SettingsButton({ className = '' }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t('settings.button')}
+        title={t('settings.button')}
         style={FONT}
         className={`inline-flex items-center justify-center border-2 border-[var(--nes-gray)] px-2 min-h-[36px] min-w-[36px] text-sm text-gray-300 hover:border-[var(--nes-yellow)] hover:text-[var(--nes-yellow)] ${className}`}
       >

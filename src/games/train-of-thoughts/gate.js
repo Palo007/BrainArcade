@@ -8,11 +8,12 @@
 //   freeze - pause the game; round time does not count. Today this comes from useSignalPause (bad forehead
 //            contact): the game timer stops, so readGate() never returns it.
 
+// Hints are text keys; the screen shows t(hint).
 const HINTS = {
-  contact: 'Hold still. Checking the headband.',
-  muscle: 'Soft jaw, soft face.',
-  eyes: 'Peek! Keep your eyes open.',
-  sleepy: 'Yawn... Sit up tall and stretch!',
+  contact: 'games.tot.hintContact',
+  muscle: 'games.tot.hintMuscle',
+  eyes: 'games.tot.hintEyes',
+  sleepy: 'games.tot.hintSleepy',
 };
 
 export function readGate({ stale, adjusting, frontalSpike, checks }) {

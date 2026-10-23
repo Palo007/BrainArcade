@@ -12,9 +12,10 @@ export const SETUPS = ['hands', 'stand', 'pc'];
 export const UNKNOWN_SETUP = 'unknown'; // session records from before the setting existed
 
 export const SETUP_INFO = {
-  hands: { label: 'PHONE IN HANDS', short: 'HANDS', hint: 'sofa, pillow', icon: '🤲', report: 'phone in hands' },
-  stand: { label: 'PHONE ON STAND', short: 'STAND', hint: 'table, eye level', icon: '📱', report: 'phone on a stand' },
-  pc: { label: 'COMPUTER', short: 'PC', hint: 'desk, keyboard', icon: '💻', report: 'computer' },
+  hands: { label: 'PHONE IN HANDS', short: 'HANDS', hint: 'sofa, pillow', icon: '🤲', report: 'phone in hands', labelKey: 'core.setup.hands.label', shortKey: 'core.setup.hands.short', hintKey: 'core.setup.hands.hint', reportKey: 'core.setup.hands.report' },
+  stand: { label: 'PHONE ON STAND', short: 'STAND', hint: 'table, eye level', icon: '📱', report: 'phone on a stand', labelKey: 'core.setup.stand.label', shortKey: 'core.setup.stand.short', hintKey: 'core.setup.stand.hint', reportKey: 'core.setup.stand.report' },
+  pc: { label: 'COMPUTER', short: 'PC', hint: 'desk, keyboard', icon: '💻', report: 'computer', labelKey: 'core.setup.pc.label', shortKey: 'core.setup.pc.short', hintKey: 'core.setup.pc.hint', reportKey: 'core.setup.pc.report' },
+  // English fields stay as fallback; the *Key fields are i18n keys for t() (use them when showing on screen)
 };
 
 export const isSetup = (v) => SETUPS.includes(v);

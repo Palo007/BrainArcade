@@ -23,10 +23,11 @@ import { calmOf, pushCalm, zOf, meterOf, makeBaseline, createChecks, DEMO_BASE }
 import { readGate, GIGGLE_GAP_MS } from './gate.js';
 import {
   BADGES, WORLDS, STORY, BATH_BOMBS, RULES, dayKey, startDay, goalLevel, pacerRate, playWeeks, whaleDaysOf,
-  finishRound, badgeFeatures, loadProgress, saveProgress,
+  finishRound, badgeFeatures, loadProgress, saveProgress, badgeName, badgeTitle, worldName, bombName, bombJoke,
 } from './progress.js';
 import { primeBubbleAudio, startMusic, stopMusic, setMusicMode, playSfx, say, setMix } from './sounds.js';
 import { phrase, line } from '../../lib/phrases.js';
+import { useT, t as tr } from '../../lib/i18n.js';
 import { W, H, createScene, drawScene, triggerLaunch, triggerToot } from './scene.js';
 
 const GAME = 'bubble-hippo';
@@ -115,7 +116,7 @@ function parentCardOf(p) {
     calmPct: avg(h.map((x) => x.successPct).filter(Number.isFinite)),
     longestHold: h.reduce((a, x) => Math.max(a, x.longestStreakS || 0), 0),
     settle: avg(times),
-    duck: total ? `${right} of ${total}` : null,
+    duck: total ? tr('hippo.card.ofTotal', { a: right, b: total }) : null,
     secretPct: avg(h.map((x) => x.secretPct).filter(Number.isFinite)),
     pestPct: avg(h.map((x) => x.pestCalmPct).filter(Number.isFinite)),
     noPestPct: avg(h.map((x) => x.noPestCalmPct).filter(Number.isFinite)),
@@ -136,6 +137,7 @@ function loadMix() {
 
 export function BubbleHippo() {
   const navigate = useNavigate();
+  const t = useT();
   const { ensureBaseline, resetBaseline, isBaselineReady, calibration } = useBaseline();
   const { subscribeEEG, isConnected, profile } = useEEG();
   const { bands } = useProcessing();
@@ -606,9 +608,9 @@ export function BubbleHippo() {
     setWarm(false);
     playSfx(res.unlockedBadge || res.golden ? 'chimes' : 'harp');
     resultLinesRef.current = [
-      res.friend ? `New friend: ${res.friend}` : 'The Bubble Zoo is full!',
-      res.golden ? 'A golden bubble floated by!' : '',
-      res.unlockedBadge ? `New badge: ${BADGES[res.unlockedBadge - 1].name}!` : '',
+      res.friend ? tr('hippo.result.newFriend', { name: tr(res.friend) }) : tr('hippo.result.zooFull'),
+      res.golden ? tr('hippo.result.golden') : '',
+      res.unlockedBadge ? tr('hippo.result.newBadge', { name: badgeName(res.unlockedBadge) }) : '',
     ].filter(Boolean);
     setResult({ ...res, round, sessionId: id, poor, early: r.early });
   }
@@ -666,8 +668,8 @@ export function BubbleHippo() {
       if (ph === 'baseline' || ph === 'warmup') {
         const c2 = collectRef.current;
         view.phase = ph;
-        view.msg = ph === 'baseline' ? 'Hippo hums. Sit still and breathe.' : 'Get ready!';
-        view.hudLines = [BADGES[(r?.badge || d.badge) - 1].name, `${Math.max(0, Math.ceil(c2.minS - c2.t))} s`];
+        view.msg = ph === 'baseline' ? tr('hippo.msg.baseline') : tr('hippo.msg.warmup');
+        view.hudLines = [badgeName(r?.badge || d.badge), `${Math.max(0, Math.ceil(c2.minS - c2.t))} s`];
         view.paused = pausedRef.current;
       } else if (ph === 'play' && r) {
         const F = badgeFeatures(r.badge);
@@ -686,7 +688,7 @@ export function BubbleHippo() {
         view.gate = r.gate.state;
         view.msg = r.msg;
         view.breakText = !r.gate.hint ? '' : r.hintId === r.gate.hint ? r.hintText : line(r.gate.hint); // same words as spoken
-        view.hudLines = [BADGES[r.badge - 1].name, `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`];
+        view.hudLines = [badgeName(r.badge), `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`];
         view.paused = pausedRef.current;
       } else if (ph === 'result') {
         view.phase = 'result';
@@ -720,8 +722,8 @@ export function BubbleHippo() {
             onClick={() => { setBadge(b.id); setWarm(false); }}
             className={`min-h-[44px] border-2 px-2 py-2 text-[9px] leading-tight text-left ${on ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : open ? 'border-white/60 text-white' : 'border-white/20 text-white/30'}`}
           >
-            {open ? `${b.id} ${b.name}` : `${b.id} ???`}
-            {open && <span className="block opacity-70 mt-1">{b.title}</span>}
+            {open ? `${b.id} ${badgeName(b.id)}` : `${b.id} ???`}
+            {open && <span className="block opacity-70 mt-1">{badgeTitle(b.id)}</span>}
           </button>
         );
       })}
@@ -730,10 +732,10 @@ export function BubbleHippo() {
 
   const goodbye = (
     <div className="text-[10px] text-gray-200 leading-relaxed">
-      <p className="text-[var(--nes-yellow)] mb-2">SEE YOU NEXT TIME!</p>
-      <p className="mb-2">You played {today.roundsDone} round{today.roundsDone === 1 ? '' : 's'} today. The hippo waves goodbye from the tub.</p>
-      <p className="mb-4">Days played: {progress.days}</p>
-      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">CHOOSE GAME</button>
+      <p className="text-[var(--nes-yellow)] mb-2">{t('hippo.goodbye.title')}</p>
+      <p className="mb-2">{t('hippo.goodbye.played', { n: today.roundsDone })}</p>
+      <p className="mb-4">{t('hippo.goodbye.days', { n: progress.days })}</p>
+      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">{t('hippo.chooseGame')}</button>
     </div>
   );
 
@@ -744,7 +746,7 @@ export function BubbleHippo() {
           <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
           {phase === 'play' && hud?.answering && (
             <div className="absolute inset-x-0 flex flex-col items-center gap-3 z-20" style={{ top: '22%', ...FONT }}>
-              <p className="text-[11px] text-white bg-black/60 px-3 py-1 border-2 border-[var(--nes-yellow)]">HOW MANY DUCKS?</p>
+              <p className="text-[11px] text-white bg-black/60 px-3 py-1 border-2 border-[var(--nes-yellow)]">{t('hippo.howMany')}</p>
               <div className="flex gap-3">
                 {answerChoices.map((n) => (
                   <button
@@ -753,7 +755,7 @@ export function BubbleHippo() {
                     onClick={() => onAnswer(n)}
                     className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-[var(--nes-yellow)] text-2xl"
                     style={{ minHeight: 64, minWidth: 64 }}
-                    aria-label={`${n} ducks`}
+                    aria-label={t('hippo.duckAria', { n })}
                   >
                     {n}
                   </button>
@@ -766,7 +768,7 @@ export function BubbleHippo() {
         {(phase === 'baseline' || phase === 'warmup') && hud?.stuck && (
           <div className="absolute inset-x-0 bottom-4 flex justify-center z-10 px-4 pointer-events-none">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px] text-white text-center max-w-sm" style={FONT}>
-              No clean signal yet. Tap ELECTRODES and check the headband. The game starts when the signal is clean.
+              {t('hippo.noSignal')}
             </div>
           </div>
         )}
@@ -774,7 +776,7 @@ export function BubbleHippo() {
         {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={FONT}>
-              Waiting for baseline…
+              {t('hippo.waitBaseline')}
             </div>
           </div>
         )}
@@ -784,56 +786,56 @@ export function BubbleHippo() {
             {dayDone ? goodbye : (
               <>
                 <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-                  Stay calm and the hippo&apos;s bubble grows. A full bubble floats away with a new friend.
+                  {t('hippo.intro1')}
                 </p>
-                <p className="text-[10px] text-gray-200 leading-relaxed mb-3">Keep your eyes open and watch the bubble.</p>
+                <p className="text-[10px] text-gray-200 leading-relaxed mb-3">{t('hippo.intro2')}</p>
                 {setup !== 'stand' && (
-                  <p className="text-[9px] text-[var(--nes-yellow)] leading-relaxed mb-3">Lean the phone on a pillow.</p>
+                  <p className="text-[9px] text-[var(--nes-yellow)] leading-relaxed mb-3">{t('hippo.pillow')}</p>
                 )}
                 {badgeButtons}
                 {progress.warmBath && progress.unlocked > 1 && (
                   <div className="mb-3 border-2 border-white/40 p-2 text-[9px]">
-                    <p className="mb-2">Feeling tired? Try a warm bath: an easy round on the {BADGES[progress.unlocked - 2].name} badge. You keep your badge.</p>
+                    <p className="mb-2">{t('hippo.warmText', { name: badgeName(progress.unlocked - 1) })}</p>
                     <button type="button" onClick={() => setWarm((w) => !w)}
                       className={`min-h-[44px] border-2 px-3 ${warm ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : 'border-[var(--nes-green)] text-[var(--nes-green)]'}`}>
-                      {warm ? 'WARM BATH ON' : 'WARM BATH'}
+                      {warm ? t('hippo.warmOn') : t('hippo.warmOff')}
                     </button>
                   </div>
                 )}
                 <div className="mb-3 text-[9px]">
-                  <p className="mb-1 text-gray-300">PICK A BATH BOMB</p>
+                  <p className="mb-1 text-gray-300">{t('hippo.pickBomb')}</p>
                   <div className="flex flex-wrap gap-1 justify-center">
                     {BATH_BOMBS.map((b, i) => (
                       <button key={b.id} type="button" onClick={() => setBomb(i)}
                         className={`min-h-[44px] border-2 px-2 ${bomb === i ? 'border-[var(--nes-yellow)] text-[var(--nes-yellow)]' : 'border-white/40 text-white'}`}>
-                        {b.name}
+                        {bombName(b.id)}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1 opacity-70">{BATH_BOMBS[bomb].joke}</p>
+                  <p className="mt-1 opacity-70">{bombJoke(BATH_BOMBS[bomb].id)}</p>
                 </div>
                 <div className="mb-3 text-[9px]">
-                  <p className="mb-1 text-gray-300">SOUND</p>
+                  <p className="mb-1 text-gray-300">{t('hippo.sound')}</p>
                   <div className="flex justify-center gap-1">
-                    {[['music', 'MUSIC'], ['sfx', 'EFFECTS'], ['voice', 'VOICE']].map(([k, label]) => (
+                    {['music', 'sfx', 'voice'].map((k) => (
                       <button key={k} type="button" aria-pressed={mix[k]} onClick={() => toggle(k)}
                         className={`min-h-[44px] border-2 px-2 ${mix[k] ? 'border-[var(--nes-green)] text-[var(--nes-green)]' : 'border-white/30 text-white/50'}`}>
-                        {label} {mix[k] ? 'ON' : 'OFF'}
+                        {t(`hippo.mix.${k}.${mix[k] ? 'on' : 'off'}`)}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 text-[9px] text-gray-200 mb-3">
                   <span className="text-[var(--nes-yellow)]">★ {progress.stars}</span>
-                  <span>BUBBLE FRIENDS {progress.zoo}</span>
-                  <span>DAYS PLAYED {progress.days}</span>
-                  <span>ROUNDS LEFT TODAY {roundsLeft}</span>
+                  <span>{t('hippo.stat.friends', { n: progress.zoo })}</span>
+                  <span>{t('hippo.stat.days', { n: progress.days })}</span>
+                  <span>{t('hippo.stat.roundsLeft', { n: roundsLeft })}</span>
                 </div>
                 <div className="flex justify-center gap-2 mb-4">
-                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">STORY</button>
-                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">PARENT CARD</button>
+                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('hippo.story')}</button>
+                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('hippo.parentCard')}</button>
                 </div>
-                {demo && <p className="text-[8px] opacity-70 mb-2">Demo mode: progress is not saved.</p>}
+                {demo && <p className="text-[8px] opacity-70 mb-2">{t('hippo.demoNote')}</p>}
               </>
             )}
           </GameStartPanel>
@@ -845,36 +847,36 @@ export function BubbleHippo() {
             offset={8}
             scheme="dark"
             align="left"
-            primary={phase === 'baseline' ? 'The hippo hums. Sit still.' : 'Get ready to blow a bubble'}
-            secondary={'Stay calm and the bubble grows'}
+            primary={phase === 'baseline' ? t('hippo.hint.baseline') : t('hippo.hint.warmup')}
+            secondary={t('hippo.hint.stayCalm')}
           />
         )}
       </div>
 
       {phase === 'result' && result && (
-        <RetroModal title="ROUND DONE!" showFooter={false} onCancel={() => go('menu')}>
+        <RetroModal title={t('hippo.roundDone')} showFooter={false} onCancel={() => go('menu')}>
           <div style={FONT} className="text-center">
             <div className="text-2xl text-[var(--nes-yellow)] mb-2">{'★'.repeat(result.stars)}</div>
             <p className="text-[10px] mb-1">
-              {result.early ? 'The round ended early, but you still get your star!' : 'You finished the round!'}
+              {result.early ? t('hippo.roundEarly') : t('hippo.roundFinished')}
             </p>
-            {result.friend && <p className="text-[9px] text-[var(--nes-green)] mt-2">NEW BUBBLE FRIEND: {result.friend}</p>}
-            {result.golden && <p className="text-[9px] text-[var(--nes-yellow)] mt-1">A GOLDEN BUBBLE!</p>}
+            {result.friend && <p className="text-[9px] text-[var(--nes-green)] mt-2">{t('hippo.newFriendUp', { name: t(result.friend) })}</p>}
+            {result.golden && <p className="text-[9px] text-[var(--nes-yellow)] mt-1">{t('hippo.goldenUp')}</p>}
             {result.unlockedBadge && (
               <div className="border-2 border-[var(--nes-yellow)] p-2 mt-3 text-[9px] text-left">
-                <p className="text-[var(--nes-yellow)] mb-1">NEW BADGE: {BADGES[result.unlockedBadge - 1].name}!</p>
-                <p className="leading-relaxed">{STORY[result.unlockedBadge - 1]}</p>
+                <p className="text-[var(--nes-yellow)] mb-1">{t('hippo.newBadgeUp', { name: badgeName(result.unlockedBadge) })}</p>
+                <p className="leading-relaxed">{t(STORY[result.unlockedBadge - 1])}</p>
               </div>
             )}
-            {result.warmBath && <p className="text-[9px] mt-3">Next time you can pick a warm bath: an easy round, just for fun.</p>}
-            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">The headband signal was poor for most of this round, so it is not counted in your progress.</p>}
-            {demo && <p className="text-[8px] opacity-70 mt-2">Demo mode — not saved</p>}
+            {result.warmBath && <p className="text-[9px] mt-3">{t('hippo.warmNext')}</p>}
+            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">{t('hippo.poor')}</p>}
+            {demo && <p className="text-[8px] opacity-70 mt-2">{t('hippo.demoNotSaved')}</p>}
             <div className="mt-4">
               {!dayDone ? (
                 <GameEndActions onPlayAgain={() => go('menu')} sessionId={result.sessionId} game={GAME} seconds={result.round.sec} />
               ) : (
                 <>
-                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">SEE YOU!</button>
+                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">{t('hippo.seeYou')}</button>
                   <div className="mt-4 text-left"><ParentReport sessionId={result.sessionId} game={GAME} seconds={result.round.sec} /></div>
                 </>
               )}
@@ -884,27 +886,27 @@ export function BubbleHippo() {
       )}
 
       {modal === 'story' && (
-        <RetroModal title={`CHAPTER ${chapter}`} cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('hippo.chapter', { n: chapter })} cancelLabel={t('hippo.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="text-[var(--nes-yellow)] mb-2">{BADGES[chapter - 1].name} - {WORLDS[chapter - 1].name}</p>
-            <p>{STORY[chapter - 1]}</p>
+            <p className="text-[var(--nes-yellow)] mb-2">{t('hippo.chapterHead', { badge: badgeName(chapter), world: worldName(WORLDS[chapter - 1].id) })}</p>
+            <p>{t(STORY[chapter - 1])}</p>
           </div>
         </RetroModal>
       )}
 
       {modal === 'parent' && card && (
-        <RetroModal title="PARENT CARD" cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('hippo.parentCard')} cancelLabel={t('hippo.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="mb-2 opacity-80">Last 7 days. This is a calm-practice game, not a medical test.</p>
-            <p>Rounds: {card.rounds} on {card.days} day{card.days === 1 ? '' : 's'}</p>
-            <p>Calm time (above the goal): {pct(card.calmPct)}</p>
-            <p>Longest calm hold: {Math.round(card.longestHold)} s</p>
-            <p>Settle time: {card.settle == null ? '-' : `${card.settle.toFixed(1)} s`} (goal {Math.round(card.settleGoal)} s)</p>
-            <p>Duck answers right: {card.duck || '-'}</p>
-            <p>Secret bubble: {pct(card.secretPct)}</p>
-            <p>Calm with a pest: {pct(card.pestPct)}, without: {pct(card.noPestPct)}</p>
-            <p>Goal now: {card.goal.toFixed(1)} (z, steps of 0.1)</p>
-            <p className="mt-2 text-[var(--nes-yellow)]">Stars come for finishing a round, never for calm. Praise the effort, not the number.</p>
+            <p className="mb-2 opacity-80">{t('hippo.card.intro')}</p>
+            <p>{t('hippo.card.rounds', { r: card.rounds, n: card.days })}</p>
+            <p>{t('hippo.card.calm', { v: pct(card.calmPct) })}</p>
+            <p>{t('hippo.card.longest', { v: Math.round(card.longestHold) })}</p>
+            <p>{t('hippo.card.settle', { v: card.settle == null ? '-' : `${card.settle.toFixed(1)} s`, g: Math.round(card.settleGoal) })}</p>
+            <p>{t('hippo.card.ducks', { v: card.duck || '-' })}</p>
+            <p>{t('hippo.card.secret', { v: pct(card.secretPct) })}</p>
+            <p>{t('hippo.card.pest', { a: pct(card.pestPct), b: pct(card.noPestPct) })}</p>
+            <p>{t('hippo.card.goal', { v: card.goal.toFixed(1) })}</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('hippo.card.stars')}</p>
           </div>
         </RetroModal>
       )}

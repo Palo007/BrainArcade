@@ -234,7 +234,7 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
             setSecondsElapsed(0);
             setPhase('idle');
             setPhaseCount(2);
-            setBaselineError('No usable brain signal during calibration. Check the headband and press START to try again.');
+            setBaselineError('core.base.noSignal');
             return;
           }
         }

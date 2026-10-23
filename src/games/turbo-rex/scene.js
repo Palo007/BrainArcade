@@ -6,6 +6,8 @@
 // Eye rule: every item flies in ONE lane at Rex's eye height at a steady speed (the game sets x); round twists
 // and new worlds must never move the lane.
 
+import { t } from '../../lib/i18n.js';
+
 export const W = 800;
 export const H = 380;
 export const GROUND = 292;
@@ -43,16 +45,16 @@ function burst(s, x, y, n, colors, o = {}) {
 }
 export function sceneEat(s, x, y, big, points) {
   s.eat = 0.55;
-  sceneFx(s, big ? 'BUUUURP!' : 'BURP!', REX_X + 70, GROUND - 175, '#FFE066', big ? 34 : 26);
+  sceneFx(s, big ? t('rex.scene.bigBurp') : t('rex.scene.burp'), REX_X + 70, GROUND - 175, '#FFE066', big ? 34 : 26);
   if (points) sceneFx(s, `+${points}`, x, y - 24, '#B9F5C4');
   burst(s, x, y, 12, ['#FFC94D', '#E2483D', '#D98B3A'], { r: 3.5, speed: 140 });
 }
 export function sceneBleh(s, x, y) {
   s.bleh = 0.8;
-  sceneFx(s, 'BLEH!', x, y - 30, '#9BE07A', 30);
+  sceneFx(s, t('rex.scene.bleh'), x, y - 30, '#9BE07A', 30);
   burst(s, x, y, 9, ['rgba(140,205,90,.75)', 'rgba(170,220,110,.7)'], { kind: 'puff', g: -20, up: 30, speed: 50, life: 1.2, r: 14 });
 }
-export function sceneCombo(s, text = 'FOCUS COMBO!') {
+export function sceneCombo(s, text = t('rex.comboPlain')) {
   sceneFx(s, text, REX_X + 30, GROUND - 205, '#FFE066', 24);
   burst(s, REX_X + 30, GROUND - 170, 26, CONFETTI, { kind: 'confetti', speed: 230, up: 120, life: 1.3 });
 }
@@ -343,7 +345,7 @@ function drawSnail(x, g) {
   for (let a = 0; a < 12; a += 0.3) { const r = 1 + a * 1.25; ctx.lineTo(x - 4 + Math.cos(a) * r, g - 22 + Math.sin(a) * r); }
   ctx.stroke();
   ctx.fillStyle = '#FFFFFF'; rr(x - 54, g - 76, 108, 24, 12); ctx.fill(); ctx.strokeStyle = '#1C2A2E'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.font = `13px ${FM}`; ctx.textAlign = 'center'; ctx.fillStyle = '#1C2A2E'; ctx.fillText('bye, slowpoke!', x, g - 59);
+  ctx.font = `13px ${FM}`; ctx.textAlign = 'center'; ctx.fillStyle = '#1C2A2E'; ctx.fillText(t('rex.scene.bye'), x, g - 59);
 }
 function drawParts(s) {
   for (const p of s.parts) {
@@ -388,7 +390,7 @@ function drawHud(s, v) {
       const ty = my + mh * (1 - v.goal);
       ctx.fillStyle = '#FFFFFF'; rr(mx - 6, ty - 2.5, mw + 12, 5, 2.5); ctx.fill();
       ctx.fillStyle = '#E2483D'; ctx.beginPath(); ctx.moveTo(mx + mw + 8, ty - 1); ctx.lineTo(mx + mw + 8, ty - 15); ctx.lineTo(mx + mw + 22, ty - 9); ctx.lineTo(mx + mw + 8, ty - 5); ctx.fill();
-      ctx.font = `bold 12px ${FM}`; ctx.textAlign = 'left'; ctx.fillStyle = '#FFFFFF'; ctx.fillText('GOAL', mx + mw + 26, ty + 4);
+      ctx.font = `bold 12px ${FM}`; ctx.textAlign = 'left'; ctx.fillStyle = '#FFFFFF'; ctx.fillText(t('rex.scene.goal'), mx + mw + 26, ty + 4);
     }
   }
   // right side starts below y 50: the app's top bar sits over the top right corner
@@ -427,13 +429,13 @@ function drawHud(s, v) {
   if (v.frozen) {
     ctx.fillStyle = 'rgba(150,210,245,.35)'; ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < 24; i++) { const x = (i * 97 + s.t * 20) % W, y = (i * 53 + s.t * 40 * (1 + (i % 3))) % H; star(x, y, 3 + (i % 3), 'rgba(255,255,255,.9)'); }
-    label('FREEZE FRAME!', W / 2 + 40, H / 2 - 30, 40, '#FFFFFF', 'center', FD, 8);
-    label('Be a statue... Rex waits for you', W / 2 + 40, H / 2 + 4, 20, '#E6F7FF', 'center', FD, 6);
+    label(t('rex.scene.freeze'), W / 2 + 40, H / 2 - 30, 40, '#FFFFFF', 'center', FD, 8);
+    label(t('rex.scene.statue'), W / 2 + 40, H / 2 + 4, 20, '#E6F7FF', 'center', FD, 6);
   }
   if (v.paused) {
     ctx.fillStyle = 'rgba(28,42,46,.55)'; ctx.fillRect(0, 0, W, H);
-    label('REX WAITS FOR YOU', W / 2, H / 2 - 10, 36, '#FFFFFF', 'center', FD, 8);
-    label('Check the headband', W / 2, H / 2 + 24, 20, '#E6F7FF', 'center', FD, 6);
+    label(t('rex.scene.waits'), W / 2, H / 2 - 10, 36, '#FFFFFF', 'center', FD, 8);
+    label(t('rex.scene.checkBand'), W / 2, H / 2 + 24, 20, '#E6F7FF', 'center', FD, 6);
   }
 }
 

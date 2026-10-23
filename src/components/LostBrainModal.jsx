@@ -4,6 +4,7 @@ import { RetroModal } from './RetroModal.jsx';
 import { isPageRoute } from '../games/games.config';
 import { useEEG } from '../contexts/MuseContext';
 import { useQuality } from '../contexts/QualityContext.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 export function LostBrainModal({ redirectSeconds = 5 }) {
@@ -11,6 +12,7 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
   const [show, setShow] = useState(false);
   const [count, setCount] = useState(redirectSeconds);
   const navigate = useNavigate();
+  const t = useT();
   const location = useLocation();
   const redirectedRef = useRef(false);
   const { disconnectEEG } = useEEG();
@@ -55,12 +57,12 @@ export function LostBrainModal({ redirectSeconds = 5 }) {
 
   return (
     <RetroModal
-      title="SIGNAL LOST"
+      title={t('core.lost.title')}
       showFooter={false}
     >
       <div style={{ fontFamily: 'var(--font-retro)' }}>
-        <p className="text-[10px] text-[var(--nes-red)] mb-3">We lost your brain.</p>
-        <p className="text-[10px] mb-4">Redirecting in {count}…</p>
+        <p className="text-[10px] text-[var(--nes-red)] mb-3">{t('core.lost.text')}</p>
+        <p className="text-[10px] mb-4">{t('core.lost.redirect', { n: count })}</p>
         <div className="w-full bg-black border border-[var(--nes-gray)] h-3 relative">
           <div
             className="bg-[var(--nes-red)] h-full transition-all"

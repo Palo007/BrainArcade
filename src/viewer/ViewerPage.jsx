@@ -15,6 +15,7 @@ import { THEME, loadPrefs, savePrefs } from './components/theme.js';
 import { computeSummary, heartSeries } from './lib/analysis.js';
 import { fmtElapsed } from './lib/series.js';
 import { formatWall } from './lib/csvParse.js';
+import { useT } from '../lib/i18n.js';
 
 const DEFAULT_PREFS = {
   open: { summary: true, topo: true, bands: true, raw: true, quality: true, markers: false, range: false, paf: false, spectrum: false, ratios: false, fnirs: false, hr: true, breath: true, motion: false, mm: false, export: false },
@@ -27,7 +28,9 @@ const DEFAULT_PREFS = {
   ratiosOn: { alphaRel: true, faa: true, thetaBeta: true, thetaAlpha: false, focus: false, coherence: false }, ratioSmooth: 10,
   specChannel: 'TP9', motionXYZ: false, hrSmooth: 0, breathSources: false,
 };
-const PHASE = { parse: 'READING FILE', filter: 'FILTERING EEG', artifacts: 'ARTIFACTS', spectrogram: 'SPECTROGRAM', paf: 'PEAK ALPHA', fnirs: 'FNIRS', pulse: 'BREATHING & HRV', classicPaf: 'PAF (FFT)' };
+const PHASE_KEYS = { parse: 'viewer.phase.parse', filter: 'viewer.phase.filter', artifacts: 'viewer.phase.artifacts', spectrogram: 'viewer.phase.spectrogram', paf: 'viewer.phase.paf', fnirs: 'viewer.phase.fnirs', pulse: 'viewer.phase.pulse', classicPaf: 'viewer.phase.classicPaf' };
+// Worker error texts (English, from the worker/parser) -> keys, translated in the main thread
+const ERROR_KEYS = { 'Empty file': 'viewer.err.empty', 'No TimeStamp column - not a Mind Monitor CSV': 'viewer.err.notMm', 'No raw EEG for PAF': 'viewer.err.noRawPaf' };
 const MIN_SPAN = 0.5;
 const SPEEDS = [1, 4, 16, 64];
 const font = { fontFamily: 'var(--font-retro)' };
@@ -57,6 +60,9 @@ function offSpans(rec) {
 
 export function ViewerPage() {
   const navigate = useNavigate();
+  const t = useT();
+  const PHASE = useMemo(() => Object.fromEntries(Object.entries(PHASE_KEYS).map(([k, v]) => [k, t(v)])), [t]);
+  const errText = useCallback((m) => (ERROR_KEYS[m] ? t(ERROR_KEYS[m]) : m), [t]);
   const [prefs, setPrefs] = useState(() => loadPrefs(DEFAULT_PREFS));
   const setPref = useCallback((k, v) => setPrefs((p) => { const n = { ...p, [k]: v }; savePrefs(n); return n; }), []);
   const togglePanel = useCallback((id) => setPrefs((p) => { const n = { ...p, open: { ...p.open, [id]: !p.open[id] } }; savePrefs(n); return n; }), []);
@@ -93,11 +99,11 @@ export function ViewerPage() {
       } else if (m.type === 'analysis') setAna((a) => ({ ...a, ...m.ana }));
       else if (m.type === 'fnirs') { setAna((a) => ({ ...a, fnirs: m.fnirs })); setProg(null); }
       else if (m.type === 'classicPaf') setClassic((c) => ({ ...c, [m.key]: m.series }));
-      else if (m.type === 'error') { setError(m.message); setProg(null); }
+      else if (m.type === 'error') { setError(errText(m.message)); setProg(null); }
     };
-    w.onerror = (e) => { setError(e.message || 'Worker failed'); setProg(null); };
+    w.onerror = (e) => { setError(e.message || t('viewer.err.worker')); setProg(null); };
     w.postMessage({ type: 'parse', file });
-  }, []);
+  }, [errText, t]);
   useEffect(() => () => workerRef.current?.terminate(), []);
 
   // Dev only: /viewer?src=/sample-recording.csv loads a file served by Vite (for testing without a file picker)
@@ -107,8 +113,8 @@ export function ViewerPage() {
     if (!src) return;
     fetch(src).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b) => load(new File([b], src.split('/').pop() || 'sample.csv')))
-      .catch((err) => setError(`Could not load ${src}: ${err.message}`));
-  }, [load]);
+      .catch((err) => setError(t('viewer.err.load', { src, msg: err.message })));
+  }, [load, t]);
 
   const runFnirs = useCallback((t) => {
     if (!workerRef.current) return;
@@ -219,15 +225,15 @@ export function ViewerPage() {
       onDrop={onDrop}
     >
       <div className="flex flex-wrap items-center gap-3 mb-3">
-        <button type="button" onClick={() => navigate('/')} className="text-sm text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] min-h-[40px]">← HOME</button>
-        <h2 className="text-xs sm:text-lg text-[var(--nes-green)]">RECORDING VIEWER</h2>
+        <button type="button" onClick={() => navigate('/')} className="text-sm text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] min-h-[40px]">{t('viewer.home')}</button>
+        <h2 className="text-xs sm:text-lg text-[var(--nes-green)]">{t('viewer.title')}</h2>
         <button type="button" className="retro-button ml-auto text-[10px] px-3 py-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent hover:bg-[var(--nes-yellow)] hover:text-black" onClick={() => fileRef.current?.click()}>
-          OPEN CSV
+          {t('viewer.openCsv')}
         </button>
         <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { load(e.target.files?.[0]); e.target.value = ''; }} />
       </div>
 
-      {error && <p className="text-[10px] text-[var(--nes-red)] border-2 border-[var(--nes-red)] p-2 mb-3" role="alert">ERROR: {error}</p>}
+      {error && <p className="text-[10px] text-[var(--nes-red)] border-2 border-[var(--nes-red)] p-2 mb-3" role="alert">{t('viewer.errorPrefix')} {error}</p>}
 
       {prog && (
         <div className="mb-3" aria-live="polite">
@@ -249,10 +255,9 @@ export function ViewerPage() {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') fileRef.current?.click(); }}
         >
-          <p className="text-xs text-white mb-3">DROP A MIND MONITOR CSV HERE</p>
+          <p className="text-xs text-white mb-3">{t('viewer.upload.title')}</p>
           <p className="text-[10px] text-gray-400 leading-relaxed">
-            BrainArcade recordings (Record this session) and Mind Monitor exports. The file is read on this device only - nothing is uploaded.
-            Large files (30+ min, 100+ MB) take a few seconds.
+            {t('viewer.upload.note')}
           </p>
         </div>
       )}
@@ -261,10 +266,10 @@ export function ViewerPage() {
         <>
           <div className="sticky top-0 z-20 bg-[#181818] pt-1 pb-2 mb-3 border-b-2 border-[var(--nes-gray)]">
             <div className="flex flex-wrap items-center gap-1 mb-1 text-[10px]">
-              <button type="button" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] px-3 min-h-[32px]" onClick={() => { if (cursor >= dur) setCursor(0); setPlaying((p) => !p); }} aria-label={playing ? 'Pause' : 'Play'}>
+              <button type="button" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] px-3 min-h-[32px]" onClick={() => { if (cursor >= dur) setCursor(0); setPlaying((p) => !p); }} aria-label={playing ? t('viewer.pause') : t('viewer.play')}>
                 {playing ? '❚❚' : '▶'}
               </button>
-              <button type="button" className="border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-2 min-h-[32px] min-w-[44px]" onClick={() => setPref('speed', SPEEDS[(SPEEDS.indexOf(prefs.speed) + 1) % SPEEDS.length])} aria-label={`Playback speed ${prefs.speed} times, tap to change`}>
+              <button type="button" className="border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-2 min-h-[32px] min-w-[44px]" onClick={() => setPref('speed', SPEEDS[(SPEEDS.indexOf(prefs.speed) + 1) % SPEEDS.length])} aria-label={t('viewer.speedAria', { n: prefs.speed })}>
                 ×{prefs.speed}
               </button>
               <span className="text-[var(--nes-yellow)] tabular-nums ml-1" aria-live="off">
@@ -274,7 +279,7 @@ export function ViewerPage() {
             </div>
             {/* Manual time slider (like Mind Monitor): drag to scrub the cursor; dragging pauses playback */}
             <div className="flex items-center gap-1 mb-1">
-              <button type="button" aria-label="Back 1 second" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.max(0, cursor - 1)); }}>-1S</button>
+              <button type="button" aria-label={t('viewer.back1')} className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.max(0, cursor - 1)); }}>{t('viewer.back1Btn')}</button>
               <input
                 type="range"
                 min={0}
@@ -282,48 +287,48 @@ export function ViewerPage() {
                 step={dur > 600 ? 0.5 : 0.1}
                 value={Math.min(cursor, dur || 0)}
                 onChange={(e) => { setPlaying(false); seek(Number(e.target.value)); }}
-                aria-label="Time"
+                aria-label={t('viewer.time')}
                 aria-valuetext={fmtElapsed(cursor, 0.1)}
                 className="flex-1 min-w-0 h-8 cursor-pointer accent-[var(--nes-green)]"
               />
-              <button type="button" aria-label="Forward 1 second" className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.min(dur, cursor + 1)); }}>+1S</button>
+              <button type="button" aria-label={t('viewer.fwd1')} className="border-2 border-[var(--nes-green)] text-[var(--nes-green)] w-8 min-h-[30px] text-[9px]" onClick={() => { setPlaying(false); seek(Math.min(dur, cursor + 1)); }}>{t('viewer.fwd1Btn')}</button>
             </div>
             <div className="flex flex-wrap items-center gap-1 mb-1">
-              {[['−', () => zoom(2), 'Zoom out'], ['+', () => zoom(0.5), 'Zoom in'], ['◀', () => pan(-0.5), 'Pan left'], ['▶', () => pan(0.5), 'Pan right']].map(([l, f, a]) => (
-                <button key={a} type="button" aria-label={a} className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] w-8 sm:w-9 min-h-[30px] text-xs" onClick={f}>{l}</button>
+              {[['−', () => zoom(2), 'zoomOut'], ['+', () => zoom(0.5), 'zoomIn'], ['◀', () => pan(-0.5), 'panLeft'], ['▶', () => pan(0.5), 'panRight']].map(([l, f, a]) => (
+                <button key={a} type="button" aria-label={t(`viewer.${a}`)} className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] w-8 sm:w-9 min-h-[30px] text-xs" onClick={f}>{l}</button>
               ))}
-              {[[10, '10S'], [30, '30S'], [60, '1M'], [300, '5M'], ['all', 'ALL']].map(([v, l]) => (
-                <button key={l} type="button" className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] px-1 sm:px-2 min-h-[30px] text-[8px] sm:text-[9px]" onClick={() => (v === 'all' ? setView(0, dur) : windowSec(v))}>{l}</button>
+              {[[10, '10s'], [30, '30s'], [60, '1m'], [300, '5m'], ['all', 'all']].map(([v, l]) => (
+                <button key={l} type="button" className="border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] px-1 sm:px-2 min-h-[30px] text-[8px] sm:text-[9px]" onClick={() => (v === 'all' ? setView(0, dur) : windowSec(v))}>{t(`viewer.win.${l}`)}</button>
               ))}
-              <button type="button" aria-pressed={!!prefs.clock} className="border-2 border-[#c0c0c0] px-1 sm:px-2 min-h-[30px] text-[8px] sm:text-[9px]" style={{ background: prefs.clock ? '#c0c0c0' : 'transparent', color: prefs.clock ? '#000' : '#c0c0c0' }} onClick={() => setPref('clock', !prefs.clock)} title="X axis as wall-clock time">
-                CLOCK
+              <button type="button" aria-pressed={!!prefs.clock} className="border-2 border-[#c0c0c0] px-1 sm:px-2 min-h-[30px] text-[8px] sm:text-[9px]" style={{ background: prefs.clock ? '#c0c0c0' : 'transparent', color: prefs.clock ? '#000' : '#c0c0c0' }} onClick={() => setPref('clock', !prefs.clock)} title={t('viewer.clockTitle')}>
+                {t('viewer.clock')}
               </button>
             </div>
             <Overview series={overview} duration={dur} view={view} cursor={cursor} onView={setView} onCursor={setCursor} events={events} />
             <div className="text-[8px] text-gray-500 mt-1">
-              View {fmtElapsed(view.t0)}–{fmtElapsed(view.t1)}
-              <span className="hidden sm:inline"> · tap = cursor, drag = pan, Ctrl+wheel / pinch = zoom, Shift+wheel = pan, double-click = all, space = play</span>
+              {t('viewer.viewRange', { a: fmtElapsed(view.t0), b: fmtElapsed(view.t1) })}
+              <span className="hidden sm:inline"> · {t('viewer.gestures')}</span>
               {busy ? ` · ${PHASE[prog.phase] || ''} ${Math.round((prog.value || 0) * 100)}%` : ''}
             </div>
           </div>
 
-          {P('summary', 'Session summary', 'var(--nes-yellow)', <SummaryPanel vc={vc} summary={summary} />)}
-          {P('topo', 'Head maps at cursor', 'var(--nes-green)', <TopoPanel vc={vc} />)}
-          {P('bands', 'Band power', 'var(--nes-green)', <BandsPanel vc={vc} />, { png: true })}
-          {P('raw', 'Raw EEG', 'var(--nes-blue)', <RawPanel vc={vc} />, { png: true })}
-          {P('quality', 'Signal quality', 'var(--nes-green)', <QualityPanel vc={vc} />, { png: true })}
-          {P('markers', `Markers & events (${rec.events.length})`, 'var(--nes-yellow)', <MarkersPanel vc={vc} />)}
-          {P('range', 'Visible range stats', 'var(--nes-yellow)', rangeSummary && <RangePanel vc={vc} summary={summary} rangeSummary={rangeSummary} />)}
-          {P('paf', 'Peak alpha frequency', 'var(--nes-blue)', <PafPanel vc={vc} />, { png: true })}
-          {P('spectrum', 'Spectrum & spectrogram', 'var(--nes-purple)', <SpectrumPanel vc={vc} />, { png: true })}
-          {P('ratios', 'Ratios & asymmetry', 'var(--nes-blue)', <RatiosPanel vc={vc} />, { png: true })}
-          {P('fnirs', 'fNIRS (HbO / HbR)', 'var(--nes-red)', <FnirsViewerPanel vc={vc} />, { png: true })}
-          {hr && P('hr', 'Heart rate', 'var(--nes-red)', <HeartPanel vc={vc} hr={hr} />, { png: true })}
-          {rec.groups.optics && P('breath', 'Breathing & HRV (estimated)', 'var(--nes-blue)', <BreathHrvPanel vc={vc} />, { png: true })}
-          {P('motion', 'Motion & battery', 'var(--nes-yellow)', <MotionPanel vc={vc} />, { png: true })}
-          {rec.groups.mm && P('mm', 'Mellow / Concentration', 'var(--nes-green)', <MmPanel vc={vc} />, { png: true })}
-          {P('export', 'Export', 'var(--nes-green)', rangeSummary && <ExportPanel vc={vc} summary={summary} rangeSummary={rangeSummary} />)}
-          {!hr && <Note>No heart rate in this file.</Note>}
+          {P('summary', t('viewer.panel.summary'), 'var(--nes-yellow)', <SummaryPanel vc={vc} summary={summary} />)}
+          {P('topo', t('viewer.panel.topo'), 'var(--nes-green)', <TopoPanel vc={vc} />)}
+          {P('bands', t('viewer.panel.bands'), 'var(--nes-green)', <BandsPanel vc={vc} />, { png: true })}
+          {P('raw', t('viewer.panel.raw'), 'var(--nes-blue)', <RawPanel vc={vc} />, { png: true })}
+          {P('quality', t('viewer.panel.quality'), 'var(--nes-green)', <QualityPanel vc={vc} />, { png: true })}
+          {P('markers', t('viewer.panel.markers', { n: rec.events.length }), 'var(--nes-yellow)', <MarkersPanel vc={vc} />)}
+          {P('range', t('viewer.panel.range'), 'var(--nes-yellow)', rangeSummary && <RangePanel vc={vc} summary={summary} rangeSummary={rangeSummary} />)}
+          {P('paf', t('viewer.panel.paf'), 'var(--nes-blue)', <PafPanel vc={vc} />, { png: true })}
+          {P('spectrum', t('viewer.panel.spectrum'), 'var(--nes-purple)', <SpectrumPanel vc={vc} />, { png: true })}
+          {P('ratios', t('viewer.panel.ratios'), 'var(--nes-blue)', <RatiosPanel vc={vc} />, { png: true })}
+          {P('fnirs', t('viewer.panel.fnirs'), 'var(--nes-red)', <FnirsViewerPanel vc={vc} />, { png: true })}
+          {hr && P('hr', t('viewer.panel.hr'), 'var(--nes-red)', <HeartPanel vc={vc} hr={hr} />, { png: true })}
+          {rec.groups.optics && P('breath', t('viewer.panel.breath'), 'var(--nes-blue)', <BreathHrvPanel vc={vc} />, { png: true })}
+          {P('motion', t('viewer.panel.motion'), 'var(--nes-yellow)', <MotionPanel vc={vc} />, { png: true })}
+          {rec.groups.mm && P('mm', t('viewer.panel.mm'), 'var(--nes-green)', <MmPanel vc={vc} />, { png: true })}
+          {P('export', t('viewer.panel.export'), 'var(--nes-green)', rangeSummary && <ExportPanel vc={vc} summary={summary} rangeSummary={rangeSummary} />)}
+          {!hr && <Note>{t('viewer.noHr')}</Note>}
         </>
       )}
     </div>

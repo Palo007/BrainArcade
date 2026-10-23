@@ -1,29 +1,31 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 import React from 'react';
 import { useFnirs } from '../hooks/useFnirs.js';
+import { useT } from '../lib/i18n.js';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 const HBO = 'var(--nes-red)';
 const HBR = 'var(--nes-blue)';
 
 const QUALITY = {
-  good: { label: 'GOOD', color: 'var(--nes-green)' },
-  calibrating: { label: 'CALIBRATING', color: 'var(--nes-yellow)' },
-  waiting: { label: 'WAITING', color: 'gray' },
-  motion: { label: 'MOVEMENT', color: 'var(--nes-yellow)' },
-  'no-light': { label: 'NO CONTACT', color: 'var(--nes-red)' },
-  saturated: { label: 'TOO BRIGHT', color: 'var(--nes-red)' },
+  good: { key: 'core.q.good', color: 'var(--nes-green)' },
+  calibrating: { key: 'core.q.calibrating', color: 'var(--nes-yellow)' },
+  waiting: { key: 'core.q.waiting', color: 'gray' },
+  motion: { key: 'core.q.motion', color: 'var(--nes-yellow)' },
+  'no-light': { key: 'core.q.noLight', color: 'var(--nes-red)' },
+  saturated: { key: 'core.q.saturated', color: 'var(--nes-red)' },
 };
 
 const fmt = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
 
 function SideCard({ name, side }) {
+  const t = useT();
   const q = QUALITY[side.quality] || QUALITY.waiting;
   return (
     <div className="flex-1 border-2 border-[var(--nes-blue)]/70 bg-black p-3 text-[10px]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[var(--nes-blue)]">{name}</span>
-        <span style={{ color: q.color }}>{q.label}</span>
+        <span style={{ color: q.color }}>{t(q.key)}</span>
       </div>
       <div className="flex justify-between mb-1">
         <span style={{ color: HBO }}>HbO</span>
@@ -67,13 +69,14 @@ function Chart({ history }) {
  */
 export function FnirsPanel({ className = '' }) {
   const { supported, data, resetBaseline } = useFnirs();
+  const t = useT();
 
   return (
     <div className={`border-4 border-[var(--nes-blue)] bg-[var(--nes-dark)] p-4 text-white ${className}`} style={FONT}>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-xs text-[var(--nes-yellow)]">fNIRS · FOREHEAD OXYGEN</div>
-          <div className="text-[8px] text-gray-400 mt-1">Change from baseline (µM, approx.)</div>
+          <div className="text-xs text-[var(--nes-yellow)]">{t('core.fnirs.title')}</div>
+          <div className="text-[8px] text-gray-400 mt-1">{t('core.fnirs.change')}</div>
         </div>
         {supported && (
           <button
@@ -81,20 +84,20 @@ export function FnirsPanel({ className = '' }) {
             onClick={resetBaseline}
             className="border-2 border-[var(--nes-yellow)] px-2 py-1 text-[8px] text-[var(--nes-yellow)] hover:bg-[var(--nes-yellow)] hover:text-black"
           >
-            RESET BASELINE
+            {t('core.fnirs.reset')}
           </button>
         )}
       </div>
 
-      {!supported && <div className="text-[10px] text-gray-400">Not available. fNIRS needs a Muse S Athena.</div>}
+      {!supported && <div className="text-[10px] text-gray-400">{t('core.fnirs.na')}</div>}
 
-      {supported && !data?.available && <div className="text-[10px] text-gray-400">Waiting for optics data…</div>}
+      {supported && !data?.available && <div className="text-[10px] text-gray-400">{t('core.fnirs.waiting')}</div>}
 
       {data?.available && (
         <>
           {!data.baselineReady && (
             <div className="mb-3">
-              <div className="text-[8px] text-[var(--nes-yellow)] mb-1">CALIBRATING — SIT STILL</div>
+              <div className="text-[8px] text-[var(--nes-yellow)] mb-1">{t('core.fnirs.calibrating')}</div>
               <div className="h-2 w-full border border-[var(--nes-yellow)]/60">
                 <div className="h-full bg-[var(--nes-yellow)]" style={{ width: `${Math.round(data.baselineProgress * 100)}%` }} />
               </div>
@@ -102,8 +105,8 @@ export function FnirsPanel({ className = '' }) {
           )}
 
           <div className="flex gap-3 mb-3">
-            <SideCard name="LEFT" side={data.left} />
-            <SideCard name="RIGHT" side={data.right} />
+            <SideCard name={t('core.fnirs.left')} side={data.left} />
+            <SideCard name={t('core.fnirs.right')} side={data.right} />
           </div>
 
           <div className="border-2 border-[var(--nes-blue)]/40 bg-black p-2">
@@ -111,18 +114,18 @@ export function FnirsPanel({ className = '' }) {
             <div className="flex gap-4 text-[8px] text-gray-400 mt-1">
               <span><span style={{ color: HBO }}>■</span> HbO</span>
               <span><span style={{ color: HBR }}>■</span> HbR</span>
-              <span>solid = left · dashed = right · 60 s</span>
+              <span>{t('core.fnirs.legend')}</span>
             </div>
           </div>
 
           <div className="border-2 border-[var(--nes-yellow)]/50 bg-black p-2 mt-3 text-[8px] leading-relaxed">
-            <div><span style={{ color: HBO }}>■ HbO</span> = blood with fresh oxygen. Brain food!</div>
-            <div><span style={{ color: HBR }}>■ HbR</span> = blood after the oxygen is used.</div>
-            <div className="text-[var(--nes-green)] mt-1">Red goes UP, blue goes DOWN = your brain is working hard!</div>
+            <div><span style={{ color: HBO }}>■ HbO</span>{t('core.fnirs.hboText')}</div>
+            <div><span style={{ color: HBR }}>■ HbR</span>{t('core.fnirs.hbrText')}</div>
+            <div className="text-[var(--nes-green)] mt-1">{t('core.fnirs.hint')}</div>
           </div>
 
           <div className="flex justify-between text-[10px] mt-3">
-            <span className="text-[var(--nes-blue)]">OXYGENATION INDEX</span>
+            <span className="text-[var(--nes-blue)]">{t('core.fnirs.index')}</span>
             <span>{fmt(data.oxy)}</span>
           </div>
         </>

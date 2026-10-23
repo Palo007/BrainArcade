@@ -13,6 +13,7 @@ import { RetroModal } from '../../components/RetroModal.jsx';
 import { GameStartPanel } from '../../components/GameStartPanel.jsx';
 import { GameEndActions } from '../../components/GameEndActions.jsx';
 import { ParentReport } from '../../components/ParentReport.jsx';
+import { useT, t as tNow } from '../../lib/i18n.js';
 import '../../styles/retro.css';
 
 import train1 from './assets/train1.png';
@@ -75,6 +76,7 @@ function newRound(line, lastOfDay, goal, len) {
 }
 
 export function TrainOfThoughts() {
+  const t = useT();
   const navigate = useNavigate();
   const { ensureBaseline, resetBaseline, isBaselineReady, calibration } = useBaseline();
   const { subscribeEEG, isConnected, profile } = useEEG();
@@ -276,7 +278,7 @@ export function TrainOfThoughts() {
       r.nose = Math.max(NOSE_MIN, r.nose + speed * dt);
       if (r.nose >= 1) {
         r.whoosh = 1.4;
-        addFx(r, 'WHOOSH!', '#FC8080');
+        addFx(r, tNow('games.tot.fxWhoosh'), '#FC8080');
         playSound('whoosh');
       }
     }
@@ -288,23 +290,23 @@ export function TrainOfThoughts() {
         r.wagons -= 1;
         r.wagonsDropped += 1;
         r.loose.push({ x: r.nose, life: 2.5 });
-        addFx(r, 'WAGON GONE! +1 PASSENGER', '#FCC060');
+        addFx(r, tNow('games.tot.fxWagon'), '#FCC060');
         playSound('wagon');
         if (r.wagons === 0) {
           r.trainsStopped += 1;
           r.stoppedFor = 2.5;
-          r.banner = { txt: 'TRAIN STOPPED!', life: 2.5 };
+          r.banner = { txt: tNow('games.tot.bannerStopped'), life: 2.5 };
           playSound('stop');
         }
       } else if (!L.wagons) {
-        addFx(r, 'NICE AND CALM!', '#FCC060');
+        addFx(r, tNow('games.tot.fxCalm'), '#FCC060');
         playSound('calm');
       }
     }
     if (L.lanterns && r.lanternFor >= LANTERN_CALM_S) {
       r.lanternFor -= LANTERN_CALM_S;
       r.lanterns += 1;
-      addFx(r, 'LANTERN LIT!', '#f7f06a');
+      addFx(r, tNow('games.tot.fxLantern'), '#f7f06a');
       playSound('lantern');
     }
 
@@ -312,7 +314,7 @@ export function TrainOfThoughts() {
     if (L.bells && r.t > r.nextBell) {
       r.nextBell = r.t + 8 + Math.random() * 6;
       r.bellChecks.push(r.t + 3);
-      addFx(r, 'DING DING!', '#40C0FF');
+      addFx(r, tNow('games.tot.fxBell'), '#40C0FF');
       playSound('bell');
     }
     if (r.bellChecks.length && r.t >= r.bellChecks[0]) {
@@ -323,7 +325,7 @@ export function TrainOfThoughts() {
       r.nextThunder = r.t + 22 + Math.random() * 10;
       r.thunderAt = r.t;
       r.flash = 1;
-      addFx(r, 'KA-BOOM!', '#ffffff');
+      addFx(r, tNow('games.tot.fxThunder'), '#ffffff');
       playSound('horn');
     }
     if (r.thunderAt != null) {
@@ -557,8 +559,8 @@ export function TrainOfThoughts() {
             onClick={() => setLine(l.id)}
             className={`min-h-[44px] border-2 px-2 py-2 text-[9px] leading-tight text-left ${on ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : open ? 'border-white/60 text-white' : 'border-white/20 text-white/30'}`}
           >
-            {open ? `${l.id} ${l.name}` : `${l.id} ???`}
-            {open && <span className="block opacity-70 mt-1">{l.skill}</span>}
+            {open ? `${l.id} ${t(l.nameKey)}` : `${l.id} ???`}
+            {open && <span className="block opacity-70 mt-1">{t(l.skillKey)}</span>}
           </button>
         );
       })}
@@ -567,11 +569,11 @@ export function TrainOfThoughts() {
 
   const goodbye = (
     <div className="text-[10px] text-gray-200 leading-relaxed">
-      <img src={train1} alt="Brainy waves" className="mx-auto mb-2" style={{ width: 96, imageRendering: 'pixelated' }} draggable={false} />
-      <p className="text-[var(--nes-yellow)] mb-2">SEE YOU NEXT TIME!</p>
-      <p className="mb-2">You played {today.roundsDone} round{today.roundsDone === 1 ? '' : 's'} today. Brainy waves from the station.</p>
-      <p className="mb-4">Days played: {progress.days}</p>
-      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">CHOOSE GAME</button>
+      <img src={train1} alt={t('games.tot.brainyWaves')} className="mx-auto mb-2" style={{ width: 96, imageRendering: 'pixelated' }} draggable={false} />
+      <p className="text-[var(--nes-yellow)] mb-2">{t('games.tot.seeYouNext')}</p>
+      <p className="mb-2">{t('games.tot.playedToday', { n: today.roundsDone })}</p>
+      <p className="mb-4">{t('games.tot.daysPlayedLine', { n: progress.days })}</p>
+      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">{t('games.tot.chooseGame')}</button>
     </div>
   );
 
@@ -580,7 +582,7 @@ export function TrainOfThoughts() {
       <div className="absolute inset-0 overflow-hidden" id="train-stage" ref={stageRef}>
         <img
           src={cityBackground}
-          alt="city background"
+          alt={t('games.tot.cityAlt')}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ imageRendering: 'pixelated' }}
         />
@@ -596,8 +598,8 @@ export function TrainOfThoughts() {
         `}</style>
 
         <div className={`absolute top-4 left-4 w-[min(520px,60vw)] ${phase === 'menu' ? 'hidden sm:block' : 'hidden'}`}>
-          <h2 className="text-2xl text-[var(--nes-yellow)]">TRAIN OF THOUGHTS</h2>
-          <p className="text-xs text-gray-100 mt-2">Stay calm. Let the busy-thought wagons go.</p>
+          <h2 className="text-2xl text-[var(--nes-yellow)]">{t('games.tot.title')}</h2>
+          <p className="text-xs text-gray-100 mt-2">{t('games.tot.subtitle')}</p>
         </div>
 
         <section className="absolute inset-0">
@@ -614,7 +616,7 @@ export function TrainOfThoughts() {
             <div style={{ position: 'relative', flex: 'none' }}>
               <img
                 src={villainTrain}
-                alt="villain train"
+                alt={t('games.tot.villainAlt')}
                 style={{ height: 'var(--vh)', width: 'auto', imageRendering: 'pixelated', display: 'block' }}
                 draggable={false}
               />
@@ -626,12 +628,12 @@ export function TrainOfThoughts() {
         {/* Brainy by the track */}
         <div className="flex flex-col items-center" style={{ position: 'absolute', bottom: '-2px', left: `${BRAINY_LEFT * 100}%`, pointerEvents: 'none', zIndex: 2 }}>
           {hud?.hint && phase === 'play' && (
-            <div className="mb-1 border-2 border-[#282828] bg-white px-2 py-1 text-[9px] text-[#282828] max-w-[180px]" style={FONT}>{hud.hint}</div>
+            <div className="mb-1 border-2 border-[#282828] bg-white px-2 py-1 text-[9px] text-[#282828] max-w-[180px]" style={FONT}>{t(hud.hint)}</div>
           )}
           <img
             ref={brainyRef}
             src={train1}
-            alt="Brainy"
+            alt={t('games.tot.brainyAlt')}
             draggable={false}
             style={{ height: 'calc(var(--vh) * 1.25)', width: 'auto', imageRendering: 'pixelated', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))' }}
           />
@@ -641,8 +643,8 @@ export function TrainOfThoughts() {
         {(phase === 'play' || phase === 'warmup') && (
           <div className="absolute top-16 left-3 border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)]/85 px-3 py-2 text-white z-20" style={{ ...FONT, width: 'min(260px, 62vw)' }}>
             <div className="flex justify-between text-[8px] opacity-80">
-              <span>CALM</span>
-              {hud?.hold && <span className="text-[var(--nes-yellow)]">HOLD</span>}
+              <span>{t('games.tot.calm')}</span>
+              {hud?.hold && <span className="text-[var(--nes-yellow)]">{t('games.tot.hold')}</span>}
             </div>
             <div className="relative h-3 mt-1 bg-[var(--nes-gray)]">
               <div ref={barRef} className="absolute left-0 top-0 bottom-0" style={{ width: '50%' }} />
@@ -651,14 +653,14 @@ export function TrainOfThoughts() {
             {phase === 'play' ? (
               <div className="flex items-center gap-3 mt-2 text-[10px]">
                 <span>{Math.floor((hud?.left ?? 0) / 60)}:{String((hud?.left ?? 0) % 60).padStart(2, '0')}</span>
-                {hud?.showWagons && <span>WAGONS {hud?.wagons}</span>}
-                {hud?.lanterns > 0 && <span className="text-[#f7f06a]">LANTERNS {hud.lanterns}</span>}
-                <span className="flex gap-[3px]" aria-label="calm seconds">
+                {hud?.showWagons && <span>{t('games.tot.wagons', { n: hud?.wagons })}</span>}
+                {hud?.lanterns > 0 && <span className="text-[#f7f06a]">{t('games.tot.lanterns', { n: hud.lanterns })}</span>}
+                <span className="flex gap-[3px]" aria-label={t('games.tot.calmSeconds')}>
                   {[0, 1, 2, 3, 4].map((i) => <span key={i} ref={(el) => { pipsRef.current[i] = el; }} className="inline-block w-2 h-2" />)}
                 </span>
               </div>
             ) : (
-              <div className="mt-2 text-[9px]">GET READY {hud?.warmLeft ?? WARMUP_MIN_S}</div>
+              <div className="mt-2 text-[9px]">{t('games.tot.getReady', { n: hud?.warmLeft ?? WARMUP_MIN_S })}</div>
             )}
           </div>
         )}
@@ -667,11 +669,11 @@ export function TrainOfThoughts() {
           // Landscape phones: right of the CALM box (not on it). The hint is inside: a bottom box would cover the train or hide behind it
           <div className="absolute inset-x-0 top-1/3 short-land:top-16 flex justify-center short-land:justify-end z-10 px-4 pointer-events-none">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 short-land:py-2 text-[10px] text-white text-center max-w-sm short-land:max-w-[calc(100%-min(260px,62vw)-1.5rem)]" style={FONT}>
-              <p className="text-[var(--nes-yellow)] mb-1">THE TRAIN IS COMING</p>
-              <p>Sit still. Eyes open. Watch the train and breathe slowly.</p>
-              <p className="mt-1 text-[9px] opacity-80">A calm brain slows the train. 5 s calm = one wagon goes.</p>
+              <p className="text-[var(--nes-yellow)] mb-1">{t('games.tot.trainComing')}</p>
+              <p>{t('games.tot.sitStill')}</p>
+              <p className="mt-1 text-[9px] opacity-80">{t('games.tot.calmSlows')}</p>
               {hud?.warmStuck && (
-                <p className="mt-2 text-[var(--nes-red)]">No clean signal yet. Tap ELECTRODES and check the headband. The game starts when the signal is clean.</p>
+                <p className="mt-2 text-[var(--nes-red)]">{t('games.tot.noSignal')}</p>
               )}
             </div>
           </div>
@@ -690,31 +692,31 @@ export function TrainOfThoughts() {
         {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={FONT}>
-              Waiting for baseline…
+              {t('games.tot.waiting')}
             </div>
           </div>
         )}
 
         {phase === 'menu' && (
-          <GameStartPanel title="TRAIN OF THOUGHTS" onStart={dayDone ? undefined : onStart} onRecalibrate={dayDone ? undefined : recal}>
+          <GameStartPanel title={t('games.tot.title')} onStart={dayDone ? undefined : onStart} onRecalibrate={dayDone ? undefined : recal}>
             {dayDone ? goodbye : (
               <>
                 <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-                  Stay calm to slow down the train. 5 seconds of calm lets one busy-thought wagon go.
+                  {t('games.tot.intro1')}
                 </p>
-                <p className="text-[10px] text-gray-200 leading-relaxed mb-3">Keep your eyes open and watch the train.</p>
+                <p className="text-[10px] text-gray-200 leading-relaxed mb-3">{t('games.tot.intro2')}</p>
                 {setup === 'hands' && (
-                  <p className="text-[9px] text-[var(--nes-yellow)] leading-relaxed mb-3">Pillow on your lap. Elbows on the pillow. Phone at chin height.</p>
+                  <p className="text-[9px] text-[var(--nes-yellow)] leading-relaxed mb-3">{t('games.tot.pillow')}</p>
                 )}
                 {lineButtons}
                 {line === 6 && (
                   <div className="mb-3 text-[9px]">
-                    <p className="mb-1 text-gray-300">PICK YOUR ROUTE</p>
+                    <p className="mb-1 text-gray-300">{t('games.tot.pickRoute')}</p>
                     <div className="flex flex-wrap gap-1 justify-center">
                       {LINES.map((l) => (
                         <button key={l.id} type="button" onClick={() => setRoute(l.id)}
                           className={`min-h-[44px] border-2 px-2 ${route === l.id ? 'border-[var(--nes-yellow)] text-[var(--nes-yellow)]' : 'border-white/40 text-white'}`}>
-                          {l.name}
+                          {t(l.nameKey)}
                         </button>
                       ))}
                     </div>
@@ -722,15 +724,15 @@ export function TrainOfThoughts() {
                 )}
                 <div className="flex flex-wrap justify-center gap-3 text-[9px] text-gray-200 mb-3">
                   <span className="text-[var(--nes-yellow)]">★ {progress.stars}</span>
-                  <span>PASSENGERS {progress.passengers}</span>
-                  <span>DAYS PLAYED {progress.days}</span>
-                  <span>ROUNDS LEFT TODAY {roundsLeft}</span>
+                  <span>{t('games.tot.passengers', { n: progress.passengers })}</span>
+                  <span>{t('games.tot.daysPlayed', { n: progress.days })}</span>
+                  <span>{t('games.tot.roundsLeft', { n: roundsLeft })}</span>
                 </div>
                 <div className="flex justify-center gap-2 mb-4">
-                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">STORY</button>
-                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">PARENT CARD</button>
+                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('games.tot.story')}</button>
+                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('games.tot.parentCard')}</button>
                 </div>
-                {demo && <p className="text-[8px] opacity-70 mb-2">Demo mode: progress is not saved.</p>}
+                {demo && <p className="text-[8px] opacity-70 mb-2">{t('games.tot.demoProgress')}</p>}
               </>
             )}
           </GameStartPanel>
@@ -739,34 +741,34 @@ export function TrainOfThoughts() {
       </div>
 
       {phase === 'result' && result && (
-        <RetroModal title="ROUND DONE!" showFooter={false} onCancel={() => go('menu')}>
+        <RetroModal title={t('games.tot.roundDone')} showFooter={false} onCancel={() => go('menu')}>
           <div style={FONT} className="text-center">
             <div className="text-2xl text-[var(--nes-yellow)] mb-2">{'★'.repeat(result.stars)}</div>
-            {result.praise.map((p) => <p key={p} className="text-[10px] mb-1">{p}</p>)}
+            {result.praise.map((p) => <p key={p.key + (p.vars?.n ?? '')} className="text-[10px] mb-1">{t(p.key, p.vars)}</p>)}
             {result.newPassengers.length > 0 && (
-              <p className="text-[9px] text-[var(--nes-green)] mt-2">NEW: {result.newPassengers.slice(0, 3).join(', ')}{result.newPassengers.length > 3 ? ` +${result.newPassengers.length - 3}` : ''}</p>
+              <p className="text-[9px] text-[var(--nes-green)] mt-2">{t('games.tot.newPassengers', { list: result.newPassengers.slice(0, 3).map((k) => t(k)).join(', '), more: result.newPassengers.length > 3 ? ` +${result.newPassengers.length - 3}` : '' })}</p>
             )}
             {result.unlockedLine && (
               <div className="border-2 border-[var(--nes-yellow)] p-2 mt-3 text-[9px] text-left">
-                <p className="text-[var(--nes-yellow)] mb-1">NEW LINE OPEN: {LINES[result.unlockedLine - 1].name}!</p>
-                <p className="leading-relaxed">{STORY[result.unlockedLine - 1]}</p>
+                <p className="text-[var(--nes-yellow)] mb-1">{t('games.tot.newLine', { name: t(LINES[result.unlockedLine - 1].nameKey) })}</p>
+                <p className="leading-relaxed">{t(STORY[result.unlockedLine - 1])}</p>
               </div>
             )}
             {result.practiceOffer && (
               <div className="border-2 border-white/50 p-2 mt-3 text-[9px]">
-                <p className="mb-2">Want an easy practice run on line {result.round.line - 1}? You keep your line.</p>
+                <p className="mb-2">{t('games.tot.practiceOffer', { line: result.round.line - 1 })}</p>
                 <button type="button" className="min-h-[44px] border-2 border-[var(--nes-green)] px-3 text-[var(--nes-green)]"
-                  onClick={() => { setLine(result.round.line - 1); go('menu'); }}>PRACTICE RUN</button>
+                  onClick={() => { setLine(result.round.line - 1); go('menu'); }}>{t('games.tot.practiceRun')}</button>
               </div>
             )}
-            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">The headband signal was poor for most of this round, so it is not counted in your progress.</p>}
-            {demo && <p className="text-[8px] opacity-70 mt-2">Demo mode — not saved</p>}
+            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">{t('games.tot.poor')}</p>}
+            {demo && <p className="text-[8px] opacity-70 mt-2">{t('games.tot.demoNotSaved')}</p>}
             <div className="mt-4">
               {!dayDone ? (
                 <GameEndActions onPlayAgain={() => go('menu')} sessionId={result.sessionId} game={GAME} seconds={result.round.sec} />
               ) : (
                 <>
-                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">SEE YOU!</button>
+                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">{t('games.tot.seeYou')}</button>
                   <div className="mt-4 text-left"><ParentReport sessionId={result.sessionId} game={GAME} seconds={result.round.sec} /></div>
                 </>
               )}
@@ -776,24 +778,24 @@ export function TrainOfThoughts() {
       )}
 
       {modal === 'story' && (
-        <RetroModal title={`CHAPTER ${chapter}`} cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('games.tot.chapter', { n: chapter })} cancelLabel={t('games.tot.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="text-[var(--nes-yellow)] mb-2">{LINES[chapter - 1].name}</p>
-            <p>{STORY[chapter - 1]}</p>
+            <p className="text-[var(--nes-yellow)] mb-2">{t(LINES[chapter - 1].nameKey)}</p>
+            <p>{t(STORY[chapter - 1])}</p>
           </div>
         </RetroModal>
       )}
 
       {modal === 'parent' && card && (
-        <RetroModal title="PARENT CARD" cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('games.tot.parentCard')} cancelLabel={t('games.tot.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="mb-2 opacity-80">Last 7 days. This is a calm-practice game, not a medical test.</p>
-            <p>Rounds: {card.rounds} on {card.days} day{card.days === 1 ? '' : 's'}</p>
-            <p>Calm time: {card.calmPct == null ? '—' : `${Math.round(card.calmPct * 100)}%`}</p>
-            <p>Longest calm streak: {Math.round(card.longestStreak)} s</p>
-            <p>Goal level: {card.goalLevel}{card.goalLevelWeekAgo != null ? ` (a week ago: ${card.goalLevelWeekAgo})` : ''}</p>
-            <p>New passengers: {card.newPassengers}</p>
-            <p className="mt-2 text-[var(--nes-yellow)]">{card.talk}</p>
+            <p className="mb-2 opacity-80">{t('games.tot.cardIntro')}</p>
+            <p>{t('games.tot.cardRounds', { rounds: card.rounds, n: card.days })}</p>
+            <p>{t('games.tot.cardCalmTime', { pct: card.calmPct == null ? '—' : `${Math.round(card.calmPct * 100)}%` })}</p>
+            <p>{t('games.tot.cardStreak', { s: Math.round(card.longestStreak) })}</p>
+            <p>{t('games.tot.cardGoal', { level: card.goalLevel })}{card.goalLevelWeekAgo != null ? t('games.tot.cardGoalWeekAgo', { level: card.goalLevelWeekAgo }) : ''}</p>
+            <p>{t('games.tot.cardPassengers', { n: card.newPassengers })}</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t(card.talk)}</p>
           </div>
         </RetroModal>
       )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RetroModal } from './RetroModal';
+import { useT, locale } from '../lib/i18n.js';
 
 /**
  * Game Over modal component with retry and menu options
@@ -12,6 +13,7 @@ import { RetroModal } from './RetroModal';
  */
 export function GameOverModal({ finalScore = 0, onRetry, showScore = true }) {
   const navigate = useNavigate();
+  const t = useT();
 
   const handleRetry = () => {
     if (onRetry) {
@@ -28,9 +30,9 @@ export function GameOverModal({ finalScore = 0, onRetry, showScore = true }) {
 
   return (
     <RetroModal
-      title="GAME OVER"
-      confirmLabel="CHOOSE GAME"
-      cancelLabel="RETRY"
+      title={t('core.over.title')}
+      confirmLabel={t('core.over.chooseGame')}
+      cancelLabel={t('core.over.retry')}
       onConfirm={handleMenu}
       onCancel={handleRetry}
       confirmVisible={true}
@@ -38,17 +40,17 @@ export function GameOverModal({ finalScore = 0, onRetry, showScore = true }) {
       <div className="text-center">
         {showScore && (
           <>
-            <div className="text-[var(--nes-gray)] mb-2">FINAL SCORE</div>
+            <div className="text-[var(--nes-gray)] mb-2">{t('core.over.finalScore')}</div>
             <div
               className="text-4xl text-[var(--nes-yellow)] mb-4"
               style={{ fontFamily: 'var(--font-retro)' }}
             >
-              {finalScore.toLocaleString()}
+              {finalScore.toLocaleString(locale())}
             </div>
           </>
         )}
         <p className="text-xs text-gray-300 leading-relaxed">
-          Keep practicing to improve your focus and achieve higher scores!
+          {t('core.over.practice')}
         </p>
       </div>
     </RetroModal>

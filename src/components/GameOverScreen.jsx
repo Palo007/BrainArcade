@@ -5,6 +5,7 @@ import { useQuality } from '../contexts/QualityContext.jsx';
 import { recordSession, isDemoMode } from '../lib/sessionStore.js';
 import { takePausedSec } from '../hooks/useSignalPause.js';
 import { GameEndActions } from './GameEndActions.jsx';
+import { useT, locale } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 /**
@@ -20,6 +21,7 @@ export function GameOverScreen({
   customMessage,
 }) {
   const navigate = useNavigate();
+  const t = useT();
   const { quality10s } = useQuality();
 
   // Highscore management
@@ -65,35 +67,35 @@ export function GameOverScreen({
   };
 
   return (
-    <RetroModal title="GAME OVER" showFooter={false} onCancel={() => navigate('/games')}>
+    <RetroModal title={t('core.over.title')} showFooter={false} onCancel={() => navigate('/games')}>
       <div style={{ fontFamily: 'var(--font-retro)' }}>
         <div className="text-center mb-4">
-          <div className="text-[var(--nes-gray)] mb-2 text-[8px]">FINAL SCORE</div>
+          <div className="text-[var(--nes-gray)] mb-2 text-[8px]">{t('core.over.finalScore')}</div>
           <div className="text-4xl text-[var(--nes-yellow)] mb-2">
-            {finalScore.toLocaleString()}
+            {finalScore.toLocaleString(locale())}
           </div>
           {customMessage && <p className="text-[9px] text-gray-300 mb-2">{customMessage}</p>}
 
           {isNewHighscore && (
-            <div className="text-[var(--nes-green)] text-[8px] mb-2">NEW HIGHSCORE!</div>
+            <div className="text-[var(--nes-green)] text-[8px] mb-2">{t('core.over.newHigh')}</div>
           )}
 
-          <div className="text-[var(--nes-gray)] mb-1 text-[8px]">HIGHSCORE</div>
+          <div className="text-[var(--nes-gray)] mb-1 text-[8px]">{t('core.over.highscore')}</div>
           <div className="text-xl text-white">
-            {Math.max(finalScore, currentHighscore).toLocaleString()}
+            {Math.max(finalScore, currentHighscore).toLocaleString(locale())}
           </div>
         </div>
 
         {poorSignal && (
           <div className="text-center text-[8px] text-[var(--nes-yellow)] mb-3">
-            The headband signal was poor for most of this round, so this score is not counted in your progress.
+            {t('core.over.poorSignal')}
           </div>
         )}
         {isDemoMode() && (
-          <div className="text-center text-[8px] opacity-70 mb-3">Demo mode — not saved</div>
+          <div className="text-center text-[8px] opacity-70 mb-3">{t('core.over.demo')}</div>
         )}
         {saveFailed && (
-          <div className="text-center text-[8px] text-red-400 mb-3">History full — not saved</div>
+          <div className="text-center text-[8px] text-red-400 mb-3">{t('core.over.historyFull')}</div>
         )}
 
         <GameEndActions onPlayAgain={handleRetry} sessionId={savedId} game={gameName} seconds={playedSec} />

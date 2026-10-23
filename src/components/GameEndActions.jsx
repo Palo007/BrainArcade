@@ -3,12 +3,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ParentReport } from './ParentReport.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 
 export function GameEndActions({ onPlayAgain, sessionId = null, game = null, seconds = 0 }) {
   const navigate = useNavigate();
+  const t = useT();
   return (
     <div style={FONT}>
       <div className="flex gap-3 justify-center flex-wrap">
@@ -17,14 +19,14 @@ export function GameEndActions({ onPlayAgain, sessionId = null, game = null, sec
           onClick={onPlayAgain}
           className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black"
         >
-          PLAY AGAIN
+          {t('core.end.playAgain')}
         </button>
         <button
           type="button"
           onClick={() => navigate('/games')}
           className="border-4 border-white/70 px-4 py-3 text-xs text-white hover:bg-white hover:text-black"
         >
-          CHOOSE GAME
+          {t('core.over.chooseGame')}
         </button>
       </div>
       <div className="mt-4">

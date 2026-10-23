@@ -8,6 +8,7 @@ import { MuseCircularBuffer } from 'web-muse/src/lib/CircularBuffer.js';
 import { FnirsProcessor } from './fnirs.js';
 import { startRelay, relaySend, onRelay } from './relaySocket.js';
 import { diag, initDiag } from './diagLog.js';
+import { t } from './i18n.js';
 
 export { relayAvailable } from './relaySocket.js';
 
@@ -150,7 +151,7 @@ class PhoneRelayDevice {
       if (Date.now() - start > FIRST_DATA_TIMEOUT_MS) {
         diag('pc-relay-no-data');
         this.disconnect();
-        throw new Error('No data from phone. Connect the Muse on the phone first and keep that page open.');
+        throw new Error(t('core.relay.noData'));
       }
       await new Promise((r) => setTimeout(r, 200));
     }

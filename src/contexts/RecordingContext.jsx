@@ -42,9 +42,9 @@ export function RecordingProvider({ children }) {
     s.rec.stop();
     try {
       const { file, size, partial } = await s.sink.finish();
-      const warn = reason === 'limit' ? 'Recording stopped at the 30 minute limit (no disk storage available).'
-        : reason === 'full' ? 'Recording stopped: device storage is almost full.'
-        : reason === 'failed' || partial ? 'Recording was cut short by a storage error. The file is saved up to that point.'
+      const warn = reason === 'limit' ? 'core.rec.w.limit'
+        : reason === 'full' ? 'core.rec.w.full'
+        : reason === 'failed' || partial ? 'core.rec.w.failed'
         : null;
       setResult({ file, name: s.name, size, sink: s.sink, warning: warn });
       setWarning(null);
@@ -108,7 +108,7 @@ export function RecordingProvider({ children }) {
         accGyro: (r) => rec.setAccGyro(r),
       };
       unsubs.push(() => { if (muse) muse.recTap = null; });
-      if (sink.kind === 'blob') setWarning('No disk storage here: recording is limited to 30 minutes.');
+      if (sink.kind === 'blob') setWarning('core.rec.w.blob');
       let warned = sink.kind === 'blob';
       const timer = setInterval(() => {
         const secs = rec.seconds;
@@ -116,7 +116,7 @@ export function RecordingProvider({ children }) {
         if (sink.failure) stopSession('failed');
         else if (secs >= sink.maxSeconds) stopSession('limit');
         else if (sink.size >= sink.maxBytes) stopSession('full');
-        else if (!warned && sink.size >= sink.warnBytes) { warned = true; setWarning('Device storage is nearly full: recording will stop soon.'); }
+        else if (!warned && sink.size >= sink.warnBytes) { warned = true; setWarning('core.rec.w.nearly'); }
       }, 500);
       unsubs.push(() => clearInterval(timer));
 

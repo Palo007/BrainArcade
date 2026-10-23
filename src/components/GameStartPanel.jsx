@@ -2,6 +2,7 @@
 // Shared START screen overlay for every PLAY game.
 import React from 'react';
 import { SignalCheck } from './ElectrodeOverlay.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -16,7 +17,8 @@ export function OptionLabel({ children }) {
 }
 
 // bottomSpace: the game has buttons at the bottom edge (SOUND, STOP); on upright phones the panel stays above them
-export function GameStartPanel({ title, children, onStart, best = 0, startLabel = 'START', signalNote, onRecalibrate, bottomSpace = false }) {
+export function GameStartPanel({ title, children, onStart, best = 0, startLabel, signalNote, onRecalibrate, bottomSpace = false }) {
+  const t = useT();
   return (
     <div className={`absolute inset-0 z-40 flex items-center justify-center px-4 pt-24 pb-4 ${bottomSpace ? 'phone-port:pb-20' : ''} pointer-events-none`}>
       <div
@@ -35,7 +37,7 @@ export function GameStartPanel({ title, children, onStart, best = 0, startLabel 
               onClick={onStart}
               className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black"
             >
-              {startLabel}
+              {startLabel ?? t('core.start.start')}
             </button>
             {onRecalibrate && (
               <div>
@@ -44,13 +46,13 @@ export function GameStartPanel({ title, children, onStart, best = 0, startLabel 
                   onClick={onRecalibrate}
                   className="border-2 border-white/60 px-3 py-2 text-[10px] text-white mt-3"
                 >
-                  RECALIBRATE
+                  {t('core.start.recalibrate')}
                 </button>
               </div>
             )}
           </>
         )}
-        {best > 0 && <p className="text-[9px] text-gray-400 mt-3">BEST {best}</p>}
+        {best > 0 && <p className="text-[9px] text-gray-400 mt-3">{t('core.start.best', { n: best })}</p>}
       </div>
     </div>
   );

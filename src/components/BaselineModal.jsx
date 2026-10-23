@@ -5,9 +5,10 @@ import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { SKIP_SECONDS } from '../lib/calibrationPrefs.js';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
-export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
+export function BaselineModal({ title } = {}) {
   const {
     visible,
     hide,
@@ -26,6 +27,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
     skipping,
     baselineError,
   } = useBaseline();
+  const t = useT();
   const [noteOpen, setNoteOpen] = useState(false);
   const calKey = calibration ? `${calibration.paf}|${calibration.reactivity}` : '';
   // Short note after calibration: poor headband fit (low reactivity) or no clear alpha peak
@@ -46,9 +48,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
         style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60, width: 'min(420px, calc(100vw - 24px))', maxWidth: 420, cursor: 'pointer', fontFamily: 'var(--font-retro)' }}
         className="bg-black border-2 border-[var(--nes-yellow)] p-3 text-[9px] leading-relaxed"
       >
-        {calibration.fitWarning
-          ? 'Check headband fit: your alpha waves barely changed when you opened your eyes. Make sure the sensors touch your skin.'
-          : 'No clear alpha peak found, so standard 8-13 Hz bands are used.'}
+        {calibration.fitWarning ? t('core.base.fitWarning') : t('core.base.noPeak')}
       </div>
     );
   }
@@ -68,16 +68,16 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
 
   return (
     <RetroModal
-      title={title}
+      title={title ?? t('core.base.title')}
       onCancel={inProgress ? cancel : handleCancel}
       onConfirm={inProgress ? undefined : (ready ? () => start(secondsRequested, { mode: 'full' }) : undefined)}
-      confirmLabel={inProgress ? undefined : (ready ? 'START' : 'waiting...')}
+      confirmLabel={inProgress ? undefined : (ready ? t('core.base.start') : t('core.base.waiting'))}
       confirmVisible={!inProgress}
       confirmDisabled={!inProgress && !ready}
       showFooter={true}
       leftActions={!inProgress && ready && savedCalibration ? (
         <button type="button" className="nes-btn" onClick={() => start(secondsRequested, { mode: 'quick' })}>
-          QUICK ({secondsRequested}s)
+          {t('core.base.quick', { s: secondsRequested })}
         </button>
       ) : null}
     >
@@ -93,48 +93,48 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
         {/* Instructions and status below the cross */}
         {skipping ? (
           <>
-            <p className="text-[12px] text-[var(--nes-yellow)] mb-2">Skipping calibration…</p>
+            <p className="text-[12px] text-[var(--nes-yellow)] mb-2">{t('core.base.skipping')}</p>
             <p className="text-[10px] mb-3">
               {savedCalibration
-                ? `Using the last alpha peak (${savedCalibration.paf.toFixed(1)} Hz) and the last few seconds of brain data.`
-                : 'No saved alpha peak: standard bands and the last few seconds of brain data are used.'}
+                ? t('core.base.skipSaved', { paf: savedCalibration.paf.toFixed(1) })
+                : t('core.base.skipNone')}
             </p>
           </>
         ) : eyesClosed ? (
           <>
-            <p className="text-[12px] text-[var(--nes-yellow)] mb-2">Step 1 of 2: close your eyes</p>
-            <p className="text-[10px] mb-3">Close your eyes like a sleeping bunny and stay very still. zZz... A soft chime will tell you when to wake up.</p>
+            <p className="text-[12px] text-[var(--nes-yellow)] mb-2">{t('core.base.step1')}</p>
+            <p className="text-[10px] mb-3">{t('core.base.step1Text')}</p>
           </>
         ) : eyesOpen ? (
           <>
-            <p className="text-[12px] text-[var(--nes-green)] mb-2">Step 2 of 2: open your eyes</p>
-            <p className="text-[10px] mb-3">Wake up, little bunny! Look at the cross and stay still.</p>
+            <p className="text-[12px] text-[var(--nes-green)] mb-2">{t('core.base.step2')}</p>
+            <p className="text-[10px] mb-3">{t('core.base.step2Text')}</p>
           </>
         ) : (
           <>
-            <p className="text-[10px] text-[var(--nes-yellow)] mb-2">This game needs a resting baseline.</p>
+            <p className="text-[10px] text-[var(--nes-yellow)] mb-2">{t('core.base.need')}</p>
             {!inProgress && twoPhase && (
-              <p className="text-[10px] mb-3">First close your eyes like a sleeping bunny for {secondsRequested}s, then open them and look at the cross for {secondsRequested}s. A soft chime tells you when to open.</p>
+              <p className="text-[10px] mb-3">{t('core.base.twoPhase', { s: secondsRequested })}</p>
             )}
-            {!inProgress && !twoPhase && <p className="text-[10px] mb-3">Focus on the cross, stay still and relaxed.</p>}
+            {!inProgress && !twoPhase && <p className="text-[10px] mb-3">{t('core.base.onePhase')}</p>}
             {!inProgress && savedCalibration && (
-              <p className="text-[10px] mb-3 opacity-80">Quick mode keeps your last alpha peak ({savedCalibration.paf.toFixed(1)} Hz) and only needs the eyes-open part.</p>
+              <p className="text-[10px] mb-3 opacity-80">{t('core.base.quickNote', { paf: savedCalibration.paf.toFixed(1) })}</p>
             )}
           </>
         )}
         {baselineError && !inProgress && (
-          <p className="text-[10px] mb-3 text-[var(--nes-red)]" role="alert">{baselineError}</p>
+          <p className="text-[10px] mb-3 text-[var(--nes-red)]" role="alert">{baselineError.startsWith('core.') ? t(baselineError) : baselineError}</p>
         )}
-        {!skipping && <p className="text-[10px] mb-3">Duration: {secondsRequested}s per step</p>}
+        {!skipping && <p className="text-[10px] mb-3">{t('core.base.duration', { s: secondsRequested })}</p>}
         {!inProgress && (
           <>
             <button type="button" className="nes-btn mb-2" onClick={() => start(SKIP_SECONDS, { mode: 'skip' })}>
-              SKIP CALIBRATION
+              {t('core.base.skipBtn')}
             </button>
-            <p className="text-[10px] mb-2 opacity-80">SKIP starts the game now. Results are less exact: the full calibration finds this child's own alpha peak and resting level.</p>
+            <p className="text-[10px] mb-2 opacity-80">{t('core.base.skipNote')}</p>
             <label className="flex items-center gap-2 text-[10px] mb-3 cursor-pointer min-h-[40px]">
               <input type="checkbox" className="w-5 h-5" checked={autoSkip} onChange={(e) => setAutoSkip(e.target.checked)} />
-              Always skip for this player (RECALIBRATE still runs the full test)
+              {t('core.base.autoSkip')}
             </label>
           </>
         )}
@@ -153,7 +153,7 @@ export function BaselineModal({ title = 'BASELINE REQUIRED' }) {
           <div className="absolute inset-0 text-center text-[10px] leading-4">{pct}%</div>
         </div>
         {inProgress && (
-          <div className="mt-3 text-[10px] opacity-80">Remain: {remaining}s • Stay relaxed and still</div>
+          <div className="mt-3 text-[10px] opacity-80">{t('core.base.remain', { s: remaining })}</div>
         )}
       </div>
     </RetroModal>

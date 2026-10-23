@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // Session metrics for Focus Ball (pure functions, no React).
 // samples: [{ t: seconds since session start, v: 0..1 ball height, ok: signal quality good }]
+import { t } from './i18n.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const MAX_STEP = 1; // seconds; a longer gap between samples is not counted as one long sample
@@ -12,15 +13,15 @@ const STUCK_SHARE = 0.8; // more than this share of ok-time at one limit = signa
 
 function pickInsight({ score, energy, flow, increase, flowSec }) {
   const parts = [];
-  if (score < 30) parts.push('NICE TRY!');
-  if (flowSec >= 10) parts.push(`You held focus for ${Math.round(flowSec)} s in a row!`);
+  if (score < 30) parts.push(t('report.insight.niceTry'));
+  if (flowSec >= 10) parts.push(t('report.insight.held', { sec: Math.round(flowSec) }));
   const weakest = [
-    ['energy', energy, 'Try to keep the ball a bit higher on average.'],
-    ['flow', flow, 'Next time, try to keep the ball up a little longer without a drop.'],
-    ['increase', increase ?? 0, 'When the ball drops, take a breath and start your counting again — it comes back faster with practice.'],
+    ['energy', energy, t('report.insight.energy')],
+    ['flow', flow, t('report.insight.flow')],
+    ['increase', increase ?? 0, t('report.insight.increase')],
   ].sort((a, b) => a[1] - b[1])[0];
   if (parts.length === 0 || weakest[1] < 85) parts.push(weakest[2]);
-  if (parts.length === 0) parts.push('Great job!');
+  if (parts.length === 0) parts.push(t('report.insight.great'));
   return parts.join(' ');
 }
 

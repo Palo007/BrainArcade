@@ -6,6 +6,7 @@ import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
 import { usePlaySetup } from '../contexts/PlaySetupContext.jsx';
 import { PlaySetupPicker } from './PlaySetup.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 import background from '../assets/background.JPG';
 
@@ -15,6 +16,7 @@ import background from '../assets/background.JPG';
  */
 export function StartScreen() {
   const navigate = useNavigate();
+  const t = useT();
   const { isConnected } = useEEG();
   const { ready, recheck15sBad } = useQuality();
   const [passedSetup, setPassedSetup] = useState(false);
@@ -145,7 +147,7 @@ export function StartScreen() {
             className="text-sm sm:text-base rgb-text-fast text-white"
             style={{ fontFamily: 'var(--font-retro)' }}
           >
-            {isConnected ? 'REC ●' : 'STANDBY'}
+            {isConnected ? 'REC ●' : t('core.start.standby')}
           </div>
         </div>
 
@@ -155,9 +157,9 @@ export function StartScreen() {
             onClick={() => navigate('/about')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: 'var(--font-retro)' }}
-            aria-label="Open About"
+            aria-label={t('core.start.aboutAria')}
           >
-            ABOUT
+            {t('core.start.about')}
           </button>
           <a
             href="https://github.com/itayinbarr/brain-arcade"
@@ -165,7 +167,7 @@ export function StartScreen() {
             rel="noopener noreferrer"
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4"
             style={{ fontFamily: 'var(--font-retro)' }}
-            aria-label="Open GitHub Repository"
+            aria-label={t('core.start.githubAria')}
           >
             GITHUB
           </a>
@@ -173,17 +175,17 @@ export function StartScreen() {
             onClick={() => navigate('/privacy')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: 'var(--font-retro)' }}
-            aria-label="Open Privacy Policy"
+            aria-label={t('core.start.privacyAria')}
           >
-            PRIVACY POLICY
+            {t('core.start.privacy')}
           </button>
           <button
             onClick={() => navigate('/viewer')}
             className="text-[10px] text-xs phone-port:text-[9px] phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer"
             style={{ fontFamily: 'var(--font-retro)' }}
-            aria-label="Open the recording viewer"
+            aria-label={t('core.start.viewerAria')}
           >
-            VIEWER
+            {t('core.nav.viewer')}
           </button>
         </div>
 
@@ -197,7 +199,7 @@ export function StartScreen() {
                   className="text-xl short-land:text-[10px] phone-port:text-[11px] phone-port:leading-relaxed phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white rgb-text uppercase"
                   style={{ fontFamily: 'var(--font-retro)' }}
                 >
-                  Use your thoughts as a joystick
+                  {t('core.start.subtitle')}
                 </p>
               </div>
 
@@ -212,9 +214,9 @@ export function StartScreen() {
                   className="text-md short-land:text-[8px] phone-port:text-[10px] phone-port:opacity-90 phone-port:bg-black/70 phone-port:px-2 phone-port:py-1 phone-port:inline-block text-white opacity-60"
                   style={{ fontFamily: 'var(--font-retro)', lineHeight: '1.8' }}
                 >
-                  CONNECT YOUR MUSE DEVICE 
+                  {t('core.start.connectLine1')}
                   <br />
-                  OR SIMULATE BRAIN DATA
+                  {t('core.start.connectLine2')}
 
                 </p>
               </div>
@@ -226,9 +228,9 @@ export function StartScreen() {
                   onClick={() => navigate('/viewer')}
                   className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] hover:bg-[var(--nes-yellow)] hover:text-black bg-transparent text-base short-land:text-[10px] px-8 py-4 short-land:px-4 short-land:py-2 phone-port:text-[12px] phone-port:leading-relaxed phone-port:px-3 phone-port:py-3 phone-port:w-full phone-port:min-h-[52px] phone-port:bg-black/85"
                   style={{ fontFamily: 'var(--font-retro)' }}
-                  aria-label="Open the recording viewer"
+                  aria-label={t('core.start.viewerAria')}
                 >
-                  VIEW A RECORDING
+                  {t('core.start.viewRecording')}
                 </button>
               </div>
             </>
@@ -241,7 +243,7 @@ export function StartScreen() {
                     className="text-xl text-white rgb-text"
                     style={{ fontFamily: 'var(--font-retro)' }}
                   >
-                    loading quality check...
+                    {t('core.start.loadingQc')}
                   </p>
                 </div>
               ) : hasEnteredStartPhase || (ready && !showLoadingQC && passedSetup && !showingRecheck) ? (
@@ -261,9 +263,9 @@ export function StartScreen() {
                       onClick={() => setSetupOpen(true)}
                       className="text-[10px] short-land:text-[8px] text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer min-h-[44px] short-land:min-h-[32px] bg-black/70 px-2"
                       style={{ fontFamily: 'var(--font-retro)' }}
-                      aria-label={`Play setup: ${setupInfo.label}. Change`}
+                      aria-label={t('core.start.setupAria', { label: t(setupInfo.labelKey) })}
                     >
-                      <span aria-hidden="true">{setupInfo.icon}</span> {setupInfo.label} · CHANGE
+                      <span aria-hidden="true">{setupInfo.icon}</span> {t(setupInfo.labelKey)}{t('core.start.change')}
                     </button>
                   </div>
                   )}
@@ -273,14 +275,14 @@ export function StartScreen() {
                     className="retro-button border-white hover:bg-white hover:text-[#2b52ff] text-lg sm:text-xl px-8 py-4 bg-transparent text-white mt-12 short-land:mt-2"
                     style={{ fontFamily: 'var(--font-retro)' }}
                   >
-                    START
+                    {t('core.start.start')}
                   </button>
 
                   <p
                     className="text-xs text-white opacity-60 mt-8 short-land:mt-2 blink"
                     style={{ fontFamily: 'var(--font-retro)' }}
                   >
-                    PRESS START
+                    {t('core.start.press')}
                   </p>
                 </div>
               ) : (

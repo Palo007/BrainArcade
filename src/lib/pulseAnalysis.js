@@ -417,9 +417,11 @@ export function analyzePulse(optics, { gyro = null, duration } = {}) {
   for (let k = 0; k < ibi.n; k++) if (ibi.ok[k]) { nn.t.push(ibi.t[k]); nn.v.push(ibi.v[k]); }
 
   let hrvReason = null;
+  let hrvReasonCode = null; // stable code for translated UI: 'coarse' | 'fewBeats'
   if (!indexClock) hrvReason = `optics only ${effFs.toFixed(1)} unique samples/s (needs ≥ ${HRV_MIN_FS}; recorded before the recorder fix) - beat timing too coarse`;
+  if (hrvReason) hrvReasonCode = 'coarse';
   const session = hrvMetrics(ibi, -Infinity, Infinity, { lfhf: true });
-  if (!hrvReason && session.pairs < HRV_MIN_PAIRS) hrvReason = 'too few clean beats';
+  if (!hrvReason && session.pairs < HRV_MIN_PAIRS) { hrvReason = 'too few clean beats'; hrvReasonCode = 'fewBeats'; }
   const hrvAvailable = !hrvReason;
 
   const resp = respirationTrack({
@@ -433,7 +435,7 @@ export function analyzePulse(optics, { gyro = null, duration } = {}) {
     effFs, clockFs: clock.fs, clockResidualMs: clock.residualMs, timebase: indexClock ? 'sample index' : 'arrival time',
     segments: segs.length, covered, duration: dur, beats: beatT.length,
     ibi,
-    hrvAvailable, hrvReason,
+    hrvAvailable, hrvReason, hrvReasonCode,
     hrv: hrvAvailable ? session : null,
     rmssd: hrvAvailable ? rmssdTrack(ibi, dur) : null,
     resp,

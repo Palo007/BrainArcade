@@ -3,6 +3,7 @@
 // first vs latest calibration, alpha reactivity, plain-language summary and CSV export. No medical claims.
 import React, { useMemo } from 'react';
 import { loadPafHistory, pafTrend, SPEC_GRID, PAF_STABLE_HZ, REACTIVITY_MIN } from '../lib/paf.js';
+import { useT, locale } from '../lib/i18n.js';
 
 const W = 600;
 const PAD = { l: 58, r: 16, t: 16, b: 30 };
@@ -12,7 +13,7 @@ const GREY = '#9ca3af';
 const GRID = 'rgba(255,255,255,0.15)';
 const fin = (v) => typeof v === 'number' && Number.isFinite(v);
 const f1 = (v) => (fin(v) ? v.toFixed(1) : '-');
-const dShort = (iso) => new Date(iso).toLocaleDateString([], { day: 'numeric', month: 'short' });
+const dShort = (iso) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 const path = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
 
 function scale(d0, d1, r0, r1) {
@@ -20,6 +21,7 @@ function scale(d0, d1, r0, r1) {
 }
 
 function TrendByDate({ list, trend }) {
+  const t = useT();
   const h = 190;
   const ts = list.map((e) => Date.parse(e.date));
   const vals = list.flatMap((e) => [e.paf, e.pafLo, e.pafHi, e.cog]).filter(fin);
@@ -32,7 +34,7 @@ function TrendByDate({ list, trend }) {
   for (let v = yLo; v <= yHi + 1e-9; v += yHi - yLo > 3 ? 1 : 0.5) ticks.push(v);
   const ref = trend.first.paf;
   return (
-    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label="Alpha peak per calibration over time">
+    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label={t('report.alpha.trendAria')}>
       <rect x={PAD.l} width={W - PAD.l - PAD.r} y={y(Math.min(yHi, ref + PAF_STABLE_HZ))}
         height={Math.max(0, y(Math.max(yLo, ref - PAF_STABLE_HZ)) - y(Math.min(yHi, ref + PAF_STABLE_HZ)))} fill="rgba(125,255,125,0.08)" />
       {ticks.map((v) => (
@@ -56,6 +58,7 @@ function TrendByDate({ list, trend }) {
 }
 
 function SpectrumCompare({ first, last }) {
+  const t = useT();
   const h = 170;
   const fx = (i) => SPEC_GRID.from + i * SPEC_GRID.step;
   const all = [...(first?.spectrum || []), ...last.spectrum];
@@ -64,7 +67,7 @@ function SpectrumCompare({ first, last }) {
   const y = scale(yLo, yHi, h - PAD.b, PAD.t);
   const line = (s) => path(s.map((v, i) => [x(fx(i)), y(v)]));
   return (
-    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label="Alpha spectrum, first and latest calibration">
+    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label={t('report.alpha.spectrumAria')}>
       <rect x={x(Math.max(SPEC_GRID.from, last.paf - 2))} width={x(last.paf + 2) - x(last.paf - 2)} y={PAD.t} height={h - PAD.t - PAD.b} fill="rgba(255,107,157,0.08)" />
       {[0, yHi].map((v) => (
         <g key={v}>
@@ -81,13 +84,14 @@ function SpectrumCompare({ first, last }) {
 }
 
 function ReactivityChart({ list }) {
+  const t = useT();
   const h = 110;
   const pts = list.filter((e) => fin(e.alphaReactivity));
   const max = Math.max(2, ...pts.map((e) => e.alphaReactivity));
   const x = scale(0, pts.length - 1, PAD.l + 8, W - PAD.r - 8);
   const y = scale(0, max, h - PAD.b, PAD.t);
   return (
-    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label="Alpha reactivity per calibration">
+    <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label={t('report.alpha.reactAria')}>
       <line x1={PAD.l} x2={W - PAD.r} y1={y(REACTIVITY_MIN)} y2={y(REACTIVITY_MIN)} stroke="#ffd84a" strokeDasharray="4 3" opacity="0.6" />
       <text x={PAD.l - 6} y={y(REACTIVITY_MIN) + 3} textAnchor="end" fontSize="15" fill={GREY}>{REACTIVITY_MIN}x</text>
       <text x={PAD.l - 6} y={y(max) + 3} textAnchor="end" fontSize="15" fill={GREY}>{max.toFixed(1)}x</text>
@@ -97,20 +101,20 @@ function ReactivityChart({ list }) {
   );
 }
 
-function summaryLines(trend, last) {
+function summaryLines(trend, last, t) {
   const out = [];
-  const range = fin(last.pafLo) && fin(last.pafHi) && last.pafHi - last.pafLo >= 0.1 ? ` (most windows ${f1(last.pafLo)}-${f1(last.pafHi)} Hz)` : '';
-  out.push(`Latest alpha peak: ${f1(last.paf)} Hz${range}.`);
+  const range = fin(last.pafLo) && fin(last.pafHi) && last.pafHi - last.pafLo >= 0.1 ? t('report.alpha.range', { lo: f1(last.pafLo), hi: f1(last.pafHi) }) : '';
+  out.push(t('report.alpha.latest', { hz: f1(last.paf), range }));
   if (trend.n < 2) {
-    out.push('Do a full calibration (eyes closed + eyes open) on other days to see a trend.');
+    out.push(t('report.alpha.needMore'));
     return out;
   }
   const sign = trend.change >= 0 ? '+' : '';
   out.push(trend.stable
-    ? `Stable: ${sign}${trend.change.toFixed(1)} Hz since the first of ${trend.n} calibrations. Changes under ${PAF_STABLE_HZ} Hz are normal day-to-day variation.`
-    : `Changed by ${sign}${trend.change.toFixed(1)} Hz since the first of ${trend.n} calibrations (${Math.round(trend.days)} days).`);
-  if (fin(trend.slopePerMonth)) out.push(`Slow trend: ${trend.slopePerMonth >= 0 ? '+' : ''}${trend.slopePerMonth.toFixed(2)} Hz per month.`);
-  if (fin(trend.jitter) && trend.jitter > 0.8) out.push('Values jump a lot between calibrations. Check headband fit and keep the eyes-closed part quiet.');
+    ? t('report.alpha.stable', { change: `${sign}${trend.change.toFixed(1)}`, count: trend.n, hz: PAF_STABLE_HZ })
+    : t('report.alpha.changed', { change: `${sign}${trend.change.toFixed(1)}`, count: trend.n, n: Math.round(trend.days) }));
+  if (fin(trend.slopePerMonth)) out.push(t('report.alpha.slow', { v: `${trend.slopePerMonth >= 0 ? '+' : ''}${trend.slopePerMonth.toFixed(2)}` }));
+  if (fin(trend.jitter) && trend.jitter > 0.8) out.push(t('report.alpha.jitter'));
   return out;
 }
 
@@ -126,6 +130,7 @@ function exportCsv(list) {
 
 // panelClass: outer panel styling of the host page. childKey: re-read history when the child changes.
 export function AlphaPeakReport({ panelClass = '', childKey }) {
+  const t = useT();
   const list = useMemo(() => loadPafHistory(), [childKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const trend = useMemo(() => pafTrend(list), [list]);
   if (!trend) return null;
@@ -135,34 +140,34 @@ export function AlphaPeakReport({ panelClass = '', childKey }) {
   const hasReact = list.filter((e) => fin(e.alphaReactivity)).length > 1;
   return (
     <div className={panelClass}>
-      <h3 className="text-xs text-[var(--nes-yellow)] mb-2">ALPHA PEAK OVER TIME (Hz)</h3>
+      <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.alpha.title')}</h3>
       <ul className="list-disc pl-5 space-y-1 text-[10px] leading-relaxed mb-3">
-        {summaryLines(trend, trend.last).map((t) => <li key={t}>{t}</li>)}
+        {summaryLines(trend, trend.last, t).map((line) => <li key={line}>{line}</li>)}
       </ul>
       <TrendByDate list={list.filter((e) => fin(e.paf))} trend={trend} />
       <p className="text-[8px] text-gray-400 mt-1 mb-3">
-        <span style={{ color: PINK }}>●</span> peak, bar = spread &nbsp; <span style={{ color: CYAN }}>○</span> centre of gravity &nbsp; green = ±{PAF_STABLE_HZ} Hz around the first
+        <span style={{ color: PINK }}>●</span> {t('report.alpha.legendPeak')} &nbsp; <span style={{ color: CYAN }}>○</span> {t('report.alpha.legendCog')} &nbsp; {t('report.alpha.legendGreen', { hz: PAF_STABLE_HZ })}
       </p>
       {lastSpec && (
         <>
-          <h3 className="text-xs text-[var(--nes-yellow)] mb-2">ALPHA SPECTRUM</h3>
+          <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.alpha.spectrumTitle')}</h3>
           <SpectrumCompare first={firstSpec} last={lastSpec} />
           <p className="text-[8px] text-gray-400 mt-1 mb-3">
-            Power above the 1/f background. <span style={{ color: PINK }}>━</span> latest ({dShort(lastSpec.date)}){firstSpec && <> &nbsp; <span style={{ color: GREY }}>┅</span> first ({dShort(firstSpec.date)})</>}. A taller, sharper hump = clearer alpha.
+            {t('report.alpha.specBg')} <span style={{ color: PINK }}>━</span> {t('report.alpha.specLatest', { date: dShort(lastSpec.date) })}{firstSpec && <> &nbsp; <span style={{ color: GREY }}>┅</span> {t('report.alpha.specFirst', { date: dShort(firstSpec.date) })}</>}. {t('report.alpha.specHump')}
           </p>
         </>
       )}
       {hasReact && (
         <>
-          <h3 className="text-xs text-[var(--nes-yellow)] mb-2">ALPHA REACTIVITY (EYES CLOSED / OPEN)</h3>
+          <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.alpha.reactTitle')}</h3>
           <ReactivityChart list={list} />
-          <p className="text-[8px] text-gray-400 mt-1 mb-3">Above the dashed line = good contact. Below = check headband fit.</p>
+          <p className="text-[8px] text-gray-400 mt-1 mb-3">{t('report.alpha.reactNote')}</p>
         </>
       )}
       <details className="text-[9px]">
-        <summary className="cursor-pointer text-gray-300">All calibrations ({list.length})</summary>
+        <summary className="cursor-pointer text-gray-300">{t('report.alpha.all', { n: list.length })}</summary>
         <table className="w-full mt-2 text-[8px]">
-          <thead><tr className="text-gray-400 text-left"><th>Date</th><th>Peak</th><th>Spread</th><th>CoG</th><th>Agree</th><th>React.</th></tr></thead>
+          <thead><tr className="text-gray-400 text-left"><th>{t('report.alpha.colDate')}</th><th>{t('report.alpha.colPeak')}</th><th>{t('report.alpha.colSpread')}</th><th>{t('report.alpha.colCog')}</th><th>{t('report.alpha.colAgree')}</th><th>{t('report.alpha.colReact')}</th></tr></thead>
           <tbody>
             {list.slice().reverse().map((e) => (
               <tr key={e.date}>
@@ -173,7 +178,7 @@ export function AlphaPeakReport({ panelClass = '', childKey }) {
             ))}
           </tbody>
         </table>
-        <button type="button" onClick={() => exportCsv(list)} className="border-4 border-white/40 px-3 py-2 mt-2 text-[9px]">EXPORT CSV</button>
+        <button type="button" onClick={() => exportCsv(list)} className="border-4 border-white/40 px-3 py-2 mt-2 text-[9px]">{t('report.alpha.export')}</button>
       </details>
     </div>
   );

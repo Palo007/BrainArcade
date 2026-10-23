@@ -3,6 +3,7 @@
 // Sources: Athena adapter and phone relay keep {values:[pct]} in _battery; the classic Muse keeps batteryLevel.
 import React, { useEffect, useState } from 'react';
 import { useEEG } from '../contexts/MuseContext.jsx';
+import { useT } from '../lib/i18n.js';
 
 const POLL_MS = 5000;
 
@@ -27,13 +28,14 @@ function useHeadbandBattery() {
 
 export function HeadbandBattery({ className = '' }) {
   const pct = useHeadbandBattery();
+  const t = useT();
   if (pct == null) return null;
   const color = pct <= 15 ? 'var(--nes-red)' : pct <= 30 ? 'var(--nes-yellow)' : 'var(--nes-green)';
   return (
     <span
       role="status"
-      title={`Headband battery ${pct}%`}
-      aria-label={`Headband battery ${pct} percent`}
+      title={t('core.battery.title', { pct })}
+      aria-label={t('core.battery.aria', { pct })}
       style={{ fontFamily: 'var(--font-retro)', borderColor: color, color }}
       className={`inline-flex items-center gap-1 border-2 px-2 min-h-[36px] text-[10px] bg-black/40 whitespace-nowrap ${className}`}
     >

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useRecording } from '../contexts/RecordingContext.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 const fmtTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -19,6 +20,8 @@ export function RecordingControl() {
     recovery, canShareRecovery, recoverySave, recoveryShare, recoveryDiscard, recoveryLater,
   } = useRecording();
   const { pathname } = useLocation();
+  const t = useT();
+  const tx = (m) => (typeof m === 'string' && m.startsWith('core.') ? t(m) : m); // texts from the context are i18n keys
   const prevGame = useRef(null);
   const [expanded, setExpanded] = useState(false); // landscape phones only: idle widget starts collapsed
 
@@ -37,14 +40,14 @@ export function RecordingControl() {
 
   if (status === 'done' && result) {
     return (
-      <div className={box} style={font} role="dialog" aria-label="Recording finished">
-        <div className="text-[var(--nes-green)]">RECORDING SAVED ON THIS DEVICE</div>
+      <div className={box} style={font} role="dialog" aria-label={t('core.rec.finished')}>
+        <div className="text-[var(--nes-green)]">{t('core.rec.saved')}</div>
         <div className="opacity-70 mt-1 break-all">{result.name} ({fmtSize(result.size)})</div>
-        {result.warning && <div className="mt-1 text-yellow-300">WARNING: {result.warning}</div>}
-        <button type="button" className={btn} onClick={download}>SAVE FILE</button>
-        {canShare && <button type="button" className={btn} onClick={share}>SHARE</button>}
-        <button type="button" className={btn} onClick={dismiss}>DELETE</button>
-        {error && <div className="mt-1 text-red-400">{error}</div>}
+        {result.warning && <div className="mt-1 text-yellow-300">{t('core.rec.warning', { w: tx(result.warning) })}</div>}
+        <button type="button" className={btn} onClick={download}>{t('core.rec.saveFile')}</button>
+        {canShare && <button type="button" className={btn} onClick={share}>{t('core.rec.share')}</button>}
+        <button type="button" className={btn} onClick={dismiss}>{t('core.rec.delete')}</button>
+        {error && <div className="mt-1 text-red-400">{tx(error)}</div>}
       </div>
     );
   }
@@ -53,9 +56,9 @@ export function RecordingControl() {
     return (
       <div className={`${box} compact:p-1 short-land:text-[7px] phone-port:text-[9px]`} style={font} role="status">
         <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse mr-1" aria-hidden="true" />
-        REC {fmtTime(stats.seconds)}<span className="compact:hidden"> · {fmtSize(stats.bytes)}</span>
-        <button type="button" className={`${btn} compact:py-0.5 compact:mt-0 compact:ml-1`} onClick={() => stop()}>STOP</button>
-        {warning && <div className="mt-1 text-yellow-300">{warning}</div>}
+        {t('core.rec.rec')} {fmtTime(stats.seconds)}<span className="compact:hidden"> · {fmtSize(stats.bytes)}</span>
+        <button type="button" className={`${btn} compact:py-0.5 compact:mt-0 compact:ml-1`} onClick={() => stop()}>{t('core.rec.stop')}</button>
+        {warning && <div className="mt-1 text-yellow-300">{tx(warning)}</div>}
       </div>
     );
   }
@@ -64,14 +67,14 @@ export function RecordingControl() {
 
   if (recovery) {
     return (
-      <div className={box} style={font} role="dialog" aria-label="Recover last recording">
-        <div className="text-yellow-300">RECOVER LAST RECORDING?</div>
-        <div className="opacity-70 mt-1 break-all">An earlier recording was not saved: {recovery.name} ({fmtSize(recovery.size)})</div>
-        <button type="button" className={btn} onClick={recoverySave}>SAVE FILE</button>
-        {canShareRecovery && <button type="button" className={btn} onClick={recoveryShare}>SHARE</button>}
-        <button type="button" className={btn} onClick={recoveryDiscard}>DELETE</button>
-        <button type="button" className={btn} onClick={recoveryLater}>LATER</button>
-        {error && <div className="mt-1 text-red-400">{error}</div>}
+      <div className={box} style={font} role="dialog" aria-label={t('core.rec.recoverAria')}>
+        <div className="text-yellow-300">{t('core.rec.recoverQ')}</div>
+        <div className="opacity-70 mt-1 break-all">{t('core.rec.recoverText', { name: recovery.name, size: fmtSize(recovery.size) })}</div>
+        <button type="button" className={btn} onClick={recoverySave}>{t('core.rec.saveFile')}</button>
+        {canShareRecovery && <button type="button" className={btn} onClick={recoveryShare}>{t('core.rec.share')}</button>}
+        <button type="button" className={btn} onClick={recoveryDiscard}>{t('core.rec.delete')}</button>
+        <button type="button" className={btn} onClick={recoveryLater}>{t('core.rec.later')}</button>
+        {error && <div className="mt-1 text-red-400">{tx(error)}</div>}
       </div>
     );
   }
@@ -93,23 +96,23 @@ export function RecordingControl() {
           aria-expanded="false"
           onClick={() => setExpanded(true)}
         >
-          <span className={armed ? 'text-red-500' : 'text-white/60'} aria-hidden="true">●</span> REC{armed ? ' ARMED' : ''}
+          <span className={armed ? 'text-red-500' : 'text-white/60'} aria-hidden="true">●</span> {armed ? t('core.rec.recArmed') : t('core.rec.rec')}
         </button>
       )}
       <div className={collapsed ? v.hide : ''}>
       <label className={`flex items-center gap-2 cursor-pointer ${onStart ? 'phone-port:min-h-[40px] phone-port:gap-3' : ''}`}>
         <input type="checkbox" className={`accent-red-600 shrink-0 ${onStart ? 'phone-port:w-6 phone-port:h-6' : ''}`} checked={armed} onChange={(e) => setArmed(e.target.checked)} />
-        <span><span className={`inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle ${armed ? 'bg-red-500 animate-pulse' : 'bg-white/40'}`} aria-hidden="true" />RECORD THIS SESSION{armed ? ' — ON' : ''}</span>
+        <span><span className={`inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle ${armed ? 'bg-red-500 animate-pulse' : 'bg-white/40'}`} aria-hidden="true" />{t('core.rec.record')}{armed ? t('core.rec.on') : ''}</span>
         {expanded && (
-          <button type="button" className={`${v.btn} ml-1 border border-white px-1`} aria-label="Collapse" onClick={() => setExpanded(false)}>X</button>
+          <button type="button" className={`${v.btn} ml-1 border border-white px-1`} aria-label={t('core.rec.collapse')} onClick={() => setExpanded(false)}>X</button>
         )}
       </label>
       <div className={`opacity-60 mt-1 ${v.hide} ${onStart ? 'phone-port:opacity-100 phone-port:text-[14px] phone-port:leading-snug phone-port:font-sans phone-port:mt-2' : ''}`}>
         {armed
-          ? 'Records when the headband connects. File stays on this device.'
-          : 'Tick to save the brain data as a file on this device.'}
+          ? t('core.rec.hintOn')
+          : t('core.rec.hintOff')}
       </div>
-      {error && <div className="mt-1 text-red-400">{error}</div>}
+      {error && <div className="mt-1 text-red-400">{tx(error)}</div>}
       </div>
     </div>
   );

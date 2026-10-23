@@ -8,12 +8,15 @@ import { driftFloor } from '../../lib/fnirs.js';
 import { recordSession } from '../../lib/sessionStore.js';
 import { GameEndActions } from '../../components/GameEndActions.jsx';
 import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
+import { useT, t as tNow } from '../../lib/i18n.js';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 const ROUND_S = 120; // default round length
 const LENGTHS = [2, 3, 5, 10]; // same choices as Focus Ball
+// The English text is the id (it is also what stays in the saved session); the screen shows CUE_KEYS[cue].
 const CUES = ['Count back by 3s', 'Stay calm and focused'];
+const CUE_KEYS = { 'Count back by 3s': 'games.glowOrb.cueCount', 'Stay calm and focused': 'games.glowOrb.cueCalm' };
 const GOAL = 0.62; // orb height (0 bottom … 1 top) that counts as "flying"
 const START_SCALE = 0.35; // µM of oxygenation index that moves the orb from rest to the top
 const BEST_KEY = 'glowOrbBest';
@@ -154,7 +157,7 @@ function draw(c, scene, s, t, dt) {
   c.setLineDash([]);
   c.fillStyle = s.flying ? 'rgba(255,230,120,1)' : 'rgba(255,255,255,0.6)';
   c.font = `${10 * dpr}px 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace`;
-  c.fillText('★ FLY ZONE', 12 * dpr, goalY - 8 * dpr);
+  c.fillText(tNow('games.glowOrb.flyZone'), 12 * dpr, goalY - 8 * dpr);
 
   // Orb
   const ox = w / 2 + Math.sin(t * 0.7) * 30 * dpr;
@@ -226,6 +229,7 @@ function draw(c, scene, s, t, dt) {
 }
 
 export function GlowOrb() {
+  const t = useT();
   const { supported, data, resetBaseline } = useFnirs();
   const [phase, setPhase] = useState('intro'); // intro | calibrate | play | done
   const [hud, setHud] = useState({ score: 0, timeLeft: ROUND_S, flyPct: 0, paused: false });
@@ -401,14 +405,14 @@ export function GlowOrb() {
 
       <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
         <div>
-          <h2 className="text-2xl text-[var(--nes-yellow)]">GLOW ORB</h2>
-          <p className="text-[10px] text-gray-200 mt-2">{phase === 'play' ? stateRef.current?.cue : 'Think hard to make the orb fly!'}</p>
+          <h2 className="text-2xl text-[var(--nes-yellow)]">{t('games.glowOrb.title')}</h2>
+          <p className="text-[10px] text-gray-200 mt-2">{phase === 'play' ? (CUE_KEYS[stateRef.current?.cue] ? t(CUE_KEYS[stateRef.current.cue]) : stateRef.current?.cue) : t('games.glowOrb.tagline')}</p>
         </div>
         {phase === 'play' && (
           <div className="text-right text-[10px] space-y-2 mt-16">
-            <div>SCORE <span className="text-[var(--nes-yellow)]">{hud.score}</span></div>
-            <div>TIME {hud.timeLeft}s</div>
-            <div>FLYING {hud.flyPct}%</div>
+            <div>{t('games.glowOrb.score')} <span className="text-[var(--nes-yellow)]">{hud.score}</span></div>
+            <div>{t('games.glowOrb.time')} {hud.timeLeft}s</div>
+            <div>{t('games.glowOrb.flying')} {hud.flyPct}%</div>
           </div>
         )}
       </div>
@@ -418,7 +422,7 @@ export function GlowOrb() {
         onClick={() => setMuted((m) => !m)}
         className="absolute bottom-6 right-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white"
       >
-        {muted ? 'SOUND OFF' : 'SOUND ON'}
+        {muted ? t('games.glowOrb.soundOff') : t('games.glowOrb.soundOn')}
       </button>
 
       {(phase === 'calibrate' || phase === 'play') && (
@@ -427,40 +431,40 @@ export function GlowOrb() {
           onClick={stop}
           className="absolute bottom-6 left-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white hover:bg-white hover:text-black"
         >
-          STOP
+          {t('games.glowOrb.stop')}
         </button>
       )}
 
       {phase === 'play' && hud.paused && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-[calc(100%-2rem)] text-center border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-[10px] text-[var(--nes-yellow)]">
-          HOLD STILL — FIX THE HEADBAND
+          {t('games.glowOrb.holdStill')}
         </div>
       )}
 
       {phase === 'intro' && (
         <GameStartPanel
-          title="GLOW ORB"
+          title={t('games.glowOrb.title')}
           bottomSpace
           onStart={supported ? start : undefined}
           best={best}
-          signalNote="Only the fNIRS sensors matter here."
+          signalNote={t('games.glowOrb.signalNote')}
         >
           {!supported ? (
-            <p className="text-xs leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
+            <p className="text-xs leading-relaxed mb-3">{t('games.glowOrb.needsAthena')}</p>
           ) : (
             <>
-              <p className="text-sm leading-relaxed mb-3">Think hard to make the orb fly up.</p>
-              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
-              <OptionLabel>PICK YOUR FOCUS TRICK</OptionLabel>
+              <p className="text-sm leading-relaxed mb-3">{t('games.glowOrb.goal')}</p>
+              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">{t('games.glowOrb.slow')}</p>
+              <OptionLabel>{t('games.glowOrb.pickTrick')}</OptionLabel>
               <div className="flex flex-wrap gap-2 justify-center mb-4">
                 {CUES.map((cc) => (
-                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
+                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{t(CUE_KEYS[cc])}</button>
                 ))}
               </div>
-              <OptionLabel>SESSION LENGTH</OptionLabel>
+              <OptionLabel>{t('games.glowOrb.sessionLength')}</OptionLabel>
               <div className="flex gap-2 justify-center mb-5">
                 {LENGTHS.map((m) => (
-                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
+                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{t('games.glowOrb.minutes', { m })}</button>
                 ))}
               </div>
             </>
@@ -472,11 +476,11 @@ export function GlowOrb() {
       {phase === 'calibrate' && (
         <div className="absolute inset-x-0 bottom-20 flex justify-center px-4 pointer-events-none">
           <div className={panel}>
-            <p className="text-[10px] mb-3">Relax and breathe slowly…</p>
+            <p className="text-[10px] mb-3">{t('games.glowOrb.relax')}</p>
             <div className="h-3 w-64 max-w-full mx-auto border-2 border-[var(--nes-yellow)]">
               <div className="h-full bg-[var(--nes-yellow)]" style={{ width: `${Math.round((data?.baselineProgress || 0) * 100)}%` }} />
             </div>
-            {!data?.available && <p className="text-[8px] text-gray-400 mt-3">Waiting for light sensors…</p>}
+            {!data?.available && <p className="text-[8px] text-gray-400 mt-3">{t('games.glowOrb.waiting')}</p>}
           </div>
         </div>
       )}
@@ -486,20 +490,20 @@ export function GlowOrb() {
           <div className={`${panel} pointer-events-auto max-h-full overflow-y-auto`}>
             {invalid ? (
               <>
-                <p className="text-sm text-[var(--nes-yellow)] mb-3">{invalid.reason === 'stuck' ? 'SIGNAL STUCK' : 'NOT ENOUGH SIGNAL'}</p>
+                <p className="text-sm text-[var(--nes-yellow)] mb-3">{invalid.reason === 'stuck' ? t('games.glowOrb.stuckTitle') : t('games.glowOrb.noSignalTitle')}</p>
                 <p className="text-[10px] leading-relaxed mb-4">
                   {invalid.reason === 'stuck'
-                    ? `The signal was stuck at the ${invalid.side}, so these numbers do not show your focus. Check the headband fit and try again.`
-                    : 'Not enough signal — check the headband and try again.'}
+                    ? t(invalid.side === 'bottom' ? 'games.glowOrb.stuckBottom' : 'games.glowOrb.stuckTop')
+                    : t('games.glowOrb.noSignal')}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm text-[var(--nes-yellow)] mb-3">{['NICE TRY!', 'GOOD JOB!', 'GREAT!', 'AMAZING!'][stars]}</p>
+                <p className="text-sm text-[var(--nes-yellow)] mb-3">{[t('games.glowOrb.rank0'), t('games.glowOrb.rank1'), t('games.glowOrb.rank2'), t('games.glowOrb.rank3')][stars]}</p>
                 <p className="text-2xl mb-3 text-[var(--nes-yellow)]">{'★'.repeat(stars)}<span className="text-gray-600">{'★'.repeat(3 - stars)}</span></p>
-                <p className="text-[10px] mb-1">SCORE {hud.score}</p>
-                <p className="text-[10px] mb-4">FLYING {hud.flyPct}% OF THE TIME</p>
-                {best > 0 && <p className="text-[8px] text-gray-400 mb-4">BEST {best}</p>}
+                <p className="text-[10px] mb-1">{t('games.glowOrb.score')} {hud.score}</p>
+                <p className="text-[10px] mb-4">{t('games.glowOrb.flyingPct', { pct: hud.flyPct })}</p>
+                {best > 0 && <p className="text-[8px] text-gray-400 mb-4">{t('games.glowOrb.best')} {best}</p>}
               </>
             )}
             <GameEndActions onPlayAgain={() => setPhase('intro')} sessionId={savedId} game="glow-orb" />

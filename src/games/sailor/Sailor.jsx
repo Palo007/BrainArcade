@@ -15,12 +15,14 @@ import sailorWorriedImg from './assets/sailor-right-worried.png';
 import barrelImg from './assets/barrel.png';
 import sceneImg from './assets/scene.jpg';
 import { preloadImages } from '../../lib/preloadImages';
+import { useT } from '../../lib/i18n.js';
 import './sailor-animations.css';
 import '../../styles/retro.css';
 
 preloadImages(sailorImg, sailorWorriedImg, barrelImg, sceneImg);
 
 export function Sailor() {
+  const t = useT();
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
   const [started, setStarted] = useState(false); // START screen gate
   // EEG engagement blended with fNIRS oxygenation on Muse S Athena (EEG only on classic Muse)
@@ -169,11 +171,11 @@ export function Sailor() {
   if (!started) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-blue-400">
-        <GameStartPanel title="SAILOR" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+        <GameStartPanel title={t('games.sailor.title')} onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
           <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-            Navigate the ocean of your mind and recollect your lost train of thought by staying engaged.
+            {t('games.sailor.intro1')}
           </p>
-          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">{t('games.sailor.intro2')}</p>
         </GameStartPanel>
       </div>
     );
@@ -184,8 +186,8 @@ export function Sailor() {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-sky-300 to-blue-400">
         <div className="text-center">
-          <div className="text-xl font-mono mb-4">CALIBRATING BRAINWAVES</div>
-          <div className="text-sm font-mono opacity-70">Relax for 30 seconds...</div>
+          <div className="text-xl font-mono mb-4">{t('games.sailor.calibrating')}</div>
+          <div className="text-sm font-mono opacity-70">{t('games.sailor.calibratingNote')}</div>
         </div>
       </div>
     );
@@ -204,8 +206,8 @@ export function Sailor() {
     };
 
     const message = hasWon
-      ? "You've recollected your train of thought!"
-      : "Seems like you lost your train of thought...";
+      ? t('games.sailor.win')
+      : t('games.sailor.lose');
 
     return (
       <GameOverScreen
@@ -242,8 +244,8 @@ export function Sailor() {
 
       {/* Title (aligned like SweetSpot) */}
       <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-        <h2 className="text-2xl text-[var(--nes-dark)]">SEA OF THOUGHTS</h2>
-        <p className="text-xs text-gray-800 mt-2">Oh no! you lost your idea in a sea of thoughts! hurry up to recollect it!</p>
+        <h2 className="text-2xl text-[var(--nes-dark)]">{t('games.sailor.seaTitle')}</h2>
+        <p className="text-xs text-gray-800 mt-2">{t('games.sailor.subtitle')}</p>
       </div>
 
       {/* Game Elements */}
@@ -264,7 +266,7 @@ export function Sailor() {
             <div className="sailor-float" style={{ width: 'min(120px, 15vmin)' }}>
               <img
                 src={sailorSprite}
-                alt="Sailor"
+                alt={t('games.sailor.sailorAlt')}
                 className="w-full h-auto"
                 style={{ imageRendering: 'pixelated' }}
               />
@@ -282,7 +284,7 @@ export function Sailor() {
           >
             <img
               src={barrelImg}
-              alt="Barrel"
+              alt={t('games.sailor.barrelAlt')}
               className="w-full h-auto"
               style={{ imageRendering: 'pixelated' }}
             />
@@ -293,13 +295,13 @@ export function Sailor() {
       {/* HUD */}
       <div className="absolute bottom-8 right-8 flex gap-6 text-white items-end" style={{ fontFamily: 'var(--font-retro)' }}>
         <div className="text-right">
-          <div className="text-[8px] opacity-60">HEALTH</div>
+          <div className="text-[8px] opacity-60">{t('games.sailor.health')}</div>
           <div className="mt-2">
             <PixelHearts health={health} maxHearts={MAX_HEARTS} size={20} />
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[8px] opacity-60">ENGAGE</div>
+          <div className="text-[8px] opacity-60">{t('games.sailor.engage')}</div>
           <div className="text-xl">{(value01 * 100).toFixed(0)}</div>
         </div>
         <div className="text-right">
@@ -315,8 +317,8 @@ export function Sailor() {
         offset={8}
         scheme="light"
         align="left"
-        primary={"Move faster by being more engaged."}
-        secondary={"Engagement 30–70% = best speed"}
+        primary={t('games.sailor.hintPrimary')}
+        secondary={t('games.sailor.hintSecondary')}
       />
     </div>
   );

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuality, CHANNEL_INFO } from '../contexts/QualityContext.jsx';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 export function ElectrodeSetupCheck({ onReady, showValues = true }) {
   const { channelRms, perChannelBad, adjusting, ready } = useQuality();
+  const t = useT();
   const [shownReady, setShownReady] = useState(false);
 
   useEffect(() => {
@@ -18,23 +20,22 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
     perChannelBad.forEach((bad, idx) => {
       if (bad) {
         const info = CHANNEL_INFO[idx];
-        const part = `${info.side} ${info.area}`;
-        out.push(`${part} isn't put well.`);
+        out.push(t(`core.elec.issue.${info.id}`));
       }
     });
     return out;
-  }, [perChannelBad]);
+  }, [perChannelBad, t]);
 
   return (
     <div className="w-full max-w-lg min-w-[22rem] phone-port:min-w-0 border-4 border-white bg-[var(--nes-dark)] p-4 text-white" style={{ fontFamily: 'var(--font-retro)' }}>
-      <h4 className="text-[var(--nes-yellow)] text-xs mb-3">ELECTRODE CHECK</h4>
+      <h4 className="text-[var(--nes-yellow)] text-xs mb-3">{t('core.elec.title')}</h4>
       {adjusting ? (
         <div className="text-[10px] flex items-center gap-2 mb-3">
           <span className="animate-pulse">▮▯▮</span>
-          <span>evaluating setup...</span>
+          <span>{t('core.elec.evaluating')}</span>
         </div>
       ) : (
-        <p className="text-[10px] opacity-80 mb-2">Hold still. Ensure contacts on skin.</p>
+        <p className="text-[10px] opacity-80 mb-2">{t('core.elec.hold')}</p>
       )}
       <div className="grid grid-cols-2 gap-2 mb-3">
         {[
@@ -49,7 +50,7 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
           const bad = perChannelBad[idx];
           return (
             <div key={info.id} className={`flex items-center justify-between border px-2 py-1 text-[10px] ${bad ? 'border-[var(--nes-red)]' : 'border-[var(--nes-green)]'}`}>
-              <span className={`${bad ? 'text-[var(--nes-red)]' : 'text-[var(--nes-green)]'}`}>{info.label}</span>
+              <span className={`${bad ? 'text-[var(--nes-red)]' : 'text-[var(--nes-green)]'}`}>{t(`core.ch.${info.id}`)}</span>
               {showValues ? (
                 <span className="opacity-80 font-mono tabular-nums w-12 text-right">{abs}</span>
               ) : (
@@ -66,7 +67,7 @@ export function ElectrodeSetupCheck({ onReady, showValues = true }) {
           ))}
         </ul>
       ) : (
-        <div className="text-[10px] text-[var(--nes-green)]">Clean to go after 5s of stability.</div>
+        <div className="text-[10px] text-[var(--nes-green)]">{t('core.elec.clean')}</div>
       )}
     </div>
   );

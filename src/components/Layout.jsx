@@ -12,6 +12,7 @@ import { isPageRoute, isFnirsRoute } from '../games/games.config';
 import { ElectrodesButton, ElectrodesModal } from './ElectrodeOverlay.jsx';
 import { TopBarSlotContext } from './topBarSlot.js';
 import { PlaySetupChip } from './PlaySetup.jsx';
+import { useT } from '../lib/i18n.js';
 
 // Portrait phones keep the floating controls (the header row has no room for them)
 const PHONE_PORT = '(orientation: portrait) and (max-width: 480px)';
@@ -33,6 +34,7 @@ function usePhonePortrait() {
  * Special full-screen mode for start screen
  */
 export function Layout({ children }) {
+  const t = useT();
   const { isConnected, isMock, disconnectEEG } = useEEG();
   const { isBaselineReady, resetBaseline, ensureBaseline, show: showBaselineModal } = useBaseline();
   const { quality10s } = useQuality();
@@ -162,7 +164,7 @@ export function Layout({ children }) {
             {isGamePage && isConnected && (
               <button
                 onClick={() => setShowMenu((v) => !v)}
-                aria-label="Pause / Menu"
+                aria-label={t('core.layout.pauseMenu')}
                 className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 short-land:px-2 py-2 short-land:py-0 min-h-[44px] min-w-[44px] short-land:min-h-[36px] short-land:min-w-[36px] hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
                 style={{ fontFamily: 'var(--font-retro)' }}
               >
@@ -180,7 +182,7 @@ export function Layout({ children }) {
               <button
                 className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 phone-port:px-2 short-land:px-2 min-h-[44px] short-land:min-h-[36px] phone-port:min-w-[44px] short-land:py-0 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
                 onClick={() => setShowMusePopup(true)}
-                title={`Muse status — ${quality10s?.label || 'Good'} • ${Math.round((quality10s?.stablePct || 1) * 100)}% stable${isMock ? ' • MOCK' : ''}`}
+                title={t('core.layout.museStatus', { label: t(`core.layout.q.${(quality10s?.label || 'Good').toLowerCase()}`), pct: Math.round((quality10s?.stablePct || 1) * 100), mock: isMock ? ' • MOCK' : '' })}
                 style={{ borderColor: `var(${quality10s?.var || '--nes-green'})` }}
               >
                 <div className="relative">
@@ -210,8 +212,8 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px] phone-port:hidden short-land:hidden" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
-                <span className="hidden phone-port:inline short-land:inline text-xs short-land:text-[10px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{isMock ? 'MOCK' : 'LIVE'}</span>
+                <span className="text-[8px] phone-port:hidden short-land:hidden" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{t('core.layout.connected')}{isMock ? ' • MOCK' : ''}</span>
+                <span className="hidden phone-port:inline short-land:inline text-xs short-land:text-[10px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{isMock ? t('core.layout.mock') : t('core.layout.live')}</span>
               </button>
             )}
           </div>
@@ -235,8 +237,8 @@ export function Layout({ children }) {
                 {isGamePage && !isPage && !isConnected ? (
                   <div className="text-center py-12">
                     <div className="text-4xl mb-4">⚠️</div>
-                    <p className="text-[var(--nes-red)] mb-2">MUSE NOT CONNECTED</p>
-                    <p className="text-xs text-gray-400 mb-6">Please return to home and connect your device</p>
+                    <p className="text-[var(--nes-red)] mb-2">{t('core.layout.notConnected')}</p>
+                    <p className="text-xs text-gray-400 mb-6">{t('core.layout.returnText')}</p>
                     <button
                       className="retro-button border-[var(--nes-yellow)] text-[var(--nes-yellow)] bg-transparent px-4 py-2 hover:bg-[var(--nes-yellow)] hover:text-black"
                       onClick={() => {
@@ -245,7 +247,7 @@ export function Layout({ children }) {
                         navigate('/');
                       }}
                     >
-                      RETURN HOME TO CONNECT
+                      {t('core.layout.returnBtn')}
                     </button>
                   </div>
                 ) : (
@@ -283,15 +285,15 @@ export function Layout({ children }) {
         {showElectrodes && isConnected && (
           <ElectrodesModal
             onClose={() => setShowElectrodes(false)}
-            eegNote={isFnirsGame ? 'This game uses the fNIRS light sensors. Weak EEG contact does not pause it.' : null}
+            eegNote={isFnirsGame ? t('core.layout.fnirsNote') : null}
           />
         )}
         {/* Muse popup for switch/disconnect */}
       {showMusePopup && (
         <RetroModal
-          title="MUSE OPTIONS"
+          title={t('core.layout.options')}
           onCancel={() => setShowMusePopup(false)}
-          cancelLabel="CANCEL"
+          cancelLabel={t('core.layout.cancel')}
           showFooter={true}
           leftActions={
             isBaselineReady ? (
@@ -304,13 +306,13 @@ export function Layout({ children }) {
                   setPendingRecalibrate(true);
                 }}
               >
-                RECALIBRATE BASELINE
+                {t('core.layout.recalibrate')}
               </button>
             ) : null
           }
         >
           <div className="space-y-3" style={{ fontFamily: 'var(--font-retro)' }}>
-            <p className="text-[10px] opacity-80">Connected via {isMock ? 'Mock Data' : 'Real Device'}</p>
+            <p className="text-[10px] opacity-80">{isMock ? t('core.layout.viaMock') : t('core.layout.viaReal')}</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               {!isMock && (
                 <button
@@ -322,7 +324,7 @@ export function Layout({ children }) {
                     setIsSwitching(true);
                   }}
                 >
-                  SWITCH TO MOCK
+                  {t('core.layout.toMock')}
                 </button>
               )}
               {isMock && (
@@ -335,7 +337,7 @@ export function Layout({ children }) {
                     setIsSwitching(true);
                   }}
                 >
-                  SWITCH TO REAL
+                  {t('core.layout.toReal')}
                 </button>
               )}
               <button
@@ -346,10 +348,10 @@ export function Layout({ children }) {
                   setIsSwitching(true);
                 }}
               >
-                DISCONNECT
+                {t('core.layout.disconnect')}
               </button>
             </div>
-            <p className="text-[9px] opacity-60 mt-1">Changes will return you to HOME to reconnect.</p>
+            <p className="text-[9px] opacity-60 mt-1">{t('core.layout.returnNote')}</p>
           </div>
         </RetroModal>
       )}
@@ -358,7 +360,7 @@ export function Layout({ children }) {
       {isSwitching && (
         <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
           <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: 'var(--font-retro)' }}>
-            <div className="text-sm text-[var(--nes-yellow)] mb-2">switching brain...</div>
+            <div className="text-sm text-[var(--nes-yellow)] mb-2">{t('core.layout.switchingBrain')}</div>
             <div className="text-center text-3xl">{countdown}</div>
           </div>
         </div>
@@ -366,7 +368,7 @@ export function Layout({ children }) {
       {isGameSwitching && (
         <div className="absolute inset-0 z-[999] bg-black/80 flex items-center justify-center">
           <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] text-white px-6 py-5" style={{ fontFamily: 'var(--font-retro)' }}>
-            <div className="text-sm text-[var(--nes-yellow)] mb-2">switching game...</div>
+            <div className="text-sm text-[var(--nes-yellow)] mb-2">{t('core.layout.switchingGame')}</div>
             <div className="text-center text-3xl">{gameCountdown}</div>
           </div>
         </div>

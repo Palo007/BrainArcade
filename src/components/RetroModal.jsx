@@ -1,11 +1,15 @@
 import React, { useEffect, useId, useRef } from 'react';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 // Open modals, topmost last: Esc only closes the top one (a modal can open another on top of itself).
 const openStack = [];
 
 // Simple retro-styled modal matching arcade theme
-export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel = 'Cancel', onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false, leftActions = null, actionsAlign = 'end', wide = false }) {
+export function RetroModal({ title, children, confirmLabel: confirmLabelProp, cancelLabel: cancelLabelProp, onConfirm, onCancel, isBusy = false, showFooter = true, confirmVisible = false, confirmDisabled = false, leftActions = null, actionsAlign = 'end', wide = false }) {
+  const t = useT();
+  const confirmLabel = confirmLabelProp ?? t('core.modal.ok');
+  const cancelLabel = cancelLabelProp ?? t('core.modal.cancel');
   const titleId = useId();
   const confirmRef = useRef(null);
   const cancelRef = useRef(null);
@@ -84,7 +88,7 @@ export function RetroModal({ title, children, confirmLabel = 'OK', cancelLabel =
                 }
                 style={{ fontFamily: 'var(--font-retro)' }}
               >
-                {isBusy ? 'WORKING…' : confirmLabel}
+                {isBusy ? t('core.modal.working') : confirmLabel}
               </button>
             )}
           </div>

@@ -8,11 +8,13 @@ import { PixelHearts } from '../../components/PixelHearts';
 import { GameHint } from '../../components/GameHint';
 import { GameOverScreen } from '../../components/GameOverScreen';
 import { GameStartPanel } from '../../components/GameStartPanel';
+import { useT } from '../../lib/i18n.js';
 import happyDiverImg from './assets/diver-happy.png';
 import sadDiverImg from './assets/diver-sad.png';
 import backgroundSeaImg from './assets/background-sea.jpg';
 
 export function Diver() {
+  const t = useT();
   const canvasRef = useRef(null);
   const roundStartRef = useRef(Date.now()); // for history: seconds played this round
   const animationFrameRef = useRef(null);
@@ -603,11 +605,11 @@ export function Diver() {
   if (!started) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900 to-blue-950">
-        <GameStartPanel title="BAD DIVER" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+        <GameStartPanel title={t('games.diver.title')} onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
           <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-            Frustration fuels your catch! The more frustrated you get, the better the fish hunt goes.
+            {t('games.diver.intro1')}
           </p>
-          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+          <p className="text-[10px] text-gray-200 leading-relaxed mb-4">{t('games.diver.intro2')}</p>
         </GameStartPanel>
       </div>
     );
@@ -618,9 +620,9 @@ export function Diver() {
     return (
       <div className="w-screen h-screen phone-port:w-full phone-port:h-full flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
         <div className="text-center px-8">
-          <div className="text-2xl text-blue-300 mb-4">CALIBRATING...</div>
+          <div className="text-2xl text-blue-300 mb-4">{t('games.diver.calibrating')}</div>
           <div className="text-sm text-blue-400">
-            Establishing your baseline frustration levels
+            {t('games.diver.calibratingNote')}
           </div>
         </div>
       </div>
@@ -632,8 +634,8 @@ export function Diver() {
     return (
       <div className="w-screen h-screen phone-port:w-full phone-port:h-full flex items-center justify-center bg-gradient-to-b from-blue-900 to-blue-950">
         <div className="text-center px-8">
-          <div className="text-2xl text-blue-300 mb-4">LOADING...</div>
-          <div className="text-sm text-blue-400">Preparing underwater scene</div>
+          <div className="text-2xl text-blue-300 mb-4">{t('games.diver.loading')}</div>
+          <div className="text-sm text-blue-400">{t('games.diver.loadingNote')}</div>
         </div>
       </div>
     );
@@ -649,7 +651,7 @@ export function Diver() {
         joystickOptions={{ range: 0.6, autoAdjustBaseline: true }}
         onRetry={handleRetry}
         playedSec={Math.round((Date.now() - roundStartRef.current) / 1000)}
-        customMessage="You stayed too calm for too long!"
+        customMessage={t('games.diver.gameOver')}
       />
     );
   }
@@ -668,9 +670,9 @@ export function Diver() {
 
         {/* Title & Subtitle */}
         <div className="absolute top-6 left-6 w-[min(480px,60vw)] z-10" style={{ fontFamily: 'var(--font-retro)' }}>
-          <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>BAD DIVER</h2>
+          <h2 className="text-2xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>{t('games.diver.title')}</h2>
           <p className="text-xs text-gray-300 mt-2" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.8)' }}>
-            Frustration fuels your catch!
+            {t('games.diver.subtitle')}
           </p>
         </div>
 
@@ -680,8 +682,8 @@ export function Diver() {
           offset={8}
           scheme="dark"
           align="left"
-          primary="Get frustrated to catch more fish!"
-          secondary="Stay satisfied for too long and you'll lose your catch"
+          primary={t('games.diver.hintPrimary')}
+          secondary={t('games.diver.hintSecondary')}
         />
 
         {/* HUD */}
@@ -690,13 +692,13 @@ export function Diver() {
             <div className="flex gap-6 items-end">
               {/* Frustration */}
               <div className="text-right">
-                <div className="text-[8px] opacity-70">FRUSTRATION</div>
+                <div className="text-[8px] opacity-70">{t('games.diver.frustration')}</div>
                 <div className="text-sm text-[var(--nes-yellow)] mt-1">{frustration.toFixed(2)}</div>
               </div>
 
               {/* Health */}
               <div className="text-right">
-                <div className="text-[8px] opacity-70">HEALTH</div>
+                <div className="text-[8px] opacity-70">{t('games.diver.health')}</div>
                 <div className="mt-2">
                   <PixelHearts health={health} maxHearts={3} size={20} />
                 </div>
@@ -704,7 +706,7 @@ export function Diver() {
 
               {/* Fish Count */}
               <div className="text-right">
-                <div className="text-[8px] opacity-70">FISH COUNT</div>
+                <div className="text-[8px] opacity-70">{t('games.diver.fishCount')}</div>
                 <div className="text-xl text-white" style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.8)' }}>
                   {Math.floor(gameScore).toLocaleString()}
                 </div>

@@ -6,6 +6,8 @@
 // Only White and Yellow are built (proposal phase D); the other belts show as "coming soon".
 import * as rules from '../../lib/progressRules.js';
 import { updateReference } from '../../lib/roundRecord.js';
+import { t } from '../../lib/i18n.js';
+import { beltName } from '../../lib/phrases.js';
 
 export const GAME_KEY = 'turboRex'; // localStorage 'brainarcade.turboRex'
 export const GOAL_STEP = 0.1; // z
@@ -23,12 +25,12 @@ export const EFFORT_STREAK_S = 5; // effort star: one focus run of 5 s
 
 // Each belt adds one new skill. minDays = least play days on the belt (Black has none).
 export const BELTS = [
-  { id: 1, name: 'WHITE', title: 'Rolling Start', sec: 60, minDays: 2, color: '#FFFFFF', taps: false, skill: 'Keep the bar above the goal. No tapping yet.' },
-  { id: 2, name: 'YELLOW', title: 'Snack Time', sec: 75, minDays: 3, color: '#F5D83A', taps: true, skill: 'Tap the pizzas.' },
-  { id: 3, name: 'ORANGE', title: 'Stinky Socks', sec: 90, minDays: 4, color: '#F39A2B', taps: true, skill: 'Do not tap the socks.' },
-  { id: 4, name: 'GREEN', title: 'Sneaky Pizza', sec: 120, minDays: 4, color: '#3FA34D', taps: true, skill: 'Pizzas with flies: do not tap.' },
-  { id: 5, name: 'BLUE', title: 'Chicken Chaos', sec: 150, minDays: 5, color: '#3B82C4', taps: true, skill: 'Ignore the chicken.' },
-  { id: 6, name: 'BLACK', title: 'Rule Swap', sec: 180, minDays: null, color: '#1C1C1C', taps: true, skill: 'The rule changes. Switch fast.' },
+  { id: 1, name: 'WHITE', sec: 60, minDays: 2, color: '#FFFFFF', taps: false },
+  { id: 2, name: 'YELLOW', sec: 75, minDays: 3, color: '#F5D83A', taps: true },
+  { id: 3, name: 'ORANGE', sec: 90, minDays: 4, color: '#F39A2B', taps: true },
+  { id: 4, name: 'GREEN', sec: 120, minDays: 4, color: '#3FA34D', taps: true },
+  { id: 5, name: 'BLUE', sec: 150, minDays: 5, color: '#3B82C4', taps: true },
+  { id: 6, name: 'BLACK', sec: 180, minDays: null, color: '#1C1C1C', taps: true },
 ];
 export const isBuilt = (id) => id >= 1 && id <= PLAYABLE;
 
@@ -53,15 +55,19 @@ export const rulesFor = (belt) => RULES_BY_BELT[Math.min(PLAYABLE, Math.max(1, b
 export const RULES = RULES_BY_BELT[0]; // goal scale, safety net and day-end ease are the same for every belt
 
 export const WORLDS = [
-  { id: 'dino-town', name: 'Dino Town', note: 'Streets, pigeons and a pizza van.' },
+  { id: 'dino-town' },
 ];
 
 // One read-aloud comic page per built belt
-export const STORY = [
-  'Rex got a skateboard! Your brain is his fuel. Think hard on Rex, and he zooms through Dino Town. Let your mind drift, and Rex gets sleepy. Watch out for the snail!',
-  'The pizza van lost its pizzas! They fly down the street. Rex is hungry. Tap the pizzas and Rex eats them. BURP! Far away, a monkey with a big grin watches.',
-];
+export const STORY = Array.from({ length: PLAYABLE }, (_, i) => `rex.story.${i + 1}`); // text keys, see locales
 
+// Words for the screen, in the app language. The ids and English names above stay as saved/recorded.
+export const beltColorName = (id) => beltName(BELTS[id - 1].name).toUpperCase(); // WHITE / BIELY
+export const beltLabel = (id) => t('rex.beltLabel', { name: beltColorName(id) });
+export const beltTitle = (id) => t(`rex.belt.${id}.title`);
+export const beltSkill = (id) => t(`rex.belt.${id}.skill`);
+export const beltHead = (id) => t('rex.beltHead', { name: beltColorName(id), title: beltTitle(id) });
+export const worldName = (id) => t(`rex.world.${id}.name`);
 export const dayKey = rules.dayKey;
 export const goalLevel = (goal) => rules.goalSteps(RULES, goal); // steps harder than day 1
 export const startDay = (p, now) => rules.startDay(rulesFor(p.unlocked), p, now);

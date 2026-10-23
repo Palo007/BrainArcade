@@ -7,10 +7,12 @@ import { useProfiles } from '../contexts/ProfileContext.jsx';
 import { loadCalibration } from '../lib/paf.js';
 import { buildParentSummary } from '../lib/parentSummary.js';
 import { isFnirsGame } from '../games/games.config.js';
+import { useLang } from '../lib/i18n.js';
 
 // sessionId: this session's record id (null when unknown); game: optional game id to compare with.
 export function ParentSummary({ sessionId, points, game = null }) {
   const { activeId } = useProfiles();
+  const lang = useLang();
   const lines = useMemo(() => {
     const all = loadSessions();
     // Without an id the session is unknown ({}): never guess that the newest stored record is this one.
@@ -21,7 +23,7 @@ export function ParentSummary({ sessionId, points, game = null }) {
     const gameId = session.game || game;
     const earlier = sessionsForChild(before, childId).filter((s) => !gameId || s.game === gameId);
     return buildParentSummary({ session, earlier, points: points || [], calibration: loadCalibration(), alphaPeak: !isFnirsGame(gameId) });
-  }, [sessionId, points, game, activeId]);
+  }, [sessionId, points, game, activeId, lang]); // eslint-disable-line react-hooks/exhaustive-deps -- lang: texts are built in the app language
   return (
     <ul className="list-disc pl-5 space-y-1 text-[11px] leading-relaxed text-left">
       {lines.map((l) => <li key={l.key}>{l.text}</li>)}

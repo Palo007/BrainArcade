@@ -5,6 +5,7 @@
 // child's own baseline: calm = meter z above the goal. Higher goal = harder.
 import * as rules from '../../lib/progressRules.js';
 import { updateReference } from '../../lib/roundRecord.js';
+import { t } from '../../lib/i18n.js';
 
 export const GAME_KEY = 'bubbleHippo'; // localStorage 'brainarcade.bubbleHippo'
 export const STORE_KEY = rules.progressKey(GAME_KEY);
@@ -25,12 +26,12 @@ export const GOLDEN_CHANCE = 0.15; // random surprise at a round end, not tied t
 
 // Each badge adds one new thing. Features are cumulative. minDays = least play days on the badge (King has none).
 export const BADGES = [
-  { id: 1, name: 'DUCKLING', title: 'Big Bubble', sec: 60, minDays: 2, color: '#F6C85F', skill: 'Grow the bubble.' },
-  { id: 2, name: 'FROG', title: 'Slow Breaths', sec: 90, minDays: 3, color: '#6CC7A0', skill: 'Breathe with the green ring.' },
-  { id: 3, name: 'OTTER', title: 'Splash and Settle', sec: 120, minDays: 4, color: '#C98B5B', skill: 'Count the ducks, then settle.' },
-  { id: 4, name: 'SEAL', title: 'Buzzy Fly', sec: 120, minDays: 4, color: '#8FA3B8', skill: 'Stay calm when something buzzes.' },
-  { id: 5, name: 'WHALE', title: 'Secret Bubble', sec: 150, minDays: 5, color: '#4F7FD1', skill: 'Calm without a screen.' },
-  { id: 6, name: 'HIPPO KING', title: 'Bath Boss', sec: 180, minDays: null, color: '#9B7FD8', skill: 'All skills together.' },
+  { id: 1, name: 'DUCKLING', sec: 60, minDays: 2, color: '#F6C85F' },
+  { id: 2, name: 'FROG', sec: 90, minDays: 3, color: '#6CC7A0' },
+  { id: 3, name: 'OTTER', sec: 120, minDays: 4, color: '#C98B5B' },
+  { id: 4, name: 'SEAL', sec: 120, minDays: 4, color: '#8FA3B8' },
+  { id: 5, name: 'WHALE', sec: 150, minDays: 5, color: '#4F7FD1' },
+  { id: 6, name: 'HIPPO KING', sec: 180, minDays: null, color: '#9B7FD8' },
 ];
 export const badgeFeatures = (id) => ({ breath: id >= 2, splash: id >= 3, pests: id >= 4, secret: id >= 5, king: id >= 6 });
 
@@ -50,42 +51,36 @@ export const RULES = RULES_BY_BADGE[0]; // goal scale, safety net and day-end ea
 
 // One bath world per badge, opened by the badge and not by a date
 export const WORLDS = [
-  { id: 'home-tub', name: 'Home Tub', note: 'Rubber ducks and a leaky tap.' },
-  { id: 'hot-spring', name: 'Hot Spring', note: 'Snow, steam and snow monkeys.' },
-  { id: 'mud-spa', name: 'Mud Spa', note: 'Pigs, mud bubbles and the stink.' },
-  { id: 'jungle-waterfall', name: 'Jungle Waterfall', note: 'Frogs, toucans and mist.' },
-  { id: 'moon-bath', name: 'Moon Bath', note: 'Low gravity. Bubbles float slow.' },
-  { id: 'remix', name: 'Remix', note: 'You pick the bath.' },
+  { id: 'home-tub' },
+  { id: 'hot-spring' },
+  { id: 'mud-spa' },
+  { id: 'jungle-waterfall' },
+  { id: 'moon-bath' },
+  { id: 'remix' },
 ];
 
 // One read-aloud comic page per badge
-export const STORY = [
-  'Sir Honk the grumpy swan stole the hot water! Hippo only has a cold tub and a straw. Hippo blows one big, soft bubble.',
-  'Who stole the hot water? Hippo follows wet footprints. Hippo breathes with the green ring, slow and soft. The footprints get warmer.',
-  'The rooster crows! Ducks pop up. Hippo counts them all, then settles back into the bubble, easy as pie.',
-  'A fly buzzes at Hippo\'s nose. A stinky sock peeks out of the foam. Hippo does not mind. Far away, something goes HONK.',
-  'Foam covers the bubble. Hippo cannot see it. Hippo stays calm anyway, and the bubble is still there. HONK! Sir Honk is close.',
-  'Sir Honk is tired of being grumpy. "How do you stay so calm?" he asks. Hippo shows him three soft breaths. Now they bathe together.',
-];
+export const STORY = Array.from({ length: 6 }, (_, i) => `hippo.story.${i + 1}`); // text keys, see locales
 
 // The Bubble Zoo: one friend for each finished round, the shelf only grows
-export const ZOO = [
-  'Burping Frog', 'Tooting Skunk', 'Sneezing Sloth', 'Hiccuping Pig', 'Giggling Goat', 'Snoring Owl',
-  'Wobbly Walrus', 'Dancing Duck', 'Grumpy Goldfish', 'Sock-Eating Llama', 'Bubble-Blowing Bat', 'Tickled Turtle',
-  'Yodeling Yak', 'Slippery Seal', 'Dizzy Dolphin', 'Sleepy Snail', 'Burping Whale', 'Muddy Monkey',
-  'Cheesy Mouse', 'Tap-Dancing Crab', 'Singing Sponge', 'Hiccup Hedgehog', 'Splashy Penguin', 'Lazy Lobster',
-  'Giggling Giraffe', 'Wiggly Worm', 'Soapy Squirrel', 'Jelly Jellyfish', 'Pirate Pigeon', 'Fizzy Flamingo',
-  'Stinky Stork', 'Tiny Tiger', 'Moon Moose', 'Bouncy Beaver', 'Sneaky Sheep', 'Noodle Newt',
-  'Rubber Rhino', 'Tutu Toad', 'Foamy Fox', 'Golden Gnu',
-];
+export const ZOO = Array.from({ length: ZOO_SIZE }, (_, i) => `hippo.zoo.${i + 1}`); // text keys, see locales
 
 // Bath bombs: color and a smell joke
 export const BATH_BOMBS = [
-  { id: 'banana', name: 'Banana', color: '#F6D55C', joke: 'Smells like a monkey\'s lunch.' },
-  { id: 'bubble-gum', name: 'Bubble-gum', color: '#F49AC1', joke: 'Pop! Pink foam everywhere.' },
-  { id: 'old-cheese', name: 'Old cheese', color: '#E8C46A', joke: 'Phew! Even the ducks hold their noses.' },
-  { id: 'dads-socks', name: 'Dad\'s socks', color: '#8FA36B', joke: 'The fly flew away. So did the sock.' },
+  { id: 'banana', color: '#F6D55C' },
+  { id: 'bubble-gum', color: '#F49AC1' },
+  { id: 'old-cheese', color: '#E8C46A' },
+  { id: 'dads-socks', color: '#8FA36B' },
 ];
+
+// Words for the screen, in the app language. The ids and English names above stay as saved/recorded.
+export const badgeName = (id) => t(`hippo.badge.${id}.name`);
+export const badgeTitle = (id) => t(`hippo.badge.${id}.title`);
+export const badgeSkill = (id) => t(`hippo.badge.${id}.skill`);
+export const worldName = (id) => t(`hippo.world.${id}.name`);
+export const worldNote = (id) => t(`hippo.world.${id}.note`);
+export const bombName = (id) => t(`hippo.bomb.${id}.name`);
+export const bombJoke = (id) => t(`hippo.bomb.${id}.joke`);
 
 export const dayKey = rules.dayKey;
 

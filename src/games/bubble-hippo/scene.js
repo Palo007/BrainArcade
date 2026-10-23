@@ -30,6 +30,8 @@
 //   sleepy    bool  eyes closed, "o" mouth, "zZ"
 //   fizz      bool  optional: force fizzy water + duck wobble; default = calm look, meter well below goal
 //   paused    bool  paused overlay
+import { t } from '../../lib/i18n.js';
+
 export const W = 800;
 export const H = 380;
 
@@ -210,7 +212,7 @@ function drawRoom() {
 
 function zooShelf() {
   const n = Math.max(0, Math.floor(V.zoo || 0));
-  ctx.font = '600 11px ' + FD; ctx.fillStyle = '#8C7A6A'; ctx.textAlign = 'left'; ctx.fillText('BUBBLE ZOO', 30, 124);
+  ctx.font = '600 11px ' + FD; ctx.fillStyle = '#8C7A6A'; ctx.textAlign = 'left'; ctx.fillText(t('hippo.scene.zoo'), 30, 124);
   for (let i = 0; i < 5; i++) {
     const x = 34 + i * 44; const y = 52;
     ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.roundRect(x, y + 6, 34, 38, [6, 6, 10, 10]); ctx.fill();
@@ -370,7 +372,7 @@ function tub() {
   });
   heart(530, WATER + 62, 10, 'rgba(247,185,204,.9)'); // little heart on the tub
   duck();
-  if (hasPest('sock')) { ctx.font = '30px ' + EMOJI; ctx.fillText('🧦', 150, WATER + 6 + Math.sin(S.t * 2) * 3); ctx.font = '600 12px ' + FD; ctx.fillStyle = '#6E9F5B'; ctx.fillText('~ stinky ~', 144, WATER - 26 + Math.sin(S.t * 3) * 2); }
+  if (hasPest('sock')) { ctx.font = '30px ' + EMOJI; ctx.fillText('🧦', 150, WATER + 6 + Math.sin(S.t * 2) * 3); ctx.font = '600 12px ' + FD; ctx.fillStyle = '#6E9F5B'; ctx.fillText(t('hippo.scene.stinky'), 144, WATER - 26 + Math.sin(S.t * 3) * 2); }
 }
 
 function duck() {
@@ -428,7 +430,7 @@ function bubbleArea() {
     const k = L.k;
     ctx.strokeStyle = 'rgba(108,199,160,.85)'; ctx.lineWidth = 3; ctx.setLineDash([2, 8]); ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(bx, by, r + 12 + 16 * k, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
-    ctx.font = '600 14px ' + FD; const txt = S.inhale ? 'breathe in...' : '...and out';
+    ctx.font = '600 14px ' + FD; const txt = S.inhale ? t('hippo.scene.in') : t('hippo.scene.out');
     const tw = ctx.measureText(txt).width;
     pill(bx + r + 34, by - 14, tw + 22, 26, 'rgba(255,255,255,.85)');
     ctx.fillStyle = '#2F7D5D'; ctx.fillText(txt, bx + r + 45, by + 4);
@@ -437,11 +439,11 @@ function bubbleArea() {
     const a = S.t * 5; const fx = HX + 70 + Math.cos(a) * 30; const fy = HY - 120 + Math.sin(a * 1.3) * 14;
     ctx.font = '22px ' + EMOJI; ctx.fillText('🪰', fx, fy);
     ctx.strokeStyle = 'rgba(92,99,120,.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(HX + 80, HY - 126, 34, a, a + 2); ctx.stroke(); ctx.setLineDash([]);
-    ctx.font = '600 13px ' + FD; ctx.fillStyle = '#5C6378'; ctx.fillText('bzzz', HX + 112, HY - 150);
+    ctx.font = '600 13px ' + FD; ctx.fillStyle = '#5C6378'; ctx.fillText(t('hippo.scene.bzzz'), HX + 112, HY - 150);
   }
   if (hasPest('swan')) {
     ctx.font = '42px ' + EMOJI; ctx.fillText('🦢', 34, WATER - 2);
-    pill(28, WATER - 78, 74, 28, '#FFFFFF'); ctx.font = '700 16px ' + FD; ctx.fillStyle = '#E46F5B'; ctx.fillText('HONK!', 38, WATER - 58);
+    pill(28, WATER - 78, 74, 28, '#FFFFFF'); ctx.font = '700 16px ' + FD; ctx.fillStyle = '#E46F5B'; ctx.fillText(t('hippo.scene.honk'), 38, WATER - 58);
   }
 }
 
@@ -456,7 +458,7 @@ function meter() {
     ctx.font = '40px ' + EMOJI; ctx.textAlign = 'center';
     ctx.fillText('🦆', x + w / 2, y + h / 2 + 14 + Math.sin(S.t * 3) * 4);
     pill(x - 20, y + h + 14, w + 40, 24, '#F58A6B');
-    ctx.font = '700 12px ' + FD; ctx.fillStyle = '#FFFFFF'; ctx.fillText('DUCK TIME', x + w / 2, y + h + 31); ctx.textAlign = 'left';
+    ctx.font = '700 12px ' + FD; ctx.fillStyle = '#FFFFFF'; ctx.fillText(t('hippo.scene.duckTime'), x + w / 2, y + h + 31); ctx.textAlign = 'left';
     return;
   }
   if (L.secret) { // foam hides everything: empty tube, no goal line, no level
@@ -465,7 +467,7 @@ function meter() {
     const c = S.bp;
     cloud(c.x, c.y, 80, 74);
     ctx.fillStyle = '#7F6FC4'; ctx.textAlign = 'center'; ctx.font = '700 15px ' + FD;
-    ctx.fillText('SECRET', c.x, c.y - 4); ctx.fillText('BUBBLE', c.x, c.y + 14);
+    ctx.fillText(t('hippo.scene.secret'), c.x, c.y - 4); ctx.fillText(t('hippo.scene.bubble'), c.x, c.y + 14);
     ctx.font = '700 32px ' + FD; ctx.fillText('?', x + w / 2, y + h / 2 + 10); ctx.textAlign = 'left';
     return;
   }
@@ -486,11 +488,11 @@ function meter() {
     ctx.strokeStyle = '#5B4A9E'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
     ctx.beginPath(); ctx.moveTo(x - 10, gy); ctx.lineTo(x + w + 10, gy); ctx.stroke(); ctx.setLineDash([]);
     star(x - 18, gy, 8, '#F6C85F');
-    ctx.font = '600 11px ' + FD; ctx.fillStyle = '#5B4A9E'; ctx.textAlign = 'right'; ctx.fillText('goal', x - 30, gy + 4);
+    ctx.font = '600 11px ' + FD; ctx.fillStyle = '#5B4A9E'; ctx.textAlign = 'right'; ctx.fillText(t('hippo.scene.goal'), x - 30, gy + 4);
   }
   ctx.textAlign = 'center';
   pill(x - 14, y + h + 14, w + 28, 24, '#7F6FC4');
-  ctx.font = '700 13px ' + FD; ctx.fillStyle = '#FFFFFF'; ctx.fillText('CALM', x + w / 2, y + h + 31);
+  ctx.font = '700 13px ' + FD; ctx.fillStyle = '#FFFFFF'; ctx.fillText(t('hippo.scene.calm'), x + w / 2, y + h + 31);
   ctx.textAlign = 'left';
 }
 
@@ -500,7 +502,7 @@ function hud(head) {
   if (colors[V.gate]) {
     soft(() => pill(14, 12, 96, 28, colors[V.gate]), 2);
     ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(30, 26, 5, 0, TAU); ctx.fill();
-    ctx.font = '700 13px ' + FD; ctx.fillText(String(V.gate).toUpperCase(), 42, 31);
+    ctx.font = '700 13px ' + FD; ctx.fillText(t(`hippo.scene.gate.${V.gate}`), 42, 31);
   }
   if (Array.isArray(V.hudLines) && V.hudLines.length) {
     const [l1, l2 = ''] = V.hudLines.map(String);
@@ -542,15 +544,15 @@ function overlays() {
     ctx.fillStyle = 'rgba(246,250,255,.86)'; ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < 18; i++) bubbleAt((i * 97 + S.t * 12) % W, H - ((i * 53 + S.t * 20) % H), 6 + (i % 4) * 4, 0.7);
     ctx.fillStyle = '#5B4A9E'; ctx.textAlign = 'center';
-    ctx.font = '700 32px ' + FD; ctx.fillText('BATH BREAK', W / 2, 168);
+    ctx.font = '700 32px ' + FD; ctx.fillText(t('hippo.scene.bathBreak'), W / 2, 168);
     ctx.font = '600 17px ' + FD; ctx.fillStyle = '#3B3560'; ctx.fillText(V.breakText || '', W / 2, 202);
-    ctx.font = '15px ' + ATK; ctx.fillText('Time does not count.', W / 2, 228); ctx.textAlign = 'left';
+    ctx.font = '15px ' + ATK; ctx.fillText(t('hippo.scene.timeNo'), W / 2, 228); ctx.textAlign = 'left';
   }
   if (L.phase === 'result') {
     ctx.fillStyle = 'rgba(62,60,126,.72)'; ctx.fillRect(0, 0, W, H);
     sparkles();
     ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'center';
-    ctx.font = '700 32px ' + FD; ctx.fillText('Round done!', W / 2, 140);
+    ctx.font = '700 32px ' + FD; ctx.fillText(t('hippo.scene.roundDone'), W / 2, 140);
     for (let i = 0; i < 3; i++) star(W / 2 - 40 + i * 40, 172, 15, '#FFD978');
     const lines = Array.isArray(V.resultLines) ? V.resultLines : [];
     ctx.font = '600 17px ' + ATK;
@@ -561,7 +563,7 @@ function overlays() {
     ctx.fillStyle = 'rgba(62,60,126,.42)'; ctx.fillRect(0, 0, W, H);
     soft(() => pill(W / 2 - 130, H / 2 - 28, 260, 56, '#FFFFFF'), 4);
     ctx.fillStyle = '#5B4A9E'; ctx.font = '700 22px ' + FD; ctx.textAlign = 'center';
-    ctx.fillText('Paused', W / 2, H / 2 + 8); ctx.textAlign = 'left';
+    ctx.fillText(t('hippo.scene.paused'), W / 2, H / 2 + 8); ctx.textAlign = 'left';
   }
 }
 
@@ -605,7 +607,7 @@ export function drawScene(c, scene, view, dt) {
     S.flying.forEach((b) => { const x = b.x + Math.sin(b.w * 2) * 8; bubbleAt(x, b.y, b.r, 0.95); ctx.font = '38px ' + EMOJI; ctx.textAlign = 'center'; ctx.fillText(b.p, x, b.y + 13); ctx.textAlign = 'left'; });
     const head = hippo();
     S.toots.forEach((b) => bubbleAt(b.x, b.y, b.r, Math.min(1, b.life)));
-    if (S.toots.length) { ctx.font = '700 22px ' + FD; ctx.fillStyle = '#9A6FC4'; ctx.fillText('toot!', HX - 150, WATER - 34 - (1.9 - S.toots[0].life) * 10); }
+    if (S.toots.length) { ctx.font = '700 22px ' + FD; ctx.fillStyle = '#9A6FC4'; ctx.fillText(t('hippo.scene.toot'), HX - 150, WATER - 34 - (1.9 - S.toots[0].life) * 10); }
     tub();
     paws();
     S.ducks.forEach((d) => { const pop = Math.sin(Math.min(1, (1.4 - d.life) / 1.4) * Math.PI); ctx.font = '34px ' + EMOJI; ctx.fillText('🦆', d.x, WATER - 4 - pop * 46); });

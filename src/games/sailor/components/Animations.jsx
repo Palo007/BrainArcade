@@ -1,8 +1,10 @@
 import React from 'react';
 import fish1Img from '../assets/fish1.png';
 import fish2Img from '../assets/fish2.png';
+import { useT } from '../../../lib/i18n.js';
 
 export function Animations() {
+  const t = useT();
   return (
     <>
       {/* Birds - 3 instances flying at different positions */}
@@ -84,7 +86,7 @@ export function Animations() {
         <div className="fish-swim" style={{ animationDelay: '0s' }}>
           <img
             src={fish1Img}
-            alt="Fish"
+            alt={t('games.sailor.fish')}
             style={{
               width: '60px',
               height: 'auto',
@@ -104,7 +106,7 @@ export function Animations() {
         <div className="fish-swim" style={{ animationDelay: '1s' }}>
           <img
             src={fish2Img}
-            alt="Fish"
+            alt={t('games.sailor.fish')}
             style={{
               width: '70px',
               height: 'auto',

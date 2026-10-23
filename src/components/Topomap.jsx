@@ -2,6 +2,7 @@
 // Canvas topomap of 4 Muse electrodes (TP9/AF7/AF8/TP10): inverse-distance interpolation on a head
 // outline. Ported from Muse_Capture&Analysis mind_monitor_viewer/app.js (drawTopomap), without Google Charts.
 import React, { useEffect, useRef } from 'react';
+import { useT } from '../lib/i18n.js';
 
 const LABELS = ['TP9', 'AF7', 'AF8', 'TP10'];
 // Unit-circle positions, x right, y towards the nose
@@ -21,7 +22,9 @@ function spectralColor(t) {
 // values: 4 relative alpha powers (0..1) in TP9, AF7, AF8, TP10 order; null = no data
 // Optional (recording viewer): range = [lo, hi] fixed colour scale (e.g. session-wide), format = value -> label,
 // size = px. Without them the scale follows the 4 values and labels are percentages.
-export function Topomap({ values, title = 'Alpha (relative)', range = null, format = null, size = 170 }) {
+export function Topomap({ values, title: titleProp, range = null, format = null, size = 170 }) {
+  const t = useT();
+  const title = titleProp ?? t('core.topo.alpha');
   const ref = useRef(null);
   const vals = (values || []).map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null));
   const ok = vals.filter((v) => v !== null);
@@ -67,13 +70,13 @@ export function Topomap({ values, title = 'Alpha (relative)', range = null, form
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, flat]);
 
-  if (!ok.length) return <p className="text-xs">Not enough data for the head map.</p>;
+  if (!ok.length) return <p className="text-xs">{t('core.topo.noData')}</p>;
   const pct = format || ((v) => `${Math.round(v * 100)}%`);
   const sensor = (s) => ({ left: `${(POS[s][0] * 0.5 + 0.5) * 100}%`, top: `${(-POS[s][1] * 0.5 + 0.5) * 100}%` });
   return (
     <figure className="inline-block text-center m-0" style={{ width: size }}>
       <div className="relative" style={{ width: size, height: size }}>
-        <canvas ref={ref} className="w-full h-full" role="img" aria-label={`${title} on the head`} style={{ imageRendering: 'auto' }} />
+        <canvas ref={ref} className="w-full h-full" role="img" aria-label={t('core.topo.aria', { title })} style={{ imageRendering: 'auto' }} />
         <svg viewBox="-1.12 -1.12 2.24 2.24" className="absolute inset-0 w-full h-full" aria-hidden="true" fill="none" stroke="#222" strokeWidth="0.03">
           <circle cx="0" cy="0" r="1" />
           <path d="M-0.12 -1 L0 -1.12 L0.12 -1" />
@@ -96,7 +99,7 @@ export function Topomap({ values, title = 'Alpha (relative)', range = null, form
         <span>{title}</span>
         <span>{pct(min + span)}</span>
       </figcaption>
-      {flat && <figcaption className="text-[9px] mt-1">Only small differences between sensors (under 5 points).</figcaption>}
+      {flat && <figcaption className="text-[9px] mt-1">{t('core.topo.flat')}</figcaption>}
     </figure>
   );
 }

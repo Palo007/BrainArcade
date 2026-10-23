@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // Recording viewer: peak alpha frequency (PAF) over time + histogram, PSD of the visible range, spectrogram.
 import React, { useEffect, useMemo, useRef } from 'react';
+import { useT } from '../../lib/i18n.js';
 import { TimeChart } from './TimeChart.jsx';
 import { Seg, Toggle, Legend, Note, Stat } from './Panel.jsx';
-import { SENSOR_COLORS, THEME, SMOOTH_OPTS, useWidth } from './theme.js';
+import { SENSOR_COLORS, THEME, smoothOpts, useWidth } from './theme.js';
 import { spectrogramDraw, heatGradient } from './lanes.js';
 import { smoothSeries, quantiles, fmt, pct, niceTicks } from '../lib/series.js';
 import { SENSORS } from '../lib/csvParse.js';
@@ -15,9 +16,9 @@ const ZONE_BANDS = [
   { lo: ALPHA_ZONES.fast[0], hi: ALPHA_ZONES.fast[1], color: 'rgba(252,192,96,0.10)' },
 ];
 const PAF_METHODS = {
-  whitened: { label: '1/F 4S', opts: null },
-  c1: { label: 'FFT 1S/0.1S', opts: { windowS: 1, stepS: 0.1, pad: 4 } },
-  c4: { label: 'FFT 4S/1S', opts: { windowS: 4, stepS: 1, pad: 1 } },
+  whitened: { label: 'viewer.paf.mWhitened', opts: null },
+  c1: { label: 'viewer.paf.mC1', opts: { windowS: 1, stepS: 0.1, pad: 4 } },
+  c4: { label: 'viewer.paf.mC4', opts: { windowS: 4, stepS: 1, pad: 1 } },
 };
 const SHOW = [...SENSORS, 'balance'];
 
@@ -42,6 +43,7 @@ function useCanvas(draw, deps, height) {
 }
 
 function Histogram({ series, range, view }) {
+  const t = useT();
   const [lo, hi] = range;
   const step = 0.25;
   const nb = Math.round((hi - lo) / step);
@@ -79,7 +81,7 @@ function Histogram({ series, range, view }) {
   return (
     <div>
       <div className="text-[9px] text-gray-400 mb-1">
-        Histogram of window peaks (visible range, 0.25 Hz bins): <span className="text-[var(--nes-blue)]">posterior TP9+TP10</span> · <span className="text-[var(--nes-green)]">frontal AF7+AF8</span>
+        {t('viewer.paf.histo')}: <span className="text-[var(--nes-blue)]">{t('viewer.paf.histoPost')}</span> · <span className="text-[var(--nes-green)]">{t('viewer.paf.histoFront')}</span>
       </div>
       <div ref={wrap} className="w-full" style={{ height: H }}><canvas ref={cv} data-export="paf-histogram" /></div>
     </div>
@@ -87,6 +89,7 @@ function Histogram({ series, range, view }) {
 }
 
 export function PafPanel({ vc }) {
+  const t = useT();
   const { rec, ana, prefs, setPref, chart, cursor, view, classic, runClassic, busy } = vc;
   const method = prefs.pafMethod;
   const series = method === 'whitened' ? ana.paf : classic[method];
@@ -104,7 +107,7 @@ export function PafPanel({ vc }) {
       ser.push({ t: series.t, y, color: SENSOR_COLORS[s], dots: 2, label: s });
       if (sm) ser.push({ t: series.t, y: smoothSeries(series.t, y, sm), color: SENSOR_COLORS[s], gap: Math.max(10, sm), width: 2 });
     }
-    const out = [{ label: 'peak alpha, Hz', yRange: [range[0] - 0.25, range[1] + 0.5], hBands: ZONE_BANDS, series: ser, weight: 2 }];
+    const out = [{ label: t('viewer.paf.laneAlpha'), yRange: [range[0] - 0.25, range[1] + 0.5], hBands: ZONE_BANDS, series: ser, weight: 2 }];
     if (prefs.pafShow.balance) {
       const n = series.n;
       const bal = new Float32Array(n);
@@ -112,33 +115,33 @@ export function PafPanel({ vc }) {
         const c = series.cols;
         bal[i] = (c.TP10[i] + c.AF8[i]) / 2 - (c.TP9[i] + c.AF7[i]) / 2;
       }
-      out.push({ label: 'balance R − L, Hz', includeZero: true, series: [{ t: series.t, y: smoothSeries(series.t, bal, sm || 10), color: '#FCC060', gap: 20, width: 1.5 }] });
+      out.push({ label: t('viewer.paf.laneBalance'), includeZero: true, series: [{ t: series.t, y: smoothSeries(series.t, bal, sm || 10), color: '#FCC060', gap: 20, width: 1.5 }] });
     }
     if (series.cols.TP9_db && prefs.pafShow.power) {
-      out.push({ label: 'peak power, dB (rel.)', series: SENSORS.filter((s) => prefs.pafShow[s]).map((s) => ({ t: series.t, y: smoothSeries(series.t, series.cols[`${s}_db`], sm), color: SENSOR_COLORS[s], gap: 5 })) });
+      out.push({ label: t('viewer.paf.lanePower'), series: SENSORS.filter((s) => prefs.pafShow[s]).map((s) => ({ t: series.t, y: smoothSeries(series.t, series.cols[`${s}_db`], sm), color: SENSOR_COLORS[s], gap: 5 })) });
     }
     return out;
-  }, [series, prefs.pafShow, prefs.pafSmooth, range]);
+  }, [series, prefs.pafShow, prefs.pafSmooth, range, t]);
   const m = useMemo(() => (series ? pafMetrics(series, view.t0, view.t1) : null), [series, view.t0, view.t1]);
   const o = ana.pafOverall;
-  if (!rec.meta.dspAvailable) return <Note>Needs raw EEG at ≥ 100 Hz.</Note>;
+  if (!rec.meta.dspAvailable) return <Note>{t('viewer.needsRaw100')}</Note>;
   return (
     <>
       <div className="mb-1">
-        <Seg label="METHOD" value={method} onChange={(v) => setPref('pafMethod', v)} options={Object.entries(PAF_METHODS).map(([k, v]) => [k, v.label])} />
-        <Seg label="SMOOTH" value={prefs.pafSmooth} onChange={(v) => setPref('pafSmooth', v)} options={SMOOTH_OPTS} />
+        <Seg label={t('viewer.paf.method')} value={method} onChange={(v) => setPref('pafMethod', v)} options={Object.entries(PAF_METHODS).map(([k, v]) => [k, t(v.label)])} />
+        <Seg label={t('viewer.smooth')} value={prefs.pafSmooth} onChange={(v) => setPref('pafSmooth', v)} options={smoothOpts(t)} />
       </div>
       <div className="mb-1">
-        {SHOW.map((s) => <Toggle key={s} color={SENSOR_COLORS[s] || '#FCC060'} on={!!prefs.pafShow[s]} onChange={(v) => setPref('pafShow', { ...prefs.pafShow, [s]: v })}>{s.toUpperCase()}</Toggle>)}
-        {method !== 'whitened' && <Toggle color="#c0c0c0" on={!!prefs.pafShow.power} onChange={(v) => setPref('pafShow', { ...prefs.pafShow, power: v })}>POWER</Toggle>}
+        {SHOW.map((s) => <Toggle key={s} color={SENSOR_COLORS[s] || '#FCC060'} on={!!prefs.pafShow[s]} onChange={(v) => setPref('pafShow', { ...prefs.pafShow, [s]: v })}>{s === 'balance' ? t('viewer.paf.balance') : s.toUpperCase()}</Toggle>)}
+        {method !== 'whitened' && <Toggle color="#c0c0c0" on={!!prefs.pafShow.power} onChange={(v) => setPref('pafShow', { ...prefs.pafShow, power: v })}>{t('viewer.paf.power')}</Toggle>}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-        <Stat label="Session PAF" value={o?.found ? `${o.paf.toFixed(2)} Hz` : o ? 'no clear peak' : '…'} sub={o?.found ? `${o.source}, conf ${pct(o.confidence)}, IQR ${fmt(o.pafLo, 1)}–${fmt(o.pafHi, 1)}` : 'lib/paf.js computePaf'} />
-        <Stat label="Posterior (view)" value={`${fmt(m?.posteriorMean)} Hz`} sub={`sd ${fmt(m?.posteriorStd)} · median ${fmt(m?.posteriorMedian)} · n ${m?.nPosterior ?? 0}`} color="var(--nes-blue)" />
-        <Stat label="Frontal (view)" value={`${fmt(m?.frontalMean)} Hz`} sub={`n ${m?.nFrontal ?? 0}`} color="var(--nes-green)" />
-        <Stat label="All sensors (view)" value={`${fmt(m?.globalMean)} Hz`} sub={o?.cog ? `CoG ${o.cog.toFixed(2)} Hz` : ''} />
+        <Stat label={t('viewer.paf.session')} value={o?.found ? `${o.paf.toFixed(2)} Hz` : o ? t('viewer.paf.noPeak') : '…'} sub={o?.found ? t('viewer.paf.sessionSub', { source: o.source, conf: pct(o.confidence), lo: fmt(o.pafLo, 1), hi: fmt(o.pafHi, 1) }) : 'lib/paf.js computePaf'} />
+        <Stat label={t('viewer.paf.posteriorView')} value={`${fmt(m?.posteriorMean)} Hz`} sub={t('viewer.paf.postSub', { sd: fmt(m?.posteriorStd), med: fmt(m?.posteriorMedian), n: m?.nPosterior ?? 0 })} color="var(--nes-blue)" />
+        <Stat label={t('viewer.paf.frontalView')} value={`${fmt(m?.frontalMean)} Hz`} sub={t('viewer.paf.nSub', { n: m?.nFrontal ?? 0 })} color="var(--nes-green)" />
+        <Stat label={t('viewer.paf.allView')} value={`${fmt(m?.globalMean)} Hz`} sub={o?.cog ? t('viewer.paf.cog', { v: o.cog.toFixed(2) }) : ''} />
       </div>
-      {!series ? <Note>{busy ? 'Computing PAF…' : 'No PAF yet.'}</Note> : (
+      {!series ? <Note>{busy ? t('viewer.paf.computing') : t('viewer.paf.none')}</Note> : (
         <>
           <Legend cursor={cursor} items={SENSORS.filter((s) => prefs.pafShow[s]).map((s) => ({ label: s, color: SENSOR_COLORS[s], t: series.t, y: series.cols[s] }))} />
           <TimeChart {...chart} cursor={cursor} lanes={lanes} height={150 + (lanes.length - 1) * 70} title="paf" />
@@ -146,10 +149,8 @@ export function PafPanel({ vc }) {
         </>
       )}
       <Note>
-        {method === 'whitened'
-          ? '1/F 4S: per 4 s window (2 s step) the 1/f trend is removed and the highest interior peak in 6–13 Hz is taken (lib/paf.js channelPaf, artifact windows dropped).'
-          : 'FFT: the old viewer\'s method (Hamming, zero-pad, argmax of |X|² in 7.5–12.5 Hz, no 1/f removal - the peak tends to sit at the lower edge). Artifact windows are dropped here.'}
-        {' '}Blue zone 8–9.5 Hz = slow / drowsy alpha, yellow 11–13 Hz = fast / alert alpha.
+        {method === 'whitened' ? t('viewer.paf.noteWhitened') : t('viewer.paf.noteFft')}
+        {' '}{t('viewer.paf.noteZones')}
       </Note>
     </>
   );
@@ -216,6 +217,7 @@ function PsdChart({ psd, paf }) {
 }
 
 export function SpectrumPanel({ vc }) {
+  const t = useT();
   const { rec, ana, prefs, setPref, chart, cursor, view } = vc;
   const spec = ana.spectrogram;
   const psd = useMemo(() => (spec ? rangePsd(spec, view.t0, view.t1) : null), [spec, view.t0, view.t1]);
@@ -253,18 +255,18 @@ export function SpectrumPanel({ vc }) {
   }, [spec, getFrame]);
   const lanes = useMemo(() => {
     if (!spec) return null;
-    return [{ label: `spectrogram ${ch}, Hz`, yRange: [spec.df, Math.min(SPEC_MAX_HZ, spec.nBins * spec.df)], yTicks: [4, 8, 13, 30], yFormat: (v) => v.toFixed(0), series: [], draw: spectrogramDraw(spec, getFrame, colorRange, SPEC_MAX_HZ) }];
-  }, [spec, ch, getFrame, colorRange]);
+    return [{ label: t('viewer.spec.lane', { ch }), yRange: [spec.df, Math.min(SPEC_MAX_HZ, spec.nBins * spec.df)], yTicks: [4, 8, 13, 30], yFormat: (v) => v.toFixed(0), series: [], draw: spectrogramDraw(spec, getFrame, colorRange, SPEC_MAX_HZ) }];
+  }, [spec, ch, getFrame, colorRange, t]);
   const paf = ana.pafOverall?.found ? ana.pafOverall.paf : NaN;
-  if (!rec.meta.dspAvailable) return <Note>Needs raw EEG at ≥ 100 Hz.</Note>;
-  if (!spec) return <Note>Computing spectrum…</Note>;
+  if (!rec.meta.dspAvailable) return <Note>{t('viewer.needsRaw100')}</Note>;
+  if (!spec) return <Note>{t('viewer.spec.computing')}</Note>;
   return (
     <>
-      <div className="text-[9px] text-gray-400 mb-1">Power spectrum of the visible range ({psd?.frames || 0} clean 2 s windows), µV²/Hz, log scale</div>
+      <div className="text-[9px] text-gray-400 mb-1">{t('viewer.spec.title', { n: psd?.frames || 0 })}</div>
       <Legend items={SENSORS.map((s) => ({ label: s, color: SENSOR_COLORS[s] }))} />
       <PsdChart psd={psd} paf={paf} />
       <div className="mt-2 mb-1">
-        <Seg label="SPECTROGRAM" value={ch} onChange={(v) => setPref('specChannel', v)} options={[...SENSORS.map((s) => [s, s]), ['mean', 'MEAN']]} />
+        <Seg label={t('viewer.spec.seg')} value={ch} onChange={(v) => setPref('specChannel', v)} options={[...SENSORS.map((s) => [s, s]), ['mean', t('viewer.eeg.mean')]]} />
       </div>
       <TimeChart {...chart} cursor={cursor} lanes={lanes} height={170} title="spectrogram" />
       <div className="flex items-center gap-2 text-[9px] text-gray-400 mt-1">
@@ -272,7 +274,7 @@ export function SpectrumPanel({ vc }) {
         <span className="inline-block h-2 w-32 border border-[var(--nes-gray)]" style={{ background: heatGradient }} />
         <span>1e{colorRange[1].toFixed(1)} µV²/Hz</span>
       </div>
-      <Note>Welch-style: 2 s Hann windows, 1 s step, 1–45 Hz band-passed; artifact windows left out (blank columns). Blue / yellow = slow / fast alpha zones.</Note>
+      <Note>{t('viewer.spec.note')}</Note>
     </>
   );
 }

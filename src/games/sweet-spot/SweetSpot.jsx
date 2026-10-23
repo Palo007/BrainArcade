@@ -14,10 +14,12 @@ import chillImg from './assets/chill.png';
 import worriedImg from './assets/worried.png';
 import fallingImg from './assets/falling.png';
 import { preloadImages } from '../../lib/preloadImages.js';
+import { useT } from '../../lib/i18n.js';
 
 preloadImages(chillImg, worriedImg, fallingImg);
 
 export function SweetSpot() {
+  const t = useT();
   const { ensureBaseline, resetBaseline, isBaselineReady } = useBaseline();
   const [started, setStarted] = useState(false); // START screen gate
   // Level 1: Cognitive joystick (0..1) for relaxation, built from biomarker vs baseline
@@ -146,17 +148,17 @@ export function SweetSpot() {
             }
           `}</style>
         {!started && (
-          <GameStartPanel title="SWEET SPOT" onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
+          <GameStartPanel title={t('games.sweetSpot.title')} onStart={() => setStarted(true)} best={best} onRecalibrate={recal}>
             <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-              Keep calm to keep your brain on a cloud. It falls if you are not relaxed.
+              {t('games.sweetSpot.intro1')}
             </p>
-            <p className="text-[10px] text-gray-200 leading-relaxed mb-4">Keep your head still.</p>
+            <p className="text-[10px] text-gray-200 leading-relaxed mb-4">{t('games.sweetSpot.intro2')}</p>
           </GameStartPanel>
         )}
         {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
-              Waiting for baseline…
+              {t('games.sweetSpot.waiting')}
             </div>
           </div>
         )}
@@ -180,8 +182,8 @@ export function SweetSpot() {
 
         {/* Title */}
         <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-          <h2 className="text-2xl text-[var(--nes-yellow)]">SWEET SPOT</h2>
-          <p className="text-xs text-gray-400 mt-2">Keep your brain chilling on a cloud - stay calm to keep it afloat</p>
+          <h2 className="text-2xl text-[var(--nes-yellow)]">{t('games.sweetSpot.title')}</h2>
+          <p className="text-xs text-gray-400 mt-2">{t('games.sweetSpot.subtitle')}</p>
         </div>
 
         {/* Sprite */}
@@ -193,7 +195,7 @@ export function SweetSpot() {
         >
           <img
             src={sprite}
-            alt="relaxation sprite"
+            alt={t('games.sweetSpot.spriteAlt')}
             draggable={false}
             className="select-none sprite-float"
             style={{
@@ -210,28 +212,28 @@ export function SweetSpot() {
         {/* Bottom right HUD */}
         <div className="absolute bottom-4 right-4 flex gap-6 text-white items-end" style={{ fontFamily: 'var(--font-retro)' }}>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">HEALTH</div>
+            <div className="text-[8px] opacity-60">{t('games.sweetSpot.health')}</div>
             <div className="mt-2">
               <PixelHearts health={health} maxHearts={3} size={20} />
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">SCORE</div>
+            <div className="text-[8px] opacity-60">{t('games.sweetSpot.score')}</div>
             <div className="text-xl text-[var(--nes-yellow)]">{gameScore.toLocaleString()}</div>
             {isAccumulating && (
               <div className="text-[6px] text-[var(--nes-green)] opacity-80">x{velocity.toFixed(1)}</div>
             )}
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">CALM</div>
+            <div className="text-[8px] opacity-60">{t('games.sweetSpot.calm')}</div>
             <div className="text-xl">{score}</div>
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">RELAX IDX</div>
+            <div className="text-[8px] opacity-60">{t('games.sweetSpot.relaxIdx')}</div>
             <div className="text-xl">{relaxIdx != null ? relaxIdx.toFixed(2) : '---'}</div>
           </div>
           <div className="text-right">
-            <div className="text-[8px] opacity-60">BASE</div>
+            <div className="text-[8px] opacity-60">{t('games.sweetSpot.base')}</div>
             <div className="text-xl">{relaxIdxBaseline != null ? relaxIdxBaseline.toFixed(2) : '---'}</div>
           </div>
         </div>
@@ -242,8 +244,8 @@ export function SweetSpot() {
           offset={8}
           scheme="dark"
           align="left"
-          primary={"Keep calm to float up!"}
-          secondary={"Relaxation 40–70% scores best"}
+          primary={t('games.sweetSpot.hintPrimary')}
+          secondary={t('games.sweetSpot.hintSecondary')}
         />
       </div>
     </div>

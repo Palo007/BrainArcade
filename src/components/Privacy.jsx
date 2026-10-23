@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 import background from '../assets/background.JPG';
 
 export function Privacy() {
   const navigate = useNavigate();
+  const t = useT();
 
   return (
     <div
@@ -31,9 +33,9 @@ export function Privacy() {
               onClick={() => navigate(-1)}
               className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 short-land:py-1 short-land:text-[10px] hover:bg-[var(--nes-blue)] hover:text-black"
               style={{ fontFamily: 'var(--font-retro)' }}
-              aria-label="Back"
+              aria-label={t('core.credits.back')}
             >
-              ← BACK
+              {t('core.credits.backBtn')}
             </button>
           </div>
 
@@ -42,7 +44,7 @@ export function Privacy() {
             className="text-2xl sm:text-3xl short-land:text-base rgb-text text-white mb-4 short-land:mb-2"
             style={{ fontFamily: 'var(--font-retro)' }}
           >
-            PRIVACY POLICY
+            {t('core.privacy.title')}
           </h2>
 
           {/* Privacy Text */}
@@ -51,33 +53,22 @@ export function Privacy() {
             style={{ fontFamily: 'var(--font-retro)' }}
           >
             <p>
-              This project is open‑source. You can inspect the source code
-              at any time to verify how it works.
+              {t('core.privacy.p1')}
             </p>
             <p>
-              We do not collect or transmit any personal data or usage
-              analytics. Nothing leaves your device.
+              {t('core.privacy.p2')}
             </p>
             <p>
-              Stored on your device only: child nicknames, session summaries
-              and per-child calibration (localStorage), and, if you switch it
-              on, a raw EEG/fNIRS recording (browser private file storage)
-              until you save or delete it. Downloads, shares and CSV export
-              happen only when you ask.
+              {t('core.privacy.p3')}
             </p>
             <p>
-              Delete it any time: Clear history per child, delete a profile,
-              delete a recording, or clear this site's data in your browser.
+              {t('core.privacy.p4')}
             </p>
             <p>
-              All processing happens locally on your device solely to enable
-              gameplay and interactions. Disconnect your device at any time to
-              stop all processing immediately.
+              {t('core.privacy.p5')}
             </p>
             <p className="opacity-80">
-              If you fork or host your own version, please review any changes
-              you introduce. This policy applies to this open‑source version
-              as provided here.
+              {t('core.privacy.p6')}
             </p>
           </div>
         </div>

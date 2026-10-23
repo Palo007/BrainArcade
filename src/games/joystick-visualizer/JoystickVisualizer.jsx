@@ -6,6 +6,7 @@ import '../../styles/retro.css';
 import brainCommandCenterImg from './assets/brain_command_center.png';
 import { FnirsPanel } from '../../components/FnirsPanel.jsx';
 import { useFnirs } from '../../hooks/useFnirs.js';
+import { useT } from '../../lib/i18n.js';
 
 // Log mapping: x2 and /2 move a tile the same distance; range 1.5 puts the edges at x2.5 and /2.5.
 // Default 90 s drift: a 600 s drift kept electrode settling on screen (demo replay: tiles at 0/100
@@ -13,6 +14,7 @@ import { useFnirs } from '../../hooks/useFnirs.js';
 const TILE_OPTIONS = { mapping: 'log', range: 1.5 };
 
 function AxisTile({ axis }) {
+  const t = useT();
   const { value01 } = useJoystick(axis, TILE_OPTIONS);
   const pct = Math.round(value01 * 100);
   const experimental = JOYSTICK_AXES[axis]?.experimental;
@@ -21,8 +23,8 @@ function AxisTile({ axis }) {
     <div className="p-3 border-2 border-[var(--nes-blue)]/70 bg-black text-white" style={{ fontFamily: 'var(--font-retro)' }}>
       <div className="flex items-center justify-between mb-2 text-[10px]">
         <div className="opacity-80 uppercase text-[var(--nes-blue)]">
-          {axis}
-          {experimental && <span className="ml-2 text-[var(--nes-yellow)]" title="Experimental: no published method">EXP</span>}
+          {t(`games.joystick.axis.${axis}`)}
+          {experimental && <span className="ml-2 text-[var(--nes-yellow)]" title={t('games.joystick.experimental')}>EXP</span>}
         </div>
         <div className="text-[var(--nes-blue)]">{pct}</div>
       </div>
@@ -35,6 +37,7 @@ function AxisTile({ axis }) {
 }
 
 export function BrainCommandCenter() {
+  const t = useT();
   const { ensureBaseline, isBaselineReady } = useBaseline();
   const { supported: fnirsSupported } = useFnirs();
 
@@ -58,15 +61,15 @@ export function BrainCommandCenter() {
       {!isBaselineReady && anyNeedsBaseline && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
           <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={{ fontFamily: 'var(--font-retro)' }}>
-            Waiting for baseline…
+            {t('games.joystick.waiting')}
           </div>
         </div>
       )}
 
       {/* Title (aligned like SweetSpot) */}
       <div className="absolute top-6 left-6 w-[min(480px,60vw)] phone-port:w-[calc(100%-3rem)]">
-        <h2 className="text-2xl phone-port:text-base text-[var(--nes-yellow)] text-left">BRAIN COMMAND CENTER</h2>
-        <p className="text-xs text-gray-400 mt-2 text-left">Check out your brain's cognitive traits in real-time</p>
+        <h2 className="text-2xl phone-port:text-base text-[var(--nes-yellow)] text-left">{t('games.joystick.title')}</h2>
+        <p className="text-xs text-gray-400 mt-2 text-left">{t('games.joystick.subtitle')}</p>
       </div>
 
       <div className="p-6 phone-port:p-3 pt-24 phone-port:pt-24 min-h-full flex flex-col items-center">
@@ -76,7 +79,7 @@ export function BrainCommandCenter() {
           <div className="flex-shrink-0">
             <img
               src={brainCommandCenterImg}
-              alt="Brain Command Center"
+              alt={t('games.joystick.title')}
               className="select-none"
               draggable={false}
               style={{

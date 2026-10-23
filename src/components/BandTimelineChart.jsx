@@ -2,10 +2,10 @@
 // Canvas chart: stacked relative band powers over time + focus line, optional fNIRS ΔHbO strip.
 import React, { useEffect, useRef, useState } from 'react';
 import { TIMELINE_BANDS } from '../lib/sessionTimeline.js';
+import { useT } from '../lib/i18n.js';
 
 const BAND_VARS = { delta: '--nes-purple', theta: '--nes-blue', alpha: '--nes-green', beta: '--nes-yellow', gamma: '--nes-red' };
 const BAND_FALLBACK = { delta: '#8040FF', theta: '#40C0FF', alpha: '#00C020', beta: '#FCC060', gamma: '#FC8080' };
-const BAND_LABEL = { delta: 'Delta', theta: 'Theta', alpha: 'Alpha', beta: 'Beta', gamma: 'Gamma' };
 const INK = '#222';
 
 function themeColor(name, fallback) {
@@ -152,6 +152,7 @@ function draw(canvas, points, width) {
 }
 
 export function BandTimelineChart({ points }) {
+  const t = useT();
   const ref = useRef(null);
   const wrapRef = useRef(null);
   const [width, setWidth] = useState(300);
@@ -173,25 +174,25 @@ export function BandTimelineChart({ points }) {
     if (usable && ref.current) setHasHbo(draw(ref.current, points, width));
   }, [points, width, usable]);
 
-  if (!usable) return <p className="text-xs">Not enough data for the brain-wave chart.</p>;
+  if (!usable) return <p className="text-xs">{t('core.band.noData')}</p>;
   return (
     <div ref={wrapRef} className="w-full">
-      <canvas ref={ref} className="w-full block" role="img" aria-label="Brain-wave bands over time" />
+      <canvas ref={ref} className="w-full block" role="img" aria-label={t('core.band.aria')} />
       <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[10px]">
         {TIMELINE_BANDS.map((b) => (
           <li key={b} className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 border border-black/60" style={{ background: `var(${BAND_VARS[b]}, ${BAND_FALLBACK[b]})` }} />
-            {BAND_LABEL[b]}
+            {t(`core.band.${b}`)}
           </li>
         ))}
         <li className="flex items-center gap-1">
           <span className="inline-block w-3 border-t-2 border-black" />
-          Focus
+          {t('core.band.focus')}
         </li>
         {hasHbo && (
           <li className="flex items-center gap-1">
             <span className="inline-block w-3 border-t-2" style={{ borderColor: '#c0392b' }} />
-            ΔHbO (µM, slow drift removed)
+            {t('core.band.hbo')}
           </li>
         )}
       </ul>

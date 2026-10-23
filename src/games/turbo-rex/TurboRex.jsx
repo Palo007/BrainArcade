@@ -22,10 +22,11 @@ import { focusOf, pushFocus, zOf, meterOf, makeBaseline, createChecks, DEMO_BASE
 import { readGate, TAP_HOLD_MS, FREEZE_MIN_MS, SIGNAL_REASONS } from './gate.js';
 import {
   BELTS, STORY, WORLDS, RULES, PLAYABLE, isBuilt, dayKey, startDay, goalLevel, roundLen, tapTravelS,
-  finishRound, loadProgress, saveProgress, parentCardOf,
+  finishRound, loadProgress, saveProgress, parentCardOf, beltColorName, beltTitle, beltSkill, beltHead, worldName,
 } from './progress.js';
 import { primeRexAudio, startMusic, stopMusic, setMusicMode, playSfx, say, setMix } from './sounds.js';
 import { phrase, line, beltName } from '../../lib/phrases.js';
+import { useT, t as tr } from '../../lib/i18n.js';
 import { usePhoneTilt } from './tilt.js';
 import {
   W, H, LANE_Y, MOUTH_X, SPAWN_X, createScene, drawScene, sceneEat, sceneCombo, sceneFx, sceneBanner, sceneParty,
@@ -113,17 +114,15 @@ function loadMix() {
 }
 
 const pct = (v) => (v == null ? '-' : `${Math.round(v * 100)}%`);
-const REASON_TEXT = {
-  muscle: 'face or jaw muscle (freeze frame)', neck: 'neck muscle', contact: 'headband contact or big spikes',
-  eyes: 'eyes closed', blink: 'blinks', eyeMove: 'eye movements',
-};
-const SETUP_TEXT = { hands: 'phone in hands', stand: 'phone on a stand', pc: 'PC', unknown: 'not recorded' };
+const REASON_KEYS = ['muscle', 'neck', 'contact', 'eyes', 'blink', 'eyeMove']; // texts: rex.reason.<id>
+const SETUP_KEYS = ['hands', 'stand', 'pc', 'unknown']; // texts: rex.setup.<id>
 
 // The parent's "real change" line: raw focus number per round (line) and its watch run (dots),
 // against the fixed first-week reference (band). Raw log units; higher = more beta against alpha + theta.
 function RawLine({ line, refStats }) {
+  const t = useT();
   const pts = line.filter((p) => Number.isFinite(p.raw) || Number.isFinite(p.watch));
-  if (pts.length < 2) return <p className="opacity-70">Play 2 rounds with the headband to see the line.</p>;
+  if (pts.length < 2) return <p className="opacity-70">{t('rex.rawLine.few')}</p>;
   const vals = pts.flatMap((p) => [p.raw, p.watch]).filter(Number.isFinite);
   if (refStats) vals.push(refStats.median - refStats.mad, refStats.median + refStats.mad);
   let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -134,20 +133,21 @@ function RawLine({ line, refStats }) {
   const path = pts.map((p, i) => (Number.isFinite(p.raw) ? `${x(i)},${y(p.raw)}` : null)).filter(Boolean).join(' ');
   return (
     <div>
-      <svg viewBox={`0 0 ${w} ${h}`} width="100%" style={{ maxWidth: w, background: 'rgba(255,255,255,.06)' }} role="img" aria-label="Raw focus number per round">
+      <svg viewBox={`0 0 ${w} ${h}`} width="100%" style={{ maxWidth: w, background: 'rgba(255,255,255,.06)' }} role="img" aria-label={t('rex.rawLine.aria')}>
         {refStats && (
           <rect x={0} width={w} y={y(refStats.median + refStats.mad)} height={Math.max(1, y(refStats.median - refStats.mad) - y(refStats.median + refStats.mad))} fill="rgba(245,216,58,.18)" />
         )}
         <polyline points={path} fill="none" stroke="#B7F36B" strokeWidth="2" />
         {pts.map((p, i) => (Number.isFinite(p.watch) ? <circle key={i} cx={x(i)} cy={y(p.watch)} r="2.5" fill="#4FB3F2" /> : null))}
       </svg>
-      <p className="opacity-70 mt-1">Green line: each round. Blue dots: its watch run. Yellow band: first-week reference{refStats?.fixed ? '' : ' (still being set this week)'}.</p>
+      <p className="opacity-70 mt-1">{t(refStats?.fixed ? 'rex.rawLine.legend' : 'rex.rawLine.legendOpen')}</p>
     </div>
   );
 }
 
 export function TurboRex() {
   const navigate = useNavigate();
+  const t = useT();
   const { ensureBaseline, resetBaseline, isBaselineReady, calibration } = useBaseline();
   const { subscribeEEG, isConnected, profile } = useEEG();
   const { bands } = useProcessing();
@@ -431,8 +431,8 @@ export function TurboRex() {
     const net = r.safetyDone ? null : safetyNet(RULES, { t: r.t, okSec: r.liveSec, successSec: r.aboveSec });
     if (net) {
       r.safetyDone = true; r.safety = net.offset; r.eased = net.eased;
-      if (net.offset > 0) sceneBanner(scene, 'GOAL LINE UP! YOU ROCK', 1.8);
-      else if (net.offset < 0) sceneBanner(scene, 'GOAL LINE A BIT LOWER', 1.8);
+      if (net.offset > 0) sceneBanner(scene, tr('rex.banner.up'), 1.8);
+      else if (net.offset < 0) sceneBanner(scene, tr('rex.banner.down'), 1.8);
     }
     const goalZ = roundGoal(RULES, r);
     const up = r.z >= goalZ;
@@ -451,7 +451,7 @@ export function TurboRex() {
       r.longest = Math.max(r.longest, r.run);
       if (r.upFor >= COMBO_S) {
         r.upFor -= COMBO_S; r.combos += 1; r.score += COMBO_POINTS;
-        sceneCombo(scene, `FOCUS COMBO! +${COMBO_POINTS}`);
+        sceneCombo(scene, tr('rex.combo', { n: COMBO_POINTS }));
         playSfx('chime');
       }
     } else {
@@ -492,7 +492,7 @@ export function TurboRex() {
     const y = ((e.clientY - rect.top) * H) / rect.height;
     const scene = sceneRef.current;
     if (ph === 'baseline' || ph === 'warmup') {
-      if (collectRef.current.lane?.on) sceneFx(scene, 'Just watch!', x, y - 20, '#FFFFFF', 20);
+      if (collectRef.current.lane?.on) sceneFx(scene, tr('rex.fx.justWatch'), x, y - 20, '#FFFFFF', 20);
       return;
     }
     const r = roundRef.current;
@@ -639,23 +639,22 @@ export function TurboRex() {
       const ph = phaseRef.current;
       const r = roundRef.current;
       const beltId = r && ph !== 'menu' ? r.belt : drawRef.current.belt;
-      const b = BELTS[beltId - 1];
       const now = performance.now();
       const view = {
-        phase: ph, belt: beltId, beltTitle: `${b.name} · ${b.title}`, meter: null, goal: null, up: false,
+        phase: ph, belt: beltId, beltTitle: beltHead(beltId), meter: null, goal: null, up: false,
         lowFor: 0, frozen: false, paused: false, items: [], targetSpeed: 120,
       };
       if (ph === 'wiggle') {
         const wg = wiggleRef.current;
         view.dance = true;
         view.targetSpeed = 0;
-        view.msg = wg.shoulders ? 'SHOULDER ROLLS!' : 'WIGGLE BREAK!';
-        view.sub = `${wg.shoulders ? 'Roll them back, slow and big.' : 'Shake your hands. Roll your shoulders.'} ${Math.max(0, Math.ceil(wg.len - wg.t))}`;
+        view.msg = wg.shoulders ? tr('rex.msg.shoulders') : tr('rex.msg.wiggle');
+        view.sub = tr(wg.shoulders ? 'rex.sub.shoulders' : 'rex.sub.wiggle', { n: Math.max(0, Math.ceil(wg.len - wg.t)) });
       } else if (ph === 'baseline' || ph === 'warmup') {
         const c2 = collectRef.current;
         view.targetSpeed = 150;
         view.items = c2.lane?.items || [];
-        view.msg = c2.lane?.on ? 'JUST WATCH! NO TAPPING.' : 'WATCH REX ROLL. SIT STILL.';
+        view.msg = c2.lane?.on ? tr('rex.msg.watchTap') : tr('rex.msg.watch');
         view.sub = `${Math.max(0, Math.ceil(c2.minS - c2.t))} s`;
         view.paused = pausedRef.current;
       } else if (ph === 'play' && r) {
@@ -670,7 +669,7 @@ export function TurboRex() {
         view.paused = pausedRef.current;
         view.items = r.lane.items;
         view.score = r.score;
-        view.stats = r.lane.on ? `combo ${r.combos} · pizzas ${r.hits}` : `combo ${r.combos}`;
+        view.stats = r.lane.on ? tr('rex.stats.pizzas', { c: r.combos, h: r.hits }) : tr('rex.stats.combo', { c: r.combos });
         view.timeText = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
         view.hint = now < r.hintUntil ? r.hintText : '';
         view.hintArrows = r.gate.reason === 'tilt';
@@ -707,8 +706,8 @@ export function TurboRex() {
             className={`min-h-[44px] border-2 px-2 py-2 text-[9px] leading-tight text-left ${on ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : open ? 'border-white/60 text-white' : 'border-white/20 text-white/30'}`}
           >
             <span className="inline-block w-2 h-2 mr-1 border border-black/60" style={{ background: b.color }} />
-            {open ? `${b.name} BELT` : built ? `${b.name} ???` : `${b.name} · SOON`}
-            {open && <span className="block opacity-70 mt-1">{b.title}</span>}
+            {t(open ? 'rex.beltLabel' : built ? 'rex.beltLocked' : 'rex.beltSoon', { name: beltColorName(b.id) })}
+            {open && <span className="block opacity-70 mt-1">{beltTitle(b.id)}</span>}
           </button>
         );
       })}
@@ -717,10 +716,10 @@ export function TurboRex() {
 
   const goodbye = (
     <div className="text-[10px] text-gray-200 leading-relaxed">
-      <p className="text-[var(--nes-yellow)] mb-2">SEE YOU NEXT TIME!</p>
-      <p className="mb-2">You played {today.roundsDone} round{today.roundsDone === 1 ? '' : 's'} today. Rex parks his skateboard and waves.</p>
-      <p className="mb-4">Days played: {progress.days}</p>
-      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">CHOOSE GAME</button>
+      <p className="text-[var(--nes-yellow)] mb-2">{t('rex.goodbye.title')}</p>
+      <p className="mb-2">{t('rex.goodbye.played', { n: today.roundsDone })}</p>
+      <p className="mb-4">{t('rex.goodbye.days', { n: progress.days })}</p>
+      <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">{t('rex.chooseGame')}</button>
     </div>
   );
 
@@ -732,14 +731,14 @@ export function TurboRex() {
             ref={canvasRef}
             onPointerDown={onPointerDown}
             style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }}
-            aria-label="Turbo Rex game. Tap the pizzas."
+            aria-label={t('rex.aria')}
           />
         </div>
 
         {(phase === 'baseline' || phase === 'warmup') && hud?.stuck && (
           <div className="absolute inset-x-0 bottom-4 flex justify-center z-10 px-4 pointer-events-none">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px] text-white text-center max-w-sm" style={FONT}>
-              No clean signal yet. Tap ELECTRODES and check the headband. The game starts when the signal is clean.
+              {t('rex.noSignal')}
             </div>
           </div>
         )}
@@ -747,7 +746,7 @@ export function TurboRex() {
         {started && !isBaselineReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px]" style={FONT}>
-              Waiting for baseline…
+              {t('rex.waitBaseline')}
             </div>
           </div>
         )}
@@ -757,37 +756,37 @@ export function TurboRex() {
             {dayDone ? goodbye : (
               <>
                 <p className="text-[10px] text-gray-200 leading-relaxed mb-2">
-                  Your brain is Rex&apos;s fuel. Keep the bar above the goal and Rex zooms!
+                  {t('rex.intro')}
                 </p>
-                <p className="text-[10px] text-gray-200 leading-relaxed mb-2">{BELTS[belt - 1].skill}</p>
+                <p className="text-[10px] text-gray-200 leading-relaxed mb-2">{beltSkill(belt)}</p>
                 {setup !== 'stand' && setup !== 'pc' && (
                   <p className="text-[9px] text-[var(--nes-yellow)] leading-relaxed mb-3">
-                    Dino nest: pillow on your lap, elbows on the pillow, phone sideways at chin height.
+                    {t('rex.nest')}
                   </p>
                 )}
-                {portrait && <p className="text-[9px] text-[var(--nes-cyan)] mb-3">Turn the phone sideways for Turbo Rex.</p>}
+                {portrait && <p className="text-[9px] text-[var(--nes-cyan)] mb-3">{t('rex.portrait')}</p>}
                 {beltButtons}
                 <div className="mb-3 text-[9px]">
-                  <p className="mb-1 text-gray-300">SOUND</p>
+                  <p className="mb-1 text-gray-300">{t('rex.sound')}</p>
                   <div className="flex justify-center gap-1">
-                    {[['music', 'MUSIC'], ['sfx', 'EFFECTS'], ['voice', 'VOICE']].map(([k, label]) => (
+                    {['music', 'sfx', 'voice'].map((k) => (
                       <button key={k} type="button" aria-pressed={mix[k]} onClick={() => toggle(k)}
                         className={`min-h-[44px] border-2 px-2 ${mix[k] ? 'border-[var(--nes-green)] text-[var(--nes-green)]' : 'border-white/30 text-white/50'}`}>
-                        {label} {mix[k] ? 'ON' : 'OFF'}
+                        {t(`rex.mix.${k}.${mix[k] ? 'on' : 'off'}`)}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 text-[9px] text-gray-200 mb-3">
                   <span className="text-[var(--nes-yellow)]">★ {progress.stars}</span>
-                  <span>DAYS PLAYED {progress.days}</span>
-                  <span>ROUNDS LEFT TODAY {roundsLeft}</span>
+                  <span>{t('rex.stat.days', { n: progress.days })}</span>
+                  <span>{t('rex.stat.roundsLeft', { n: roundsLeft })}</span>
                 </div>
                 <div className="flex justify-center gap-2 mb-4">
-                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">STORY</button>
-                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">PARENT CARD</button>
+                  <button type="button" onClick={() => setModal('story')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('rex.story')}</button>
+                  <button type="button" onClick={() => setModal('parent')} className="min-h-[44px] border-2 border-white/60 px-3 text-[9px] text-white">{t('rex.parentCard')}</button>
                 </div>
-                {demo && <p className="text-[8px] opacity-70 mb-2">Demo mode: a fake brain wave drives Rex. Progress is not saved.</p>}
+                {demo && <p className="text-[8px] opacity-70 mb-2">{t('rex.demoNote')}</p>}
               </>
             )}
           </GameStartPanel>
@@ -795,30 +794,30 @@ export function TurboRex() {
       </div>
 
       {phase === 'result' && result && (
-        <RetroModal title="ROUND DONE!" showFooter={false} onCancel={() => go('menu')}>
+        <RetroModal title={t('rex.roundDone')} showFooter={false} onCancel={() => go('menu')}>
           <div style={FONT} className="text-center">
             <div className="text-2xl text-[var(--nes-yellow)] mb-2">{'★'.repeat(result.stars)}</div>
             <p className="text-[10px] mb-1">
-              {result.early ? 'The round ended early, but you still get your star!' : 'You finished the round!'}
+              {result.early ? t('rex.roundEarly') : t('rex.roundFinished')}
             </p>
-            <p className="text-[9px] mt-2">Points {result.score} · Focus combos {result.combos}</p>
-            {result.round.tapPct != null && <p className="text-[9px] mt-1">Pizzas eaten {result.round.hits}</p>}
-            <p className="text-[9px] mt-1">Longest zoom {Math.round(result.round.longest)} s</p>
+            <p className="text-[9px] mt-2">{t('rex.result.points', { score: result.score, n: result.combos })}</p>
+            {result.round.tapPct != null && <p className="text-[9px] mt-1">{t('rex.result.pizzas', { n: result.round.hits })}</p>}
+            <p className="text-[9px] mt-1">{t('rex.result.longest', { n: Math.round(result.round.longest) })}</p>
             {result.unlockedBelt && (
               <div className="border-2 border-[var(--nes-yellow)] p-2 mt-3 text-[9px] text-left">
-                <p className="text-[var(--nes-yellow)] mb-1">NEW BELT: {BELTS[result.unlockedBelt - 1].name}!</p>
-                <p className="leading-relaxed">{STORY[result.unlockedBelt - 1]}</p>
+                <p className="text-[var(--nes-yellow)] mb-1">{t('rex.newBeltUp', { name: beltColorName(result.unlockedBelt) })}</p>
+                <p className="leading-relaxed">{t(STORY[result.unlockedBelt - 1])}</p>
               </div>
             )}
-            {result.practiceOffer && <p className="text-[9px] mt-3">That was a tough one! Next time you can pick an easier belt, just for fun. You keep your belt.</p>}
-            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">The headband signal was poor for most of this round, so it is not counted in your progress.</p>}
-            {demo && <p className="text-[8px] opacity-70 mt-2">Demo mode — not saved</p>}
+            {result.practiceOffer && <p className="text-[9px] mt-3">{t('rex.practice')}</p>}
+            {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">{t('rex.poor')}</p>}
+            {demo && <p className="text-[8px] opacity-70 mt-2">{t('rex.demoNotSaved')}</p>}
             <div className="mt-4">
               {!dayDone ? (
                 <GameEndActions onPlayAgain={() => go('menu')} sessionId={result.sessionId} game={GAME} seconds={result.round.sec} />
               ) : (
                 <>
-                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">SEE YOU!</button>
+                  <button type="button" onClick={() => go('menu')} className="border-4 border-[var(--nes-green)] px-4 py-3 text-xs text-[var(--nes-green)]">{t('rex.seeYou')}</button>
                   <div className="mt-4 text-left"><ParentReport sessionId={result.sessionId} game={GAME} seconds={result.round.sec} /></div>
                 </>
               )}
@@ -828,42 +827,42 @@ export function TurboRex() {
       )}
 
       {modal === 'story' && (
-        <RetroModal title={`CHAPTER ${chapter}`} cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('rex.chapter', { n: chapter })} cancelLabel={t('rex.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="text-[var(--nes-yellow)] mb-2">{BELTS[chapter - 1].name} BELT - {WORLDS[0].name}</p>
-            <p>{STORY[chapter - 1]}</p>
+            <p className="text-[var(--nes-yellow)] mb-2">{t('rex.chapterHead', { belt: beltColorName(chapter), world: worldName(WORLDS[0].id) })}</p>
+            <p>{t(STORY[chapter - 1])}</p>
           </div>
         </RetroModal>
       )}
 
       {modal === 'parent' && card && (
-        <RetroModal title="PARENT CARD" cancelLabel="CLOSE" onCancel={() => setModal(null)}>
+        <RetroModal title={t('rex.parentCard')} cancelLabel={t('rex.close')} onCancel={() => setModal(null)}>
           <div style={FONT} className="text-[10px] leading-relaxed">
-            <p className="mb-2 opacity-80">Last 7 days. Turbo Rex is a focus-practice game, not a medical test.</p>
-            <p>Rounds: {card.rounds} on {card.days} day{card.days === 1 ? '' : 's'}</p>
-            <p className="mt-2 text-[var(--nes-yellow)]">REAL CHANGE</p>
-            <p className="mb-1">The raw focus number, against a fixed reference from the first week. Watch this line over weeks.</p>
+            <p className="mb-2 opacity-80">{t('rex.card.intro')}</p>
+            <p>{t('rex.card.rounds', { r: card.rounds, n: card.days })}</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('rex.card.realChange')}</p>
+            <p className="mb-1">{t('rex.card.realText')}</p>
             <RawLine line={card.line} refStats={card.ref} />
-            <p className="mt-2 text-[var(--nes-yellow)]">TUNING</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('rex.card.tuning')}</p>
             <p>
-              Goal level: {card.goalSteps === 0 ? 'the same as day 1'
-                : `${Math.abs(card.goalSteps)} step${Math.abs(card.goalSteps) === 1 ? '' : 's'} ${card.goalSteps > 0 ? 'harder' : 'easier'} than day 1`}
+              {card.goalSteps === 0 ? t('rex.card.goalSame')
+                : t(card.goalSteps > 0 ? 'rex.card.goalHarder' : 'rex.card.goalEasier', { n: Math.abs(card.goalSteps) })}
             </p>
-            <p>Focus time (above the goal): {pct(card.focusPct)}. The goal moves with your child, so this shows the tuning, not learning.</p>
-            <p>Longest focus run: {Math.round(card.longest)} s</p>
-            <p className="mt-2 text-[var(--nes-yellow)]">TAPS</p>
-            {card.tapPct == null ? <p>Tapping starts on Yellow belt.</p> : (
+            <p>{t('rex.card.focusTime', { v: pct(card.focusPct) })}</p>
+            <p>{t('rex.card.longest', { n: Math.round(card.longest) })}</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('rex.card.taps')}</p>
+            {card.tapPct == null ? <p>{t('rex.card.tapsLater')}</p> : (
               <>
-                <p>Correct taps: {pct(card.tapPct)} · pizzas eaten {card.hits} · missed {card.missed} · sock taps {card.sockTaps}</p>
-                <p>Reaction time: {card.rtMs == null ? '-' : `${Math.round(card.rtMs)} ms`}</p>
+                <p>{t('rex.card.tapsLine', { a: pct(card.tapPct), h: card.hits, m: card.missed, s: card.sockTaps })}</p>
+                <p>{t('rex.card.rt', { v: card.rtMs == null ? '-' : `${Math.round(card.rtMs)} ms` })}</p>
               </>
             )}
-            <p className="mt-2 text-[var(--nes-yellow)]">SIGNAL QUALITY</p>
-            <p>Held: {pct(card.heldPct)} · frozen: {pct(card.frozenPct)}</p>
-            <p>Main reason: {card.mainReason ? REASON_TEXT[card.mainReason] || card.mainReason : '-'}</p>
-            <p className="opacity-80">High numbers mean &quot;fix the pose&quot;, not &quot;bad focus&quot;.</p>
-            <p className="mt-2">Setup: {Object.entries(card.setups).map(([k, n]) => `${SETUP_TEXT[k] || k} ${n}`).join(', ') || '-'}</p>
-            <p className="mt-2 text-[var(--nes-yellow)]">Stars come for finishing a round, never for score. Praise the effort, not the number.</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('rex.card.quality')}</p>
+            <p>{t('rex.card.held', { a: pct(card.heldPct), b: pct(card.frozenPct) })}</p>
+            <p>{t('rex.card.reason', { v: card.mainReason ? (REASON_KEYS.includes(card.mainReason) ? t(`rex.reason.${card.mainReason}`) : card.mainReason) : '-' })}</p>
+            <p className="opacity-80">{t('rex.card.fixPose')}</p>
+            <p className="mt-2">{t('rex.card.setup', { v: Object.entries(card.setups).map(([k, n]) => `${SETUP_KEYS.includes(k) ? t(`rex.setup.${k}`) : k} ${n}`).join(', ') || '-' })}</p>
+            <p className="mt-2 text-[var(--nes-yellow)]">{t('rex.card.stars')}</p>
           </div>
         </RetroModal>
       )}

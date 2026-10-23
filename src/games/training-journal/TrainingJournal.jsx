@@ -5,7 +5,8 @@ import { PlayerSwitcher } from '../../components/PlayerSwitcher.jsx';
 import { AlphaPeakReport } from '../../components/AlphaPeakReport.jsx';
 import { loadPafHistory } from '../../lib/paf.js';
 import { useProfiles } from '../../contexts/ProfileContext.jsx';
-import { sessionSetup, SETUP_INFO } from '../../lib/playSetup.js';
+import { sessionSetup } from '../../lib/playSetup.js';
+import { useT, locale } from '../../lib/i18n.js';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -20,7 +21,7 @@ const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const fmtDate = (iso) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '-';
-  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString(locale())} ${d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}`;
 };
 
 function Tile({ label, value, color = 'var(--nes-yellow)' }) {
@@ -40,6 +41,7 @@ function xAt(i, n) {
 }
 
 function Frame({ h, n, label, children }) {
+  const t = useT();
   const y = (v) => PAD.t + (1 - v / 100) * (h - PAD.t - PAD.b);
   return (
     <svg viewBox={`0 0 ${W} ${h}`} className="w-full h-auto block" role="img" aria-label={label}>
@@ -49,8 +51,8 @@ function Frame({ h, n, label, children }) {
           <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" fontSize="9" fill="#9ca3af">{v}</text>
         </g>
       ))}
-      <text x={PAD.l} y={h - 6} fontSize="9" fill="#9ca3af">oldest</text>
-      <text x={W - PAD.r} y={h - 6} fontSize="9" fill="#9ca3af" textAnchor="end">{n > 1 ? 'latest' : ''}</text>
+      <text x={PAD.l} y={h - 6} fontSize="9" fill="#9ca3af">{t('report.journal.oldest')}</text>
+      <text x={W - PAD.r} y={h - 6} fontSize="9" fill="#9ca3af" textAnchor="end">{n > 1 ? t('report.journal.latest') : ''}</text>
       {children(y)}
     </svg>
   );
@@ -58,6 +60,7 @@ function Frame({ h, n, label, children }) {
 
 // Generic auto-scaled trend line (one or two series) for any numeric session field.
 function TrendChart({ list, series, label }) {
+  const t = useT();
   const n = list.length;
   const h = 160;
   const has = (s, k) => s[k] != null && s[k] !== '' && Number.isFinite(Number(s[k]));
@@ -69,8 +72,8 @@ function TrendChart({ list, series, label }) {
       <line x1={PAD.l} x2={W - PAD.r} y1={y(max)} y2={y(max)} stroke="rgba(255,255,255,0.15)" />
       <text x={PAD.l - 6} y={y(max) + 3} textAnchor="end" fontSize="9" fill="#9ca3af">{Math.round(max * 10) / 10}</text>
       <text x={PAD.l - 6} y={y(0) + 3} textAnchor="end" fontSize="9" fill="#9ca3af">0</text>
-      <text x={PAD.l} y={h - 6} fontSize="9" fill="#9ca3af">oldest</text>
-      <text x={W - PAD.r} y={h - 6} fontSize="9" fill="#9ca3af" textAnchor="end">{n > 1 ? 'latest' : ''}</text>
+      <text x={PAD.l} y={h - 6} fontSize="9" fill="#9ca3af">{t('report.journal.oldest')}</text>
+      <text x={W - PAD.r} y={h - 6} fontSize="9" fill="#9ca3af" textAnchor="end">{n > 1 ? t('report.journal.latest') : ''}</text>
       {series.map(([k, c]) => (
         <g key={k}>
           <path d={path(list.flatMap((s, i) => (has(s, k) ? [[xAt(i, n), y(num(s[k]))]] : [])))} fill="none" stroke={c} strokeWidth="2" />
@@ -84,18 +87,20 @@ function TrendChart({ list, series, label }) {
 const GAME_LABEL = { 'focus-ball': 'Focus Ball', 'glow-orb': 'Glow Orb', sailor: 'Sailor', 'sweet-spot': 'Sweet Spot', 'blinking-contest': 'Blinking', diver: 'Diver', 'train-of-thoughts': 'Train' };
 const gameName = (g) => GAME_LABEL[g] || g || '?';
 const FEELINGS = ['😣', '😕', '😐', '🙂', '😄'];
+const SETUP_KEYS = ['hands', 'stand', 'pc'];
 const path = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
 
 function ScoreChart({ list, baseline }) {
+  const t = useT();
   const n = list.length;
   return (
-    <Frame h={220} n={n} label="Score per session">
+    <Frame h={220} n={n} label={t('report.journal.scoreAria')}>
       {(y) => (
         <>
           {baseline != null && (
             <g>
               <line x1={PAD.l} x2={W - PAD.r} y1={y(baseline)} y2={y(baseline)} stroke={PINK} strokeDasharray="5 4" />
-              <text x={W - PAD.r} y={y(baseline) + 12} textAnchor="end" fontSize="9" fill={PINK}>baseline {Math.round(baseline)}</text>
+              <text x={W - PAD.r} y={y(baseline) + 12} textAnchor="end" fontSize="9" fill={PINK}>{t('report.journal.baseline', { n: Math.round(baseline) })}</text>
             </g>
           )}
           <path d={path(list.map((s, i) => [xAt(i, n), y(num(s.score))]))} fill="none" stroke={YELLOW} strokeWidth="2.5" />
@@ -105,7 +110,7 @@ function ScoreChart({ list, baseline }) {
             return s.checkIn ? (
               <g key={i}>
                 <circle cx={cx} cy={cy} r="6" fill={PINK} stroke="#fff" strokeWidth="1.5" />
-                <text x={cx} y={cy - 10} textAnchor="middle" fontSize="8" fill={PINK}>CHECK-IN</text>
+                <text x={cx} y={cy - 10} textAnchor="middle" fontSize="8" fill={PINK}>{t('report.journal.checkInTag')}</text>
               </g>
             ) : (
               <circle key={i} cx={cx} cy={cy} r="3" fill={YELLOW} />
@@ -118,10 +123,11 @@ function ScoreChart({ list, baseline }) {
 }
 
 function MetricChart({ list }) {
+  const t = useT();
   const n = list.length;
   const lines = [['energy', YELLOW], ['increase', CYAN], ['flow', GREEN]];
   return (
-    <Frame h={160} n={n} label="Energy, increase and flow per session">
+    <Frame h={160} n={n} label={t('report.journal.metricAria')}>
       {(y) =>
         lines.map(([k, c]) => (
           <path key={k} d={path(list.map((s, i) => [xAt(i, n), y(num(s[k]))]))} fill="none" stroke={c} strokeWidth="1.5" />
@@ -138,28 +144,29 @@ function Diff({ a, b }) {
 }
 
 function CheckInCard({ sessions }) {
+  const t = useT();
   const cis = sessions.filter((s) => s.checkIn);
   const first = cis[0];
   const last = cis[cis.length - 1];
   const left = Math.max(0, CHECK_IN_EVERY - sessionsSinceCheckIn(sessions));
-  const rows = [['SCORE', 'score'], ['ENERGY', 'energy'], ['INCREASE', 'increase'], ['FLOW', 'flow']];
+  const rows = [[t('report.journal.rowScore'), 'score'], [t('report.journal.rowEnergy'), 'energy'], [t('report.journal.rowIncrease'), 'increase'], [t('report.journal.rowFlow'), 'flow']];
   let footer;
-  if (!first) footer = 'Check-in is due now: it becomes your baseline.';
-  else if (left === 0) footer = 'Check-in is due now: play FOCUS BALL.';
-  else footer = `Next check-in in ${left} session${left === 1 ? '' : 's'}`;
+  if (!first) footer = t('report.journal.dueFirst');
+  else if (left === 0) footer = t('report.journal.dueNow');
+  else footer = t('report.journal.dueIn', { n: left });
   return (
     <div className={panel}>
-      <h3 className="text-xs text-[var(--nes-yellow)] mb-3">CHECK-INS</h3>
+      <h3 className="text-xs text-[var(--nes-yellow)] mb-3">{t('report.journal.checkIns')}</h3>
       {!first ? (
-        <p className="text-[9px] text-gray-300 leading-relaxed mb-3">Your first check-in is your baseline. Start it from the FOCUS BALL intro screen.</p>
+        <p className="text-[9px] text-gray-300 leading-relaxed mb-3">{t('report.journal.firstCheckIn')}</p>
       ) : (
         <table className="w-full text-[10px] mb-3">
           <thead>
             <tr className="text-gray-400 text-[8px]">
               <th className="text-left font-normal" />
-              <th className="font-normal">BASELINE</th>
-              <th className="font-normal">LATEST</th>
-              <th className="font-normal">CHANGE</th>
+              <th className="font-normal">{t('report.journal.colBaseline')}</th>
+              <th className="font-normal">{t('report.journal.colLatest')}</th>
+              <th className="font-normal">{t('report.journal.colChange')}</th>
             </tr>
           </thead>
           <tbody>
@@ -180,6 +187,7 @@ function CheckInCard({ sessions }) {
 }
 
 export function TrainingJournal() {
+  const t = useT();
   const [allSessions, setSessions] = useState(loadSessions);
   const profiles = useProfiles();
   // Player switched / created / deleted anywhere (chip, modal, other tab): re-read the data
@@ -216,7 +224,7 @@ export function TrainingJournal() {
   const showScoreTrend = filter !== 'all' || games.length <= 1;
   const hasFocusPct = recent.some((s) => s.timeAbovePct != null && s.timeAbovePct !== '' && Number.isFinite(Number(s.timeAbovePct)));
   const trendSeries = [...(showScoreTrend ? [['score', YELLOW]] : []), ...(hasFocusPct ? [['timeAbovePct', CYAN]] : [])];
-  const activeName = profiles.list.find((c) => c.id === profiles.activeId)?.name || 'this player';
+  const activeName = profiles.list.find((c) => c.id === profiles.activeId)?.name || t('report.journal.thisPlayer');
 
   const exportFile = () => {
     try {
@@ -238,13 +246,13 @@ export function TrainingJournal() {
     e.target.value = '';
     if (!f) return;
     f.text()
-      .then((t) => {
-        const r = importCsv(t);
+      .then((text) => {
+        const r = importCsv(text);
         setSessions(loadSessions());
         profiles.refresh();
-        setNote(`Imported ${r.sessions}, skipped ${r.skipped}.`);
+        setNote(t('report.journal.imported', { done: r.sessions, skipped: r.skipped }));
       })
-      .catch(() => setNote('Could not read that file.'));
+      .catch(() => setNote(t('report.journal.readFail')));
   };
   const clear = () => {
     clearSessions(profiles.activeId);
@@ -255,15 +263,15 @@ export function TrainingJournal() {
   return (
     <div className="absolute inset-0 overflow-y-auto bg-black text-white" style={FONT}>
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-10 space-y-4">
-        <h2 className="text-xl text-[var(--nes-yellow)]">TRAINING JOURNAL</h2>
+        <h2 className="text-xl text-[var(--nes-yellow)]">{t('report.journal.title')}</h2>
 
         <div className="border-4 border-white/40 bg-black/60 px-3 py-3 flex items-center gap-3 flex-wrap">
-          <p className="text-[8px] text-gray-300">PLAYER</p>
+          <p className="text-[8px] text-gray-300">{t('report.journal.player')}</p>
           <PlayerSwitcher />
         </div>
 
         {games.length > 1 && (
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by game">
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('report.journal.filterAria')}>
             {['all', ...games].map((g) => (
               <button
                 key={g}
@@ -272,7 +280,7 @@ export function TrainingJournal() {
                 aria-pressed={filter === g}
                 className={`${smallBtn} ${filter === g ? 'border-[var(--nes-yellow)] bg-[var(--nes-yellow)] text-black' : 'border-white/50 text-white'}`}
               >
-                {g === 'all' ? 'ALL' : gameName(g)}
+                {g === 'all' ? t('report.journal.all') : gameName(g)}
               </button>
             ))}
           </div>
@@ -280,9 +288,9 @@ export function TrainingJournal() {
 
         {sessions.length === 0 ? (
           <>
-          <div className={`${panel} text-center text-xs leading-relaxed`}>No sessions yet — play a game to start your journal.
+          <div className={`${panel} text-center text-xs leading-relaxed`}>{t('report.journal.empty')}
             <div className="mt-3">
-              <button type="button" onClick={() => fileRef.current?.click()} className={`${smallBtn} border-[var(--nes-blue)] text-[var(--nes-blue)]`}>Import CSV</button>
+              <button type="button" onClick={() => fileRef.current?.click()} className={`${smallBtn} border-[var(--nes-blue)] text-[var(--nes-blue)]`}>{t('report.journal.import')}</button>
               <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onImport} />
               {note && <p className="text-[9px] text-gray-300 mt-2">{note}</p>}
             </div>
@@ -292,43 +300,43 @@ export function TrainingJournal() {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              <Tile label="SESSIONS" value={stats.total} />
-              <Tile label="MINUTES" value={stats.minutes} />
-              <Tile label="DAY STREAK" value={`🔥 ${stats.streak}`} color="#ff9f43" />
-              {showScoreTrend && <Tile label="BEST SCORE" value={stats.best} color="var(--nes-green)" />}
-              {showScoreTrend && <Tile label="AVG LAST 7" value={stats.avg7} color={CYAN} />}
+              <Tile label={t('report.journal.tileSessions')} value={stats.total} />
+              <Tile label={t('report.journal.tileMinutes')} value={stats.minutes} />
+              <Tile label={t('report.journal.tileStreak')} value={`🔥 ${stats.streak}`} color="#ff9f43" />
+              {showScoreTrend && <Tile label={t('report.journal.tileBest')} value={stats.best} color="var(--nes-green)" />}
+              {showScoreTrend && <Tile label={t('report.journal.tileAvg')} value={stats.avg7} color={CYAN} />}
             </div>
 
             {filter !== 'focus-ball' && trendSeries.length > 0 && (
               <div className={panel}>
-                <h3 className="text-xs text-[var(--nes-yellow)] mb-2">TREND (LAST {recent.length}){filter === 'all' ? ' - ALL GAMES' : ''}</h3>
+                <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t(filter === 'all' ? 'report.journal.trendAll' : 'report.journal.trend', { n: recent.length })}</h3>
                 <TrendChart
                   list={recent}
-                  label={showScoreTrend ? 'Score and time in focus per session' : 'Time in focus per session'}
+                  label={showScoreTrend ? t('report.journal.trendAriaBoth') : t('report.journal.trendAriaFocus')}
                   series={trendSeries}
                 />
                 <div className="flex gap-4 justify-center text-[9px] mt-2">
-                  {showScoreTrend && <span style={{ color: YELLOW }}>■ Score</span>}
-                  {hasFocusPct && <span style={{ color: CYAN }}>■ Time in focus %</span>}
+                  {showScoreTrend && <span style={{ color: YELLOW }}>■ {t('report.journal.legendScore')}</span>}
+                  {hasFocusPct && <span style={{ color: CYAN }}>■ {t('report.journal.legendFocus')}</span>}
                 </div>
               </div>
             )}
 
             {filter === 'focus-ball' && (
             <div className={panel}>
-              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">SCORE (LAST {recent.length})</h3>
+              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.journal.scoreTitle', { n: recent.length })}</h3>
               <ScoreChart list={recent} baseline={baseline ? num(baseline.score) : null} />
             </div>
             )}
 
             {filter === 'focus-ball' && (
             <div className={panel}>
-              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">ENERGY / INCREASE / FLOW</h3>
+              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.journal.metricTitle')}</h3>
               <MetricChart list={recent} />
               <div className="flex gap-4 justify-center text-[9px] mt-2">
-                <span style={{ color: YELLOW }}>■ Energy</span>
-                <span style={{ color: CYAN }}>■ Increase</span>
-                <span style={{ color: GREEN }}>■ Flow</span>
+                <span style={{ color: YELLOW }}>■ {t('report.journal.legendEnergy')}</span>
+                <span style={{ color: CYAN }}>■ {t('report.journal.legendIncrease')}</span>
+                <span style={{ color: GREEN }}>■ {t('report.journal.legendFlow')}</span>
               </div>
             </div>
             )}
@@ -337,28 +345,28 @@ export function TrainingJournal() {
 
             {withPaf.length > 0 && !loadPafHistory(profiles.activeId).length && (
               <div className={panel}>
-                <h3 className="text-xs text-[var(--nes-yellow)] mb-2">PEAK ALPHA FREQUENCY (Hz)</h3>
-                <TrendChart list={withPaf} label="Peak alpha frequency per session" series={[['paf', PINK]]} />
+                <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.journal.pafTitle')}</h3>
+                <TrendChart list={withPaf} label={t('report.journal.pafAria')} series={[['paf', PINK]]} />
               </div>
             )}
 
             {filter === 'focus-ball' && <CheckInCard sessions={sessions} />}
 
             <div className={panel}>
-              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">SESSIONS</h3>
+              <h3 className="text-xs text-[var(--nes-yellow)] mb-2">{t('report.journal.sessions')}</h3>
               <div className="max-h-72 overflow-y-auto overflow-x-auto">
                 <table className="w-full text-[9px]">
                   <thead className="text-gray-400 sticky top-0 bg-black">
                     <tr className="text-left">
-                      <th className="font-normal py-1">DATE</th>
-                      <th className="font-normal">GAME</th>
-                      <th className="font-normal">LEN</th>
-                      <th className="font-normal" title="How the child played">SETUP</th>
-                      <th className="font-normal hidden sm:table-cell">CUE</th>
-                      <th className="font-normal">SCORE</th>
-                      <th className="font-normal hidden sm:table-cell">STARS</th>
-                      <th className="font-normal hidden sm:table-cell">PTS</th>
-                      <th className="font-normal">FEEL</th>
+                      <th className="font-normal py-1">{t('report.journal.colDate')}</th>
+                      <th className="font-normal">{t('report.journal.colGame')}</th>
+                      <th className="font-normal">{t('report.journal.colLen')}</th>
+                      <th className="font-normal" title={t('report.journal.setupHint')}>{t('report.journal.colSetup')}</th>
+                      <th className="font-normal hidden sm:table-cell">{t('report.journal.colCue')}</th>
+                      <th className="font-normal">{t('report.journal.colScore')}</th>
+                      <th className="font-normal hidden sm:table-cell">{t('report.journal.colStars')}</th>
+                      <th className="font-normal hidden sm:table-cell">{t('report.journal.colPts')}</th>
+                      <th className="font-normal">{t('report.journal.colFeel')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -366,12 +374,12 @@ export function TrainingJournal() {
                       <tr key={s.id || `${s.date}-${i}`} className="border-t border-white/10 align-top">
                         <td className="py-1 pr-2">
                           {fmtDate(s.date)}
-                          {s.checkIn && <span className="ml-1 text-[var(--nes-green)]">CHECK-IN</span>}
+                          {s.checkIn && <span className="ml-1 text-[var(--nes-green)]">{t('report.journal.checkInTag')}</span>}
                         </td>
                         <td className="pr-2">{gameName(s.game)}</td>
-                        <td className="pr-2">{s.durationSec ? `${Math.round(num(s.durationSec) / 60)}m` : '-'}</td>
-                        <td className="pr-2" title={SETUP_INFO[sessionSetup(s)]?.label || 'unknown (not recorded)'}>
-                          {SETUP_INFO[sessionSetup(s)]?.short || '?'}
+                        <td className="pr-2">{s.durationSec ? t('report.journal.lenMin', { n: Math.round(num(s.durationSec) / 60) }) : '-'}</td>
+                        <td className="pr-2" title={SETUP_KEYS.includes(sessionSetup(s)) ? t(`report.journal.setupTitle.${sessionSetup(s)}`) : t('report.journal.setupUnknown')}>
+                          {SETUP_KEYS.includes(sessionSetup(s)) ? t(`report.journal.setupShort.${sessionSetup(s)}`) : '?'}
                         </td>
                         <td className="pr-2 hidden sm:table-cell">{s.cue || '-'}</td>
                         <td className="pr-2 text-[var(--nes-yellow)]">{Math.round(num(s.score))}</td>
@@ -387,22 +395,22 @@ export function TrainingJournal() {
 
             <div className="flex flex-wrap gap-3 items-center">
               <button type="button" onClick={exportFile} className={`${smallBtn} border-[var(--nes-green)] text-[var(--nes-green)] hover:bg-[var(--nes-green)] hover:text-black`}>
-                Export CSV
+                {t('report.journal.export')}
               </button>
               <button type="button" onClick={() => fileRef.current?.click()} className={`${smallBtn} border-[var(--nes-blue)] text-[var(--nes-blue)] hover:bg-[var(--nes-blue)] hover:text-black`}>
-                Import CSV
+                {t('report.journal.import')}
               </button>
               <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onImport} />
               {note && <span className="text-[9px] text-gray-300">{note}</span>}
               {!confirming ? (
                 <button type="button" onClick={() => setConfirming(true)} className={`${smallBtn} border-white/60 text-white hover:bg-white hover:text-black`}>
-                  Clear history
+                  {t('report.journal.clear')}
                 </button>
               ) : (
                 <>
-                  <span className="text-[9px] text-gray-300">Delete all sessions of {activeName}?</span>
-                  <button type="button" onClick={clear} className={`${smallBtn} border-red-400 text-red-400 hover:bg-red-400 hover:text-black`}>Yes, clear</button>
-                  <button type="button" onClick={() => setConfirming(false)} className={`${smallBtn} border-white/60 text-white`}>Cancel</button>
+                  <span className="text-[9px] text-gray-300">{t('report.journal.confirmClear', { name: activeName })}</span>
+                  <button type="button" onClick={clear} className={`${smallBtn} border-red-400 text-red-400 hover:bg-red-400 hover:text-black`}>{t('report.journal.yesClear')}</button>
+                  <button type="button" onClick={() => setConfirming(false)} className={`${smallBtn} border-white/60 text-white`}>{t('report.journal.cancel')}</button>
                 </>
               )}
             </div>

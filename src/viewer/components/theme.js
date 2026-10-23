@@ -28,7 +28,7 @@ export const EVENT_STYLE = {
   other: { color: '#c0c0c0', line: false },
 };
 
-export const SMOOTH_OPTS = [[0, 'RAW'], [5, '5S'], [10, '10S'], [30, '30S'], [60, '60S']];
+export const smoothOpts = (t) => [[0, t('viewer.smooth.raw')], [5, t('viewer.smooth.s5')], [10, t('viewer.smooth.s10')], [30, t('viewer.smooth.s30')], [60, t('viewer.smooth.s60')]];
 export const bandsGroupOf = (rec, ana) => rec.groups.bands || ana.bandsDerived || null;
 
 export const padLeft = (w) => (w < 480 ? 40 : 52);

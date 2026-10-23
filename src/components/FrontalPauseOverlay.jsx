@@ -4,9 +4,11 @@ import { useQuality } from '../contexts/QualityContext.jsx';
 import { useBaseline } from '../contexts/BaselineContext.jsx';
 import { RetroModal } from './RetroModal.jsx';
 import { isPageRoute } from '../games/games.config';
+import { useT } from '../lib/i18n.js';
 
 export function FrontalPauseOverlay() {
   const { frontalBad, adjusting } = useQuality();
+  const t = useT();
   const location = useLocation();
   const isGamePage = location.pathname.startsWith('/game/') && !isPageRoute(location.pathname);
   const { visible: baselineVisible } = useBaseline();
@@ -40,21 +42,21 @@ export function FrontalPauseOverlay() {
   if (!isGamePage || !visible || baselineVisible) return null;
 
   return (
-    <RetroModal title={adjusting ? 'EVALUATING SETUP…' : 'PAUSED: CHECK ELECTRODES'} showFooter={false}>
+    <RetroModal title={adjusting ? t('core.pause.evaluating') : t('core.pause.title')} showFooter={false}>
       <div style={{ fontFamily: 'var(--font-retro)' }}>
         {adjusting ? (
           <div className="text-[10px] flex items-center gap-2">
             <span className="animate-pulse">▮▯▮</span>
-            <span>evaluating setup...</span>
+            <span>{t('core.elec.evaluating')}</span>
           </div>
         ) : (
           <>
-            <p className="text-[10px] mb-2">Front electrodes show unstable contact.</p>
+            <p className="text-[10px] mb-2">{t('core.pause.unstable')}</p>
             <ul className="text-[10px] list-disc ml-4">
-              <li>Re-seat left/right forehead pads</li>
-              <li>Ensure skin contact and minimal movement</li>
+              <li>{t('core.pause.reseat')}</li>
+              <li>{t('core.pause.contact')}</li>
             </ul>
-            <p className="text-[9px] opacity-60 mt-2">Game resumes automatically when stable.</p>
+            <p className="text-[9px] opacity-60 mt-2">{t('core.pause.resumes')}</p>
           </>
         )}
       </div>

@@ -9,6 +9,7 @@ import { recordSession, loadSessions, isCheckInDue, sessionsForChild } from '../
 import { useProfiles } from '../../contexts/ProfileContext.jsx';
 import { GameStartPanel, OptionLabel, startChip } from '../../components/GameStartPanel.jsx';
 import { SessionReport } from '../../components/SessionReport.jsx';
+import { useT } from '../../lib/i18n.js';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -18,7 +19,9 @@ const PAUSE_GIVE_UP_SEC = 60; // a round paused this long in a row ends as inval
 const START_SCALE = 0.35; // µM of oxygenation index that moves the ball from rest to the top
 const BEST_KEY = 'brainarcade.focusBall.best';
 const LENGTHS = [2, 3, 5, 10];
+// The English text is also what gets saved with the session, so it stays the id; the screen shows CUE_KEYS[cue].
 const CUES = ['Count back by 3s', 'Stay calm and focused'];
+const CUE_KEYS = { 'Count back by 3s': 'games.focusBall.cueCount', 'Stay calm and focused': 'games.focusBall.cueCalm' };
 const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -445,6 +448,7 @@ function draw(c, scene, s, t) {
 }
 
 export function FocusBall() {
+  const t = useT();
   const { supported, data, resetBaseline } = useFnirs();
   const [phase, setPhase] = useState('intro'); // intro | calibrate | countdown | play | report
   const [cue, setCue] = useState(CUES[0]);
@@ -452,7 +456,7 @@ export function FocusBall() {
   const [minutes, setMinutes] = useState(3);
   const [hud, setHud] = useState({ points: 0, timeLeft: 180, mult: 1, paused: false, progress: 0, activity: 0, goalSec: 0, hint: 'still' });
   const [count, setCount] = useState(3);
-  const [breathLabel, setBreathLabel] = useState('BREATHE IN');
+  const [breathLabel, setBreathLabel] = useState('in');
   const calStartRef = useRef(0);
   const [muted, setMuted] = useState(false);
   const [best, setBest] = useState(readBest);
@@ -495,7 +499,7 @@ export function FocusBall() {
   // Calibration: breathing label (4 s in / 4 s out)
   useEffect(() => {
     if (phase !== 'calibrate') return undefined;
-    const id = setInterval(() => setBreathLabel(((performance.now() - calStartRef.current) / 1000) % 8 < 4 ? 'BREATHE IN' : 'BREATHE OUT'), 250);
+    const id = setInterval(() => setBreathLabel(((performance.now() - calStartRef.current) / 1000) % 8 < 4 ? 'in' : 'out'), 250);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -707,7 +711,7 @@ export function FocusBall() {
     resetBaseline();
     sawResetRef.current = false;
     calStartRef.current = performance.now();
-    setBreathLabel('BREATHE IN');
+    setBreathLabel('in');
     setPhase('calibrate');
   };
 
@@ -734,8 +738,8 @@ export function FocusBall() {
 
       <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
         <div>
-          <h2 className="text-2xl text-[var(--nes-yellow)] [text-shadow:2px_2px_0_#000]">FOCUS BALL</h2>
-          {phase === 'play' && <p className="text-xs text-white mt-2 [text-shadow:1px_1px_0_#000]">{session?.cue}</p>}
+          <h2 className="text-2xl text-[var(--nes-yellow)] [text-shadow:2px_2px_0_#000]">{t('games.focusBall.title')}</h2>
+          {phase === 'play' && <p className="text-xs text-white mt-2 [text-shadow:1px_1px_0_#000]">{session?.cue ? t(CUE_KEYS[session.cue] || session.cue) : ''}</p>}
         </div>
       </div>
 
@@ -763,7 +767,7 @@ export function FocusBall() {
               {BRAIN.flatMap((row, j) => [...row].map((ch, i) => (ch === '1' ? <rect key={`${i}-${j}`} x={i} y={j} width="1" height="1" fill="#ffd84a" /> : null)))}
             </svg>
             <div>
-              <p className="text-[8px] text-gray-300">NEURAL ACTIVITY</p>
+              <p className="text-[8px] text-gray-300">{t('games.focusBall.neuralActivity')}</p>
               <p className="text-sm text-[var(--nes-yellow)] mt-1">{hud.activity >= 0 ? '+' : ''}{hud.activity.toFixed(1)}%</p>
             </div>
           </div>
@@ -781,7 +785,7 @@ export function FocusBall() {
         onClick={() => setMuted((m) => !m)}
         className="absolute bottom-6 right-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white"
       >
-        {muted ? 'SOUND OFF' : 'SOUND ON'}
+        {muted ? t('games.focusBall.soundOff') : t('games.focusBall.soundOn')}
       </button>
 
       {(phase === 'calibrate' || phase === 'countdown' || phase === 'play') && (
@@ -790,49 +794,49 @@ export function FocusBall() {
           onClick={stop}
           className="absolute bottom-6 left-6 border-2 border-white/60 bg-black/60 px-3 py-2 text-[10px] text-white hover:bg-white hover:text-black"
         >
-          STOP
+          {t('games.focusBall.stop')}
         </button>
       )}
 
       <div aria-live="polite" className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
         {phase === 'play' && hud.paused && (
           <div className="border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-xs text-[var(--nes-yellow)] whitespace-nowrap">
-            {hud.hint === 'headband' ? 'CHECK HEADBAND' : 'HOLD STILL'}
+            {hud.hint === 'headband' ? t('games.focusBall.checkHeadband') : t('games.focusBall.holdStill')}
           </div>
         )}
       </div>
 
       {phase === 'intro' && (
         <GameStartPanel
-          title="FOCUS BALL"
+          title={t('games.focusBall.title')}
           bottomSpace
           onStart={supported ? startNormal : undefined}
           best={best}
-          signalNote="Only the fNIRS sensors matter here."
+          signalNote={t('games.focusBall.signalNote')}
         >
           {!supported ? (
-            <p className="text-xs leading-relaxed mb-3">This game needs a Muse S Athena (fNIRS light sensors).</p>
+            <p className="text-xs leading-relaxed mb-3">{t('games.focusBall.needsAthena')}</p>
           ) : (
             <>
               {checkInDue && (
                 <div className="border-4 border-[var(--nes-green)] bg-[var(--nes-green)]/15 px-3 py-3 mb-4">
-                  <p className="text-xs text-[var(--nes-green)] mb-2">CHECK-IN DUE</p>
-                  <p className="text-[9px] text-gray-200 leading-relaxed mb-3">A short re-test to see how your focus is growing.</p>
-                  <button type="button" onClick={startCheckIn} className={btn}>Start check-in (2 min)</button>
+                  <p className="text-xs text-[var(--nes-green)] mb-2">{t('games.focusBall.checkInDue')}</p>
+                  <p className="text-[9px] text-gray-200 leading-relaxed mb-3">{t('games.focusBall.checkInNote')}</p>
+                  <button type="button" onClick={startCheckIn} className={btn}>{t('games.focusBall.startCheckIn')}</button>
                 </div>
               )}
-              <p className="text-sm leading-relaxed mb-3">Focus on the ball and keep it above the line.</p>
-              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">Your brain is slow to show change: wait 3-6 seconds.</p>
-              <OptionLabel>PICK YOUR FOCUS TRICK</OptionLabel>
+              <p className="text-sm leading-relaxed mb-3">{t('games.focusBall.goal')}</p>
+              <p className="text-[9px] text-gray-300 leading-relaxed mb-4">{t('games.focusBall.slow')}</p>
+              <OptionLabel>{t('games.focusBall.pickTrick')}</OptionLabel>
               <div className="flex flex-wrap gap-2 justify-center mb-4">
                 {CUES.map((cc) => (
-                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{cc}</button>
+                  <button key={cc} type="button" className={startChip(cue === cc)} onClick={() => setCue(cc)}>{t(CUE_KEYS[cc])}</button>
                 ))}
               </div>
-              <OptionLabel>SESSION LENGTH</OptionLabel>
+              <OptionLabel>{t('games.focusBall.sessionLength')}</OptionLabel>
               <div className="flex gap-2 justify-center mb-5">
                 {LENGTHS.map((m) => (
-                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{m} min</button>
+                  <button key={m} type="button" className={startChip(minutes === m)} onClick={() => setMinutes(m)}>{t('games.focusBall.minutes', { m })}</button>
                 ))}
               </div>
             </>
@@ -843,11 +847,11 @@ export function FocusBall() {
       <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 phone-port:pb-20 pointer-events-none">
         {phase === 'calibrate' && (
           <div className={`${panel} absolute bottom-24 left-1/2 -translate-x-1/2`}>
-            <p className="text-sm text-[var(--nes-yellow)] mb-3">{breathLabel}</p>
+            <p className="text-sm text-[var(--nes-yellow)] mb-3">{breathLabel === 'in' ? t('games.focusBall.breatheIn') : t('games.focusBall.breatheOut')}</p>
             <div className="h-3 w-64 mx-auto border-2 border-[var(--nes-yellow)]">
               <div className="h-full bg-[var(--nes-yellow)]" style={{ width: `${Math.round((data?.baselineProgress || 0) * 100)}%` }} />
             </div>
-            {!data?.available && <p className="text-[9px] text-gray-400 mt-3">Waiting for light sensors…</p>}
+            {!data?.available && <p className="text-[9px] text-gray-400 mt-3">{t('games.focusBall.waiting')}</p>}
           </div>
         )}
 

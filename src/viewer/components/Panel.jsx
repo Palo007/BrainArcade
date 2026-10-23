@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // Collapsible retro panel + small controls used by the recording viewer.
 import React, { useRef } from 'react';
+import { useT } from '../../lib/i18n.js';
 import { downloadBlob, THEME } from './theme.js';
 import { valueAt } from '../lib/series.js';
 
@@ -24,6 +25,7 @@ function exportPng(root, name) {
 
 export function Panel({ id, title, color = 'var(--nes-blue)', open, onToggle, right, children, pngName }) {
   const body = useRef(null);
+  const t = useT();
   return (
     <section className="border-4 bg-[var(--nes-dark)] mb-3" style={{ borderColor: open ? color : 'var(--nes-gray)', ...font }}>
       <header className="flex items-center gap-2 px-2 py-1">
@@ -39,7 +41,7 @@ export function Panel({ id, title, color = 'var(--nes-blue)', open, onToggle, ri
         </button>
         {open && right}
         {open && pngName && (
-          <button type="button" className="text-[8px] border-2 border-[var(--nes-gray)] px-2 py-1 text-gray-300 hover:border-white" onClick={() => exportPng(body.current, pngName)} title="Save the charts as PNG">
+          <button type="button" className="text-[8px] border-2 border-[var(--nes-gray)] px-2 py-1 text-gray-300 hover:border-white" onClick={() => exportPng(body.current, pngName)} title={t('viewer.pngTitle')}>
             PNG
           </button>
         )}

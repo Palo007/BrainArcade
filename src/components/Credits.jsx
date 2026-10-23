@@ -1,9 +1,23 @@
+import { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 import background from '../assets/background.JPG';
 
+// Fills {name} markers of a translated text with React nodes (links, colored spans)
+function fill(text, nodes) {
+  return text.split(/(\{\w+\})/).map((part, i) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    return <Fragment key={i}>{m && nodes[m[1]] !== undefined ? nodes[m[1]] : part}</Fragment>;
+  });
+}
+
+const LINK = 'text-[var(--nes-yellow)] underline';
+const REPO = 'https://github.com/itayinbarr/brain-arcade';
+
 export function Credits() {
   const navigate = useNavigate();
+  const t = useT();
 
   return (
     <div
@@ -31,9 +45,9 @@ export function Credits() {
               onClick={() => navigate(-1)}
               className="retro-button border-[var(--nes-blue)] text-[var(--nes-blue)] bg-transparent px-4 py-2 short-land:py-1 short-land:text-[10px] hover:bg-[var(--nes-blue)] hover:text-black"
               style={{ fontFamily: 'var(--font-retro)' }}
-              aria-label="Back"
+              aria-label={t('core.credits.back')}
             >
-              ← BACK
+              {t('core.credits.backBtn')}
             </button>
           </div>
 
@@ -42,7 +56,7 @@ export function Credits() {
             className="text-2xl sm:text-3xl short-land:text-base rgb-text text-white mb-4 short-land:mb-2"
             style={{ fontFamily: 'var(--font-retro)' }}
           >
-            ABOUT
+            {t('core.credits.about')}
           </h2>
 
       {/* About Text */}
@@ -52,48 +66,49 @@ export function Credits() {
       >
             {/* Original credits content remains */}
             <p>
-              Made by
+              {t('core.credits.madeBy')}
               <a
                 href="https://itayinbar.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--nes-yellow)] underline hover:opacity-90 ml-2"
-                title="Open Itay Inbar website"
+                title={t('core.credits.authorSite')}
               >
                 Itay Inbar
               </a>.
             </p>
             <p>
-              Neural signals acquired with <span className="text-[var(--nes-blue)]">Muse</span> by{' '}
-              <span className="text-[var(--nes-green)]">Interaxon</span>.
+              {fill(t('core.credits.signals'), {
+                muse: <span className="text-[var(--nes-blue)]">Muse</span>,
+                interaxon: <span className="text-[var(--nes-green)]">Interaxon</span>,
+              })}
             </p>
             <p className="opacity-80">
-              A collaborative, open‑source effort - showcasing that usable neurotechnology already exists today.
+              {t('core.credits.effort')}
             </p>
 
             {/* Why Muse section */}
             <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
               <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: 'var(--font-retro)' }}>
-                WHY MUSE?
+                {t('core.credits.whyTitle')}
               </h3>
               <p className="text-[10px] sm:text-xs">
-                Muse is one of the most affordable and widely available consumer EEG headsets. If reliable control can be
-                achieved with just two frontal dry electrodes, that’s a strong signal of robustness and real‑world viability.
+                {t('core.credits.whyText')}
               </p>
             </div>
           </div>
           {/* License & Privacy */}
           <div className="mt-6 pt-4 border-t-4 border-[var(--nes-gray)] border-opacity-40">
             <h3 className="text-sm sm:text-base text-white mb-3 rgb-text" style={{ fontFamily: 'var(--font-retro)' }}>
-              LICENSE & PRIVACY
+              {t('core.credits.licenseTitle')}
             </h3>
             <p className="text-[10px] sm:text-xs">
-              Brain Arcade - Open-source core (AGPL-3.0-or-later). Games under CC BY-SA 4.0.
-              No data is saved or transmitted. See
-              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Privacy</a>,
-              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">License</a>,
-              {' '}<a href="https://github.com/itayinbarr/brain-arcade/blob/main/LICENSE.games" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Games License</a>, and
-              {' '}<a href="https://github.com/itayinbarr/brain-arcade" target="_blank" rel="noopener noreferrer" className="text-[var(--nes-yellow)] underline">Repo</a>.
+              {fill(t('core.credits.license'), {
+                privacy: <a href={`${REPO}/blob/main/PRIVACY.md`} target="_blank" rel="noopener noreferrer" className={LINK}>{t('core.credits.linkPrivacy')}</a>,
+                license: <a href={`${REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className={LINK}>{t('core.credits.linkLicense')}</a>,
+                games: <a href={`${REPO}/blob/main/LICENSE.games`} target="_blank" rel="noopener noreferrer" className={LINK}>{t('core.credits.linkGames')}</a>,
+                repo: <a href={REPO} target="_blank" rel="noopener noreferrer" className={LINK}>{t('core.credits.linkRepo')}</a>,
+              })}
             </p>
           </div>
         </div>

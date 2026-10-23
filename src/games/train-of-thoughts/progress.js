@@ -14,13 +14,14 @@ export const WAGON_CALM_S = 5;
 export const LANTERN_CALM_S = 10;
 
 // Each line adds one new thing. Features are cumulative: wagons from 2, bells from 3, lanterns from 4, thunder from 5.
+// Texts are keys (games.tot.line<id>Name / Skill); the screen resolves them with t() when it draws.
 export const LINES = [
-  { id: 1, name: 'SUNSET CITY', sec: 60, wagons: 0, skill: 'Slow the train.' },
-  { id: 2, name: 'HARBOUR BRIDGE', sec: 75, wagons: 3, skill: '5 s calm drops a wagon.' },
-  { id: 3, name: 'BELL CROSSING', sec: 90, wagons: 3, skill: 'Bells ring. Stay calm.' },
-  { id: 4, name: 'FIREFLY NIGHT', sec: 120, wagons: 4, skill: '10 s calm lights a lantern.' },
-  { id: 5, name: 'THUNDER TUNNEL', sec: 150, wagons: 4, skill: 'Thunder! Get calm again fast.' },
-  { id: 6, name: 'MOON EXPRESS', sec: 180, wagons: 5, skill: 'You pick the route.' },
+  { id: 1, nameKey: 'games.tot.line1Name', sec: 60, wagons: 0, skillKey: 'games.tot.line1Skill' },
+  { id: 2, nameKey: 'games.tot.line2Name', sec: 75, wagons: 3, skillKey: 'games.tot.line2Skill' },
+  { id: 3, nameKey: 'games.tot.line3Name', sec: 90, wagons: 3, skillKey: 'games.tot.line3Skill' },
+  { id: 4, nameKey: 'games.tot.line4Name', sec: 120, wagons: 4, skillKey: 'games.tot.line4Skill' },
+  { id: 5, nameKey: 'games.tot.line5Name', sec: 150, wagons: 4, skillKey: 'games.tot.line5Skill' },
+  { id: 6, nameKey: 'games.tot.line6Name', sec: 180, wagons: 5, skillKey: 'games.tot.line6Skill' },
 ];
 export const lineFeatures = (id) => ({ wagons: id >= 2, bells: id >= 3, lanterns: id >= 4, thunder: id >= 5 });
 
@@ -38,31 +39,12 @@ export const RULES = rules.makeRules({
   dayEndScored: true,
 });
 
-export const STORY = [
-  'Brainy sits by the track. A noisy train comes: the Racing Thoughts Express. It is full of busy thoughts. Brainy breathes slowly. The train slows down.',
-  'Now the train has wagons. Each wagon is a busy thought. When Brainy stays calm, a wagon lets go. A happy passenger hops off.',
-  'Bells ring. Horns honk. Seagulls shout. Brainy hears them all, and stays calm anyway.',
-  'It is night. Long calm lights the lanterns on the track. Who drives the train? Brainy sees a face in the window.',
-  'KA-BOOM! Thunder! The driver is Captain Rush. He is always in a hurry. Brainy gets calm again, fast.',
-  'The train flies to the moon. Captain Rush is tired. "How do you stay so calm?" he asks. Brainy shows him. Now they are friends.',
-];
-
-export const PASSENGERS = [
-  'Tap-Dancing Sock', 'Pizza in Sunglasses', 'Sleepy Cloud', 'Burping Frog', 'Shy Robot', 'Disco Banana',
-  'Tiny Dragon', 'Singing Toaster', 'Hiccup Ghost', 'Skating Penguin', 'Grumpy Cactus', 'Juggling Octopus',
-  'Moon Cat', 'Bubble Fish', 'Space Hamster', 'Karate Carrot', 'Giggling Cupcake', 'Pirate Parrot',
-  'Wobbly Jelly', 'Rocket Snail', 'Wizard Mouse', 'Sneezing Llama', 'Kite Turtle', 'Drum Bear',
-  'Painter Fox', 'Lazy Lion', 'Bouncy Ball', 'Comet Puppy', 'Owl Detective', 'Golden Wagon Cat',
-];
+export const STORY = [1, 2, 3, 4, 5, 6].map((i) => `games.tot.story${i}`); // text keys
+export const PASSENGERS = Array.from({ length: 30 }, (_, i) => `games.tot.passenger${i + 1}`); // text keys
 
 export const TWISTS = ['none', 'none', 'snow', 'party-hat', 'ducks', 'big-moon'];
 
-const TALK_IDEAS = [
-  'Ask: what does Brainy do when the bell rings?',
-  'Ask: which passenger is the silliest?',
-  'Ask: how does your body feel when the train slows down?',
-  'Ask: what busy thought would you put in a wagon today?',
-];
+const TALK_IDEAS = [1, 2, 3, 4].map((i) => `games.tot.talk${i}`); // text keys
 
 export const goalLevel = (goal) => rules.goalSteps(RULES, goal); // steps calmer than day 1
 export const startDay = (p, now) => rules.startDay(RULES, p, now);
@@ -92,23 +74,23 @@ export function finishRound(p, round, now = new Date()) {
 }
 
 // Praise that names the act
+// Praise lines as { key, vars }: the screen turns them into text with t(key, vars).
 export function praiseFor(round) {
   const out = [];
-  if (round.wagonsDropped > 0) out.push(`You let ${round.wagonsDropped} wagon${round.wagonsDropped > 1 ? 's' : ''} go!`);
-  if (round.trainsStopped > 0) out.push(round.trainsStopped > 1 ? `You stopped the train ${round.trainsStopped} times!` : 'You stopped the train!');
-  if (round.bellCalm > 0) out.push('You stayed calm when the bell rang!');
-  if (round.lanterns > 0) out.push(`You lit ${round.lanterns} lantern${round.lanterns > 1 ? 's' : ''}!`);
-  if (round.thunderCalm > 0) out.push('You stayed calm in the thunder!');
+  if (round.wagonsDropped > 0) out.push({ key: 'games.tot.praiseWagons', vars: { n: round.wagonsDropped } });
+  if (round.trainsStopped > 0) out.push(round.trainsStopped > 1 ? { key: 'games.tot.praiseStoppedN', vars: { n: round.trainsStopped } } : { key: 'games.tot.praiseStopped' });
+  if (round.bellCalm > 0) out.push({ key: 'games.tot.praiseBell' });
+  if (round.lanterns > 0) out.push({ key: 'games.tot.praiseLanterns', vars: { n: round.lanterns } });
+  if (round.thunderCalm > 0) out.push({ key: 'games.tot.praiseThunder' });
   if (Number.isFinite(round.bounceBackS)) {
     const s = Math.max(1, Math.round(round.bounceBackS));
-    out.push(`You got calm again in ${s} second${s > 1 ? 's' : ''}!`);
+    out.push({ key: 'games.tot.praiseBounce', vars: { n: s } });
   }
-  if (round.longestStreak >= 3) out.push(`You stayed calm for ${Math.round(round.longestStreak)} seconds in a row!`);
-  if (!out.length) out.push('You finished the round. Well done for trying!');
+  if (round.longestStreak >= 3) out.push({ key: 'games.tot.praiseStreak', vars: { n: Math.round(round.longestStreak) } });
+  if (!out.length) out.push({ key: 'games.tot.praiseDefault' });
   return out.slice(0, 3);
 }
 
-// Weekly parent card: the last 7 days
 export function weeklyCard(p, now = new Date()) {
   const w = rules.weeklySummary(RULES, p, now);
   return {

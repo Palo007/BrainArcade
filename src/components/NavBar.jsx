@@ -5,6 +5,7 @@ import { SettingsButton } from './SettingsButton.jsx';
 import { TopBarSlotContext } from './topBarSlot.js';
 import { Link, useLocation } from 'react-router-dom';
 import { games, categories } from '../games/games.config';
+import { useT } from '../lib/i18n.js';
 import '../styles/retro.css';
 
 const ALL = 'all';
@@ -13,6 +14,7 @@ const ALL = 'all';
  * GameCard - Picture card for one game (art on top, name + description below)
  */
 function GameCard({ game, isActive, onClick }) {
+  const t = useT();
   return (
     <Link
       to={`/game/${game.id}`}
@@ -55,7 +57,7 @@ function GameCard({ game, isActive, onClick }) {
         {/* Badge (e.g. required hardware) */}
         {game.badge && (
           <span className="absolute top-1.5 right-1.5 text-[7px] phone-port:text-[9px] sm:text-[8px] px-1.5 py-1 bg-black/80 text-[var(--nes-yellow)] border border-[var(--nes-yellow)] leading-none">
-            {game.badge}
+            {game.badgeKey ? t(game.badgeKey) : game.badge}
           </span>
         )}
 
@@ -67,16 +69,16 @@ function GameCard({ game, isActive, onClick }) {
           `}
         >
           <span className="text-[10px] sm:text-xs px-3 py-2 bg-[var(--nes-yellow)] text-black">
-            {isActive ? '◆ PLAYING' : '▶ PLAY'}
+            {isActive ? t('core.nav.playing') : t('core.nav.play')}
           </span>
         </div>
       </div>
 
       {/* Text */}
       <div className="p-2 sm:p-3 text-left flex-1">
-        <h3 className="text-[9px] sm:text-xs leading-snug text-white mb-1 break-words">{game.name}</h3>
+        <h3 className="text-[9px] sm:text-xs leading-snug text-white mb-1 break-words">{game.nameKey ? t(game.nameKey) : game.name}</h3>
         <p className="hidden sm:block text-[9px] text-gray-400 leading-relaxed group-hover:text-gray-200 line-clamp-3">
-          {game.description}
+          {game.descKey ? t(game.descKey) : game.description}
         </p>
       </div>
     </Link>
@@ -89,6 +91,7 @@ function GameCard({ game, isActive, onClick }) {
  */
 export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
   const setTopBarSlot = useContext(TopBarSlotContext);
+  const t = useT();
   const location = useLocation();
   const [filter, setFilter] = useState(ALL);
 
@@ -114,7 +117,7 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
     }
   };
 
-  const chips = [{ id: ALL, name: 'ALL', color: 'var(--nes-yellow)' }, ...usedCategories];
+  const chips = [{ id: ALL, name: 'ALL', nameKey: 'core.cat.all', color: 'var(--nes-yellow)' }, ...usedCategories];
 
   return (
     <nav className="mb-8 pb-4">
@@ -125,17 +128,17 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
             to="/"
             className="text-sm sm:text-xl short-land:text-xs text-[var(--nes-blue)] hover:text-[var(--nes-yellow)] transition-colors whitespace-nowrap py-2 short-land:py-0 phone-port:min-h-[40px] phone-port:inline-flex phone-port:items-center"
           >
-            ← HOME
+            {t('core.nav.home')}
           </Link>
-          <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">SELECT GAME</h2>
+          <h2 className="text-xs sm:text-lg short-land:text-xs text-[var(--nes-green)]">{t('core.nav.selectGame')}</h2>
           <Link
             to="/viewer"
             className="text-[9px] sm:text-[10px] border-2 border-[var(--nes-gray)] px-2 py-1 text-gray-300 hover:border-[var(--nes-yellow)] hover:text-[var(--nes-yellow)] whitespace-nowrap phone-port:min-h-[36px] phone-port:inline-flex phone-port:items-center"
-            title="Open a recorded session (Mind Monitor CSV)"
+            title={t('core.nav.viewerTitle')}
           >
-            VIEWER
+            {t('core.nav.viewer')}
           </Link>
-          <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
+          <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{t('core.nav.games', { n: visible.length })}</span>
           {/* One group, so the chips stay at the right edge also when no battery is shown */}
           <div className="ml-auto sm:ml-0 short-land:ml-auto flex items-center gap-3 sm:gap-6 short-land:gap-3 min-w-0">
             <HeadbandBattery />
@@ -147,7 +150,7 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
         </div>
 
         {/* Category filter (scrolls sideways on phones) */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Game categories">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label={t('core.nav.categories')}>
           {chips.map((c) => {
             const selected = filter === c.id;
             return (
@@ -164,7 +167,7 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
                   color: selected ? '#000' : c.color,
                 }}
               >
-                {c.name}
+                {c.nameKey ? t(c.nameKey) : c.name}
               </button>
             );
           })}
@@ -180,7 +183,7 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
             {filter === ALL && (
               <h3 className="text-[10px] sm:text-xs mb-3 flex items-center gap-2" style={{ color: cat.color }}>
                 <span className="inline-block w-2 h-2" style={{ backgroundColor: cat.color }} />
-                {cat.name}
+                {cat.nameKey ? t(cat.nameKey) : cat.name}
               </h3>
             )}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -203,7 +206,7 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
       {/* Games with no (or unknown) category */}
       {filter === ALL && games.some((g) => !categoryById[g.category]) && (
         <section className="mt-5">
-          <h3 className="text-[10px] sm:text-xs mb-3 text-gray-300">OTHER</h3>
+          <h3 className="text-[10px] sm:text-xs mb-3 text-gray-300">{t('core.nav.other')}</h3>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {games.filter((g) => !categoryById[g.category]).map((game) => {
               const isActive = location.pathname === `/game/${game.id}`;
@@ -222,9 +225,9 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
 
       {games.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-400 text-sm">No games available yet.</p>
+          <p className="text-gray-400 text-sm">{t('core.nav.none')}</p>
           <p className="text-[10px] text-gray-500 mt-2">
-            Add games to src/games/games.config.js
+            {t('core.nav.addGames')}
           </p>
         </div>
       )}

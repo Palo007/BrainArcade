@@ -23,6 +23,7 @@ import './styles/retro.css';
 import { BaselineModal } from './components/BaselineModal.jsx';
 import { LostBrainModal } from './components/LostBrainModal.jsx';
 import { GameTimelineCollector } from './components/GameTimelineCollector.jsx';
+import { useT } from './lib/i18n.js';
 
 // Recording viewer (Mind Monitor CSV) - loaded on demand, it is not needed for playing
 const ViewerPage = lazy(() => import('./viewer/ViewerPage.jsx'));
@@ -47,6 +48,7 @@ function GamesPage() {
  */
 function GamePage() {
   const { gameId } = useParams();
+  const t = useT();
   const game = games.find((g) => g.id === gameId);
 
   if (!game) {
@@ -55,8 +57,8 @@ function GamePage() {
         <NavBar />
         <div className="text-center py-12">
           <div className="text-4xl mb-4">❌</div>
-          <p className="text-[var(--nes-red)] mb-2">GAME NOT FOUND</p>
-          <p className="text-xs text-gray-400">The requested game does not exist</p>
+          <p className="text-[var(--nes-red)] mb-2">{t('core.app.notFound')}</p>
+          <p className="text-xs text-gray-400">{t('core.app.notFoundText')}</p>
         </div>
       </div>
     );
@@ -79,6 +81,7 @@ function GamePage() {
  * App - Main application component with routing
  */
 function App() {
+  const t = useT();
   return (
     <ProfileProvider>
     <PlaySetupProvider>
@@ -109,7 +112,7 @@ function App() {
               {/* Recording viewer (Mind Monitor CSV) */}
               <Route
                 path="/viewer"
-                element={<Suspense fallback={<p className="text-xs text-gray-400">LOADING VIEWER…</p>}><ViewerPage /></Suspense>}
+                element={<Suspense fallback={<p className="text-xs text-gray-400">{t('core.app.loadingViewer')}</p>}><ViewerPage /></Suspense>}
               />
 
               {/* Individual Game Routes */}

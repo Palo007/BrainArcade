@@ -6,6 +6,7 @@ import { PixelHearts } from '../../components/PixelHearts.jsx';
 import { GameOverScreen } from '../../components/GameOverScreen.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
 import { GameStartPanel } from '../../components/GameStartPanel.jsx';
+import { useT } from '../../lib/i18n.js';
 import '../../styles/retro.css';
 import './eye-animations.css';
 
@@ -46,16 +47,18 @@ function BlinkDebug() {
 // Small hint when the detector is blind (threshold stuck at its cap, usually a clenched jaw)
 function JawHint() {
   const { debugRef } = useBlink();
+  const t = useT();
   const [on, setOn] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setOn(!!debugRef.current?.saturated), 1000);
     return () => clearInterval(id);
   }, [debugRef]);
   if (!on) return null;
-  return <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>Relax your jaw — blinks can't be seen.</p>;
+  return <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>{t('games.blinkingContest.jawHint')}</p>;
 }
 
 export function BlinkingContest() {
+  const t = useT();
   // Game state
   const [showWelcome, setShowWelcome] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
@@ -195,7 +198,7 @@ export function BlinkingContest() {
         gameName="blinking-contest"
         onRetry={handleRetry}
         playedSec={Math.round(timeElapsed)}
-        customMessage="You blinked 3 times!"
+        customMessage={t('games.blinkingContest.gameOver')}
       />
     );
   }
@@ -205,11 +208,11 @@ export function BlinkingContest() {
       {SHOW_BLINK_DEBUG && <BlinkDebug />}
       {/* START screen */}
       {showWelcome && (
-        <GameStartPanel title="BLINKING CONTEST" onStart={handleStart} best={best} signalNote="Blinks are read from the front electrodes.">
+        <GameStartPanel title={t('games.blinkingContest.title')} onStart={handleStart} best={best} signalNote={t('games.blinkingContest.signalNote')}>
           <p className="text-[10px] text-gray-200 leading-relaxed mb-4">
-            Welcome to the blinking contest.<br /><br />
-            You have 3 blinks before losing.<br /><br />
-            Try to stay as long as possible without blinking!
+            {t('games.blinkingContest.welcome1')}<br /><br />
+            {t('games.blinkingContest.welcome2')}<br /><br />
+            {t('games.blinkingContest.welcome3')}
           </p>
         </GameStartPanel>
       )}
@@ -220,10 +223,10 @@ export function BlinkingContest() {
           {/* Title */}
           <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
             <h2 className="text-2xl text-[var(--nes-dark)]" style={{ fontFamily: 'var(--font-retro)' }}>
-              BLINKING CONTEST
+              {t('games.blinkingContest.title')}
             </h2>
             <p className="text-xs text-[var(--nes-dark)] mt-2" style={{ fontFamily: 'var(--font-retro)' }}>
-              Don't blink!
+              {t('games.blinkingContest.dontBlink')}
             </p>
             {gameStarted && <JawHint />}
           </div>
@@ -250,19 +253,19 @@ export function BlinkingContest() {
             style={{ fontFamily: 'var(--font-retro)' }}
           >
             <div className="text-right">
-              <div className="text-[8px] opacity-80">BLINKS</div>
+              <div className="text-[8px] opacity-80">{t('games.blinkingContest.blinks')}</div>
               <div className="mt-2">
                 <PixelHearts health={(blinksRemaining / 3) * 100} maxHearts={3} size={20} />
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[8px] opacity-80">SCORE</div>
+              <div className="text-[8px] opacity-80">{t('games.blinkingContest.score')}</div>
               <div className="text-xl">
                 {Math.round(score).toLocaleString()}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[8px] opacity-80">TIME</div>
+              <div className="text-[8px] opacity-80">{t('games.blinkingContest.time')}</div>
               <div className="text-xl">
                 {timeElapsed.toFixed(1)}s
               </div>
@@ -275,8 +278,8 @@ export function BlinkingContest() {
             offset={8}
             scheme="dark"
             align="left"
-            primary="Don't blink!"
-            secondary="3 blinks and you lose"
+            primary={t('games.blinkingContest.dontBlink')}
+            secondary={t('games.blinkingContest.hintSecondary')}
           />
         </>
       )}
