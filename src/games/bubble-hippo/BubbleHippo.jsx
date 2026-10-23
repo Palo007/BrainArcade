@@ -15,11 +15,14 @@ import { ParentReport } from '../../components/ParentReport.jsx';
 import { GameHint } from '../../components/GameHint.jsx';
 import '../../styles/retro.css';
 
-import { useCalmSignal, makeBaseline, toMeter, createChecks, STALE_MS } from './calmSignal.js';
+import { useFastSignal, freshFrame, blinkHoldMs } from '../../lib/fastSignal.js';
+import { roundGoal, safetyNet, isScored, loadDaily, dailyCheck, addUsage, recordDailyUsage } from '../../lib/progressRules.js';
+import { makeRoundRecord, toSessionFields } from '../../lib/roundRecord.js';
+import { calmOf, pushCalm, zOf, meterOf, makeBaseline, createChecks, DEMO_BASE } from './calmSignal.js';
 import { readGate, readPlaySetup, GIGGLE_GAP_MS } from './gate.js';
 import {
-  BADGES, WORLDS, STORY, BATH_BOMBS, MAX_ROUNDS_PER_DAY, dayKey, startDay, inRoundSafetyStep,
-  finalStretchGoal, pacerRate, playWeeks, finishRound, roundsLeftToday, badgeFeatures, loadProgress, saveProgress,
+  BADGES, WORLDS, STORY, BATH_BOMBS, RULES, dayKey, startDay, goalLevel, pacerRate, playWeeks, whaleDaysOf,
+  finishRound, badgeFeatures, loadProgress, saveProgress,
 } from './progress.js';
 import { primeBubbleAudio, startMusic, stopMusic, setMusicMode, playSfx, say, setMix } from './sounds.js';
 import { W, H, createScene, drawScene, triggerLaunch, triggerToot } from './scene.js';
@@ -33,10 +36,10 @@ export const STEP_MS = 33; // game logic timer; requestAnimationFrame only draws
 export const HUD_MS = 250; // React state about 4x/s
 export const BASELINE_S = 60; // daily baseline, first round of the day
 export const BASELINE_MAX_S = 90;
-export const BASELINE_MIN_FRAMES = 100;
+export const BASELINE_MIN_FRAMES = 200; // 8 frames a second
 export const WARMUP_MIN_S = 20; // re-baseline before every round
 export const WARMUP_MAX_S = 40;
-export const WARMUP_MIN_FRAMES = 40;
+export const WARMUP_MIN_FRAMES = 80;
 export const DEMO_BASELINE_S = 8; // demo mode has no headband: short fake baseline and warm-up
 export const DEMO_WARMUP_S = 4;
 export const GROW_S = 14; // calm seconds that fill a bubble
@@ -64,8 +67,6 @@ export const HINT_COOLDOWN_MS = 25000;
 export const HINT_SHOW_MS = 4000;
 export const POOR_PAUSED_PCT = 0.7;
 
-const clamp01 = (x) => Math.min(1, Math.max(0, x));
-const toM = (z) => clamp01(0.5 + z / 4); // z -> meter units (goal line = 0.5 + goalZ / 4)
 const rand = (a, b) => a + Math.random() * (b - a);
 const BOMB_SCENE = { banana: 'banana', 'bubble-gum': 'bubblegum', 'old-cheese': 'cheese', 'dads-socks': 'socks' };
 const PEST_SOUND = { fly: ['buzz', 2.5], sock: ['foamIn', 5], swan: ['honk', 6] };
@@ -84,8 +85,8 @@ function demoTarget(r) {
 function newRound(badge, warm, lastOfDay, goal, weeks, whaleDays) {
   const b = BADGES[badge - 1];
   return {
-    badge, warm, lastOfDay, goal, startGoal: goal, len: b.sec, weeks, whaleDays,
-    t: 0, z: 0, lastFrameAt: 0, gate: { state: 'ok', reason: null, hint: null },
+    badge, warm, lastOfDay, goal, safety: 0, len: b.sec, weeks, whaleDays,
+    t: 0, z: 0, calmWin: [], calmMin: [], lastFrameAt: 0, gate: { state: 'ok', reason: null, hint: null },
     sub: 'calm', subT: 0, calmTimer: 0, giggleUntil: 0, frozenSec: 0, offSec: 0,
     bubble: BUBBLE_AFTER_LAUNCH, launches: 0, safetyDone: false, eased: false,
     liveSec: 0, aboveSec: 0, heldSec: 0, run: 0, grace: 0, longest: 0,
@@ -109,8 +110,8 @@ function parentCardOf(p) {
   return {
     rounds: h.length,
     days: new Set(h.map((x) => x.date.slice(0, 10))).size,
-    calmPct: avg(h.map((x) => x.calmPct).filter(Number.isFinite)),
-    longestHold: h.reduce((a, x) => Math.max(a, x.longestHold || 0), 0),
+    calmPct: avg(h.map((x) => x.successPct).filter(Number.isFinite)),
+    longestHold: h.reduce((a, x) => Math.max(a, x.longestStreakS || 0), 0),
     settle: avg(times),
     duck: total ? `${right} of ${total}` : null,
     secretPct: avg(h.map((x) => x.secretPct).filter(Number.isFinite)),
@@ -134,7 +135,7 @@ function loadMix() {
 export function BubbleHippo() {
   const navigate = useNavigate();
   const { ensureBaseline, resetBaseline, isBaselineReady, calibration } = useBaseline();
-  const { subscribeEEG, isConnected } = useEEG();
+  const { subscribeEEG, isConnected, profile } = useEEG();
   const { bands } = useProcessing();
   const { adjusting, hasRecentExtreme, quality10s } = useQuality();
   const { onBlink } = useBlink();
@@ -147,6 +148,7 @@ export function BubbleHippo() {
   const demoRef = useRef(demo);
   useEffect(() => { demoRef.current = demo; }, [demo]);
   const [progress, setProgress] = useState(() => startDay(loadProgress(activeId)));
+  const [daily, setDaily] = useState(() => loadDaily(activeId)); // arcade-wide daily limit (rounds and minutes)
   const [badge, setBadge] = useState(() => progress.unlocked);
   const [warm, setWarm] = useState(false);
   const [bomb, setBomb] = useState(0);
@@ -156,6 +158,7 @@ export function BubbleHippo() {
     setProgress(p);
     setBadge(p.unlocked); // never keep another child's (maybe locked) badge
     setWarm(false);
+    setDaily(loadDaily(activeId));
   }, [activeId]);
   const [phase, setPhase] = useState('menu'); // menu | baseline | warmup | play | result
   const [hud, setHud] = useState(null);
@@ -165,8 +168,10 @@ export function BubbleHippo() {
 
   // A new day can start while the game stays open: apply it when the menu shows and when the page comes back
   useEffect(() => {
-    if (phase === 'menu') setProgress((p) => startDay(p));
-  }, [phase]);
+    if (phase !== 'menu') return;
+    setProgress((p) => startDay(p));
+    if (!demo) setDaily(loadDaily(activeId)); // calibration and other games count too
+  }, [phase, demo, activeId]);
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') setProgress((p) => startDay(p)); };
     document.addEventListener('visibilitychange', onVisible);
@@ -187,8 +192,10 @@ export function BubbleHippo() {
   const lastBlinkRef = useRef(0);
   const sceneRef = useRef(createScene());
   const resultLinesRef = useRef([]);
-  const frameRef = useCalmSignal(subscribeEEG, isConnected, bands, {
+  const collectSecRef = useRef(0); // baseline and warm-up seconds of this round, for the daily limit
+  const frameRef = useFastSignal(subscribeEEG, isConnected, bands, {
     enabled: phase === 'baseline' || phase === 'warmup' || phase === 'play', blinkRef: lastBlinkRef,
+    holdMs: blinkHoldMs(profile),
   });
   const pausedRef = useRef(paused);
   const qualityRef = useRef({ adjusting, hasRecentExtreme });
@@ -265,7 +272,7 @@ export function BubbleHippo() {
       const frontalSpike = q.hasRecentExtreme?.(1, 1000) || q.hasRecentExtreme?.(2, 1000);
       // A frame older than STALE_MS means the stream stalled: never score a frozen signal
       const raw = frameRef.current;
-      const frame = raw && now - raw.at < STALE_MS ? raw : null;
+      const frame = freshFrame(raw, now);
       if (ph === 'baseline' || ph === 'warmup') stepCollect(ph, dt, frame, q.adjusting || frontalSpike);
       else stepRound(dt, now, frame, q.adjusting || frontalSpike);
       if (now - hudAt > HUD_MS) { hudAt = now; pushHud(); }
@@ -285,7 +292,8 @@ export function BubbleHippo() {
       ? c.t >= c.minS
       : (c.t >= c.minS && enough) || (c.t >= c.maxS && c.frames.length >= 8);
     if (!done) return;
-    const base = demoRef.current ? { mu: 0, mad: 1 } : makeBaseline(c.frames);
+    const base = demoRef.current ? DEMO_BASE : makeBaseline(c.frames);
+    collectSecRef.current += c.t;
     if (ph === 'baseline') {
       dailyRef.current = { day: dayKey(), base };
       baseRef.current = base;
@@ -315,8 +323,8 @@ export function BubbleHippo() {
     const isDemo = demoRef.current;
     const inDuck = r.sub === 'duck' || r.sub === 'answer';
 
-    const checks = isDemo ? {} : checksRef.current.update(frame, base, {
-      now, lastBlinkAt: lastBlinkRef.current, reactivity: reactivityRef.current, duckTime: inDuck,
+    const checks = isDemo ? {} : checksRef.current.update(frame, base, dt, now, {
+      lastBlinkMs: lastBlinkRef.current, reactivity: reactivityRef.current, duckTime: inDuck,
     });
     r.gate = readGate({ stale: !isDemo && !frame, adjusting: adjustingNow, checks, giggle: now < r.giggleUntil });
     const g = r.gate;
@@ -349,30 +357,36 @@ export function BubbleHippo() {
       r.z += (zt - r.z) * Math.min(1, dt * 1.5);
     } else if (live && frame && !frame.blink && frame.at !== r.lastFrameAt) {
       r.lastFrameAt = frame.at;
-      r.z = toMeter(frame, base).z;
+      const c = calmOf(frame, base.thetaCap);
+      r.z = zOf(pushCalm(r.calmWin, c), base); // average of the last 8 frames (1 s)
+      const m = Math.floor(r.t / 60);
+      const acc = r.calmMin[m] || (r.calmMin[m] = [0, 0]);
+      acc[0] += c; acc[1] += 1;
     }
 
-    // Goal: fixed in the round; one safety step after 45 s; last 20 s of the day's last round a little easier
-    if (!r.safetyDone && r.t >= 45 && r.liveSec > 10) {
-      r.safetyDone = true;
-      const ng = inRoundSafetyStep(r.goal, r.aboveSec / r.liveSec, r.t, false);
-      if (ng < r.goal) r.eased = true;
-      r.goal = ng;
-    }
-    const goalZ = finalStretchGoal(r.goal, r.len - r.t, r.lastOfDay);
+    // Goal: fixed in the round; safety net once after 45 s; last 20 s of the day's last round a little easier
+    const net = r.safetyDone ? null : safetyNet(RULES, { t: r.t, okSec: r.liveSec, successSec: r.aboveSec });
+    if (net) { r.safetyDone = true; r.safety = net.offset; r.eased = net.eased; }
+    const goalZ = roundGoal(RULES, r);
     const calm = r.z >= goalZ;
     const secret = !!r.secret;
 
     if (scoring) {
       if (live) {
-        r.liveSec += dt;
+        const scored = isScored(RULES, r); // the day's last 20 s are eased and not scored
         const pestOn = !!r.pest;
-        if (pestOn) r.pestLive += dt; else r.noPestLive += dt;
-        if (secret) r.secLive += dt;
+        if (scored) {
+          r.liveSec += dt;
+          if (pestOn) r.pestLive += dt; else r.noPestLive += dt;
+          if (secret) r.secLive += dt;
+        }
         if (calm) {
-          r.aboveSec += dt; r.run += dt; r.grace = 0;
-          if (pestOn) r.pestAbove += dt; else r.noPestAbove += dt;
-          if (secret) r.secAbove += dt;
+          if (scored) {
+            r.aboveSec += dt;
+            if (pestOn) r.pestAbove += dt; else r.noPestAbove += dt;
+            if (secret) r.secAbove += dt;
+          }
+          r.run += dt; r.grace = 0;
           r.bubble = Math.min(1, r.bubble + dt / GROW_S);
         } else {
           r.grace += dt;
@@ -533,13 +547,16 @@ export function BubbleHippo() {
     go('result');
     const calmPct = r.liveSec > 0 ? r.aboveSec / r.liveSec : 0;
     const total = r.liveSec + r.heldSec;
+    const heldPct = total > 0 ? r.heldSec / total : 0;
+    const calmByMin = r.calmMin.map((a) => (a && a[1] ? Math.round((a[0] / a[1]) * 1000) / 1000 : null));
     const round = {
-      badge: r.badge, warm: r.warm, sec: Math.round(r.t), goal: r.goal, calmPct, longestHold: r.longest,
+      badge: r.badge, warm: r.warm, sec: Math.round(r.t), calmPct, eased: r.eased, longestHold: r.longest,
       settleTimes: r.settleTimes, ducksRight: r.ducksRight, ducksTotal: r.ducksTotal,
       secretPct: r.secLive > 0 ? r.secAbove / r.secLive : undefined,
       pestCalmPct: r.pestLive > 0 ? r.pestAbove / r.pestLive : undefined,
       noPestCalmPct: r.noPestLive > 0 ? r.noPestAbove / r.noPestLive : undefined,
-      setup: setup || undefined, baseMu: baseRef.current?.mu, baseMad: baseRef.current?.mad,
+      heldPct, rawByMin: calmByMin,
+      setup: setup || undefined, baseMu: baseRef.current?.calm?.median, baseMad: baseRef.current?.calm?.mad,
     };
     const res = finishRound(progress, round);
     if (!demoRef.current) saveProgress(activeId, res.progress);
@@ -547,25 +564,25 @@ export function BubbleHippo() {
 
     const pausedSec = takePausedSec();
     const poor = r.t > 0 && pausedSec / Math.max(r.len, r.t) > POOR_PAUSED_PCT;
-    const heldPct = total > 0 ? r.heldSec / total : 0;
-    const frozenPct = r.t + r.frozenSec > 0 ? r.frozenSec / (r.t + r.frozenSec) : 0;
+    // Arcade-wide daily limit: this round plus the baseline and warm-up count
+    const usage = { game: GAME, rounds: 1, sec: r.t + r.frozenSec + collectSecRef.current };
+    collectSecRef.current = 0;
+    setDaily(demoRef.current ? addUsage(daily, usage) : recordDailyUsage(activeId, usage));
+    const rec = makeRoundRecord({
+      game: GAME, level: r.badge, setup, rawByMin: calmByMin, ref: res.progress.ref,
+      goal: goalLevel(r.goal), successPct: calmPct, longestStreakS: r.longest, heldPct,
+      frozenPct: (r.frozenSec + pausedSec) / Math.max(1, r.t + r.frozenSec + pausedSec), stars: res.stars,
+    });
     const id = recordSession(GAME, {
+      ...toSessionFields(rec),
       score: Math.round(r.aboveSec), // calm seconds, like the other calm games
       scoreKind: 'calmSec',
-      timeAbovePct: Math.round(calmPct * 100),
-      successPct: Math.round(calmPct * 100),
-      flowSec: Math.round(r.longest),
-      longestStreakS: Math.round(r.longest),
       okSec: Math.round(r.liveSec),
       durationSec: Math.round(r.t),
       playedSec: Math.round(r.t),
-      stars: res.stars,
       qualityPct: quality10s ? Math.round(quality10s.stablePct * 100) : undefined,
-      level: r.badge,
-      goal: Math.round(r.goal * 100) / 100,
-      heldPct: Math.round(heldPct * 100),
-      frozenPct: Math.round(frozenPct * 100),
       badge: BADGES[r.badge - 1].name,
+      bathBomb: BATH_BOMBS[bomb]?.id,
       warmBath: r.warm || undefined,
       settleTimes: r.settleTimes.length ? r.settleTimes.join(' ') : undefined,
       ducksRight: r.ducksTotal ? r.ducksRight : undefined,
@@ -573,8 +590,6 @@ export function BubbleHippo() {
       secretPct: round.secretPct != null ? Math.round(round.secretPct * 100) : undefined,
       pestCalmPct: round.pestCalmPct != null ? Math.round(round.pestCalmPct * 100) : undefined,
       noPestCalmPct: round.noPestCalmPct != null ? Math.round(round.noPestCalmPct * 100) : undefined,
-      baseMu: round.baseMu != null ? Math.round(round.baseMu * 1000) / 1000 : undefined,
-      baseMad: round.baseMad != null ? Math.round(round.baseMad * 1000) / 1000 : undefined,
       endedEarly: r.early || undefined,
       ...(poor ? { valid: false, invalidReason: 'bad-quality' } : {}),
     });
@@ -592,16 +607,19 @@ export function BubbleHippo() {
   const beginRound = useCallback((badgeId, isWarm) => {
     const p = startDay(progress); // a new day may have started while the game stayed open
     if (p !== progress) setProgress(p);
-    if (roundsLeftToday(p) <= 0) return;
+    const d = demoRef.current ? daily : loadDaily(activeId);
+    if (d !== daily) setDaily(d);
+    const today = dailyCheck(d, GAME);
+    if (!today.ok) return;
     const id = Math.min(Math.max(1, badgeId), p.unlocked);
-    const lastOfDay = roundsLeftToday(p) === 1;
-    roundRef.current = newRound(id, isWarm, lastOfDay, p.goal, playWeeks(p), p.badgeDays?.[5] || 0);
+    roundRef.current = newRound(id, isWarm, today.lastRound, p.goal, playWeeks(p), whaleDaysOf(p));
+    collectSecRef.current = 0;
     checksRef.current.reset();
     takePausedSec();
     startMusic();
     const haveDaily = dailyRef.current && dailyRef.current.day === dayKey();
     if (haveDaily) { startCollect('warmup'); go('warmup'); } else { startCollect('baseline'); go('baseline'); }
-  }, [progress, go]);
+  }, [progress, go, daily, activeId]);
 
   const onStart = () => {
     primeBubbleAudio();
@@ -644,11 +662,11 @@ export function BubbleHippo() {
         view.paused = pausedRef.current;
       } else if (ph === 'play' && r) {
         const F = badgeFeatures(r.badge);
-        const goalZ = finalStretchGoal(r.goal, r.len - r.t, r.lastOfDay);
+        const goalZ = roundGoal(RULES, r);
         const left = Math.max(0, Math.ceil(r.len - r.t));
         view.phase = r.gate.state === 'freeze' ? 'break' : r.sub;
-        view.meter = toM(r.z);
-        view.goal = toM(goalZ);
+        view.meter = meterOf(r.z);
+        view.goal = meterOf(goalZ);
         view.bubble = r.bubble;
         view.secret = !!r.secret;
         view.sleepy = r.gate.reason === 'sleepy';
@@ -672,8 +690,9 @@ export function BubbleHippo() {
   }, []);
 
   // ---- screens
-  const roundsLeft = roundsLeftToday(progress);
-  const dayDone = roundsLeft === 0;
+  const today = dailyCheck(daily, GAME);
+  const roundsLeft = today.ok ? today.roundsLeft : 0;
+  const dayDone = !today.ok;
   const chapter = Math.min(progress.unlocked, STORY.length);
   const card = modal === 'parent' ? parentCardOf(progress) : null;
   const toggle = (k) => setMixState((m) => ({ ...m, [k]: !m[k] }));
@@ -703,7 +722,7 @@ export function BubbleHippo() {
   const goodbye = (
     <div className="text-[10px] text-gray-200 leading-relaxed">
       <p className="text-[var(--nes-yellow)] mb-2">SEE YOU NEXT TIME!</p>
-      <p className="mb-2">You played {MAX_ROUNDS_PER_DAY} rounds today. The hippo waves goodbye from the tub.</p>
+      <p className="mb-2">You played {today.roundsDone} round{today.roundsDone === 1 ? '' : 's'} today. The hippo waves goodbye from the tub.</p>
       <p className="mb-4">Days played: {progress.days}</p>
       <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">CHOOSE GAME</button>
     </div>
@@ -842,7 +861,7 @@ export function BubbleHippo() {
             {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">The headband signal was poor for most of this round, so it is not counted in your progress.</p>}
             {demo && <p className="text-[8px] opacity-70 mt-2">Demo mode — not saved</p>}
             <div className="mt-4">
-              {roundsLeftToday(progress) > 0 ? (
+              {!dayDone ? (
                 <GameEndActions onPlayAgain={() => go('menu')} sessionId={result.sessionId} game={GAME} seconds={result.round.sec} />
               ) : (
                 <>

@@ -1,24 +1,19 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // Bubble Hippo progress per child: badge, goal, stars, Bubble Zoo, days played, history.
-// Pure functions + localStorage (in try/catch). The goal is in z units of the child's own baseline:
-// calm = meter z above the goal. Higher goal = harder. All limits are START values; the test day sets real ones.
+// The rules are the shared ones (lib/progressRules.js); this file has the game's badge table, story, zoo
+// and the game-only parts (settle goal, breath pacer, cues, secret bubble). The goal is in z units of the
+// child's own baseline: calm = meter z above the goal. Higher goal = harder.
+import * as rules from '../../lib/progressRules.js';
+import { updateReference } from '../../lib/roundRecord.js';
 
-export const STORE_KEY = 'brainarcade.bubbleHippo';
+export const GAME_KEY = 'bubbleHippo'; // localStorage 'brainarcade.bubbleHippo'
+export const STORE_KEY = rules.progressKey(GAME_KEY);
 export const GOAL_STEP = 0.1; // z
 export const START_GOAL = 0; // the goal line starts at the child's own normal
 export const GOAL_MIN = -1.5;
 export const GOAL_MAX = 3;
-export const MAX_ROUNDS_PER_DAY = 3;
-export const UNLOCK_STEPS = 3; // the goal must be this many steps above where the badge started
-export const SAFETY_AT_S = 45; // one safety step inside a round, after this long
-export const SAFETY_LOW = 0.4; // above-goal time below this = too hard
-export const SAFETY_HIGH = 0.9; // above this = too easy
-export const BETWEEN_UP = 0.8; // between rounds: above the goal more than this = one step up
-export const HARD_PCT = 0.4; // a round below this is "hard"
-export const HARD_ROUNDS_FOR_WARM = 3;
-export const LAST_EASE_S = 20; // the last seconds of the day's last round are a little easier
 export const SETTLE_START_S = 15;
-export const DELAY_S = 2; // measured delay of the meter (about 1.5-2 s), to be set on the test day
+export const DELAY_S = 2; // measured delay of the meter, to be set on the test day
 export const SETTLE_MARGIN_S = 3;
 export const SETTLE_STEP_S = 1;
 export const SETTLE_OK_CUES = 2; // settled in 2 of the last 3 cues
@@ -38,6 +33,20 @@ export const BADGES = [
   { id: 6, name: 'HIPPO KING', title: 'Bath Boss', sec: 180, minDays: null, color: '#9B7FD8', skill: 'All skills together.' },
 ];
 export const badgeFeatures = (id) => ({ breath: id >= 2, splash: id >= 3, pests: id >= 4, secret: id >= 5, king: id >= 6 });
+
+// Shared rules with the game's own numbers, one set per badge because the minimum play days differ.
+// Stars are for finishing only (no effort star). Day-end ease and safety net are the shared defaults.
+export const RULES_BY_BADGE = BADGES.map((b) => rules.makeRules({
+  levels: BADGES,
+  goalStep: GOAL_STEP,
+  startGoal: START_GOAL,
+  goalMin: GOAL_MIN,
+  goalMax: GOAL_MAX,
+  harder: 1, // a higher z goal is harder
+  minDaysOnLevel: b.minDays ?? Infinity,
+}));
+export const rulesFor = (badge) => RULES_BY_BADGE[Math.min(BADGES.length, Math.max(1, badge)) - 1];
+export const RULES = RULES_BY_BADGE[0]; // goal scale, safety net and day-end ease are the same for every badge
 
 // One bath world per badge, opened by the badge and not by a date
 export const WORLDS = [
@@ -78,49 +87,16 @@ export const BATH_BOMBS = [
   { id: 'dads-socks', name: 'Dad\'s socks', color: '#8FA36B', joke: 'The fly flew away. So did the sock.' },
 ];
 
-export const dayKey = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const dayKey = rules.dayKey;
 
-const clampGoal = (g) => Math.min(GOAL_MAX, Math.max(GOAL_MIN, Math.round(g * 100) / 100));
-const stepsAbove = (goal, start) => Math.floor((goal - start) / GOAL_STEP + 1e-6);
+export const goalLevel = (goal) => rules.goalSteps(RULES, goal); // steps harder than day 1
+export const startDay = (p, now) => rules.startDay(rulesFor(p.unlocked), p, now);
 
 export function defaultProgress() {
   return {
-    unlocked: 1, goal: START_GOAL, dayEndGoal: null, lastDay: null, roundsToday: 0, firstDay: null,
-    badgeDays: {}, badgeLastDay: {}, badgeStart: { 1: START_GOAL },
-    settleGoal: SETTLE_START_S, cues: [], secretPcts: [],
-    hardStreak: 0, warmBath: false, stars: 0, zoo: 0, golden: 0, days: 0,
-    history: [],
+    ...rules.defaultProgress(RULES),
+    firstDay: null, settleGoal: SETTLE_START_S, cues: [], secretPcts: [], warmBath: false, zoo: 0, golden: 0, ref: null,
   };
-}
-
-// Loaded progress with the new day applied: rounds reset, and the day starts one step easier.
-export function startDay(p, now = new Date()) {
-  const today = dayKey(now);
-  if (p.lastDay === today) return p;
-  const goal = p.dayEndGoal != null ? clampGoal(p.dayEndGoal - GOAL_STEP) : p.goal;
-  return { ...p, roundsToday: 0, goal };
-}
-
-export const roundsLeftToday = (p, now = new Date()) =>
-  Math.max(0, MAX_ROUNDS_PER_DAY - (p.lastDay === dayKey(now) ? p.roundsToday : 0));
-
-// Inside a round the goal stays still, except for one safety step after 45 s (max 0.1 z):
-// above the goal less than 40% = one step easier, more than 90% = one step harder. done = the step was used.
-export function inRoundSafetyStep(goal, abovePct, elapsedS, done = false) {
-  if (done || elapsedS < SAFETY_AT_S || !Number.isFinite(abovePct)) return goal;
-  if (abovePct < SAFETY_LOW) return clampGoal(goal - GOAL_STEP);
-  if (abovePct > SAFETY_HIGH) return clampGoal(goal + GOAL_STEP);
-  return goal;
-}
-
-// The last 20 s of the day's last round are a little easier (one step), so the day ends with a win
-export const finalStretchGoal = (goal, secLeft, lastRoundOfDay) =>
-  lastRoundOfDay && secLeft <= LAST_EASE_S ? clampGoal(goal - GOAL_STEP) : goal;
-
-// Main loop between rounds: above the goal more than 80% of the time = one step harder
-export function nextGoal(goal, abovePct) {
-  return abovePct > BETWEEN_UP ? clampGoal(goal + GOAL_STEP) : goal;
 }
 
 // Settle goal (seconds): starts at 15 and shrinks 1 s per round in which half the settles were inside it,
@@ -146,108 +122,98 @@ export function playWeeks(p, now = new Date()) {
   return Math.max(0, Math.floor((now - new Date(y, m - 1, d)) / (7 * 864e5)));
 }
 
-// The next badge opens when BOTH: enough play days on this badge AND real progress (goal 3 steps above where
-// the badge started). From Otter on also: settled in 2 of the last 3 cues. From Whale on also: secret time
-// above the goal at least half. Never taken away, King is the top.
-export function canUnlock(p) {
-  const badge = BADGES[p.unlocked - 1];
-  if (!badge || badge.minDays == null || p.unlocked >= BADGES.length) return false;
-  if ((p.badgeDays?.[p.unlocked] || 0) < badge.minDays) return false;
-  const start = p.badgeStart?.[p.unlocked] ?? START_GOAL;
-  if (stepsAbove(p.goal, start) < UNLOCK_STEPS) return false;
-  if (p.unlocked >= 3 && (p.cues || []).filter(Boolean).length < SETTLE_OK_CUES) return false;
-  if (p.unlocked >= 5) {
-    const s = p.secretPcts || [];
+// Days played on the Whale badge, for the growing secret bubble (max 5 counts)
+export const whaleDaysOf = (p) => (p.unlocked > 5 ? 5 : p.unlocked === 5 ? p.levelDays : 0);
+
+// The extra unlock conditions on top of the shared ones. From Otter on: settled in 2 of the last 3 cues.
+// From Whale on: secret time above the goal at least half.
+export function extraUnlockOk(badge, cues, secretPcts) {
+  if (badge >= 3 && (cues || []).filter(Boolean).length < SETTLE_OK_CUES) return false;
+  if (badge >= 5) {
+    const s = secretPcts || [];
     if (!s.length || s.reduce((a, b) => a + b, 0) / s.length < SECRET_MIN_PCT) return false;
   }
   return true;
 }
 
-// round: { badge, warm, sec, goal (end of round, after any safety step), calmPct (above the goal), longestHold,
-//          settleTimes[], ducksRight, ducksTotal, secretPct, pestCalmPct, noPestCalmPct, setup, baseMu, baseMad }
+// round: { badge, warm, sec, calmPct (above the goal, 0-1), eased, longestHold, settleTimes[], ducksRight,
+//          ducksTotal, secretPct, pestCalmPct, noPestCalmPct, heldPct, rawByMin[], setup, baseMu, baseMad }
 // The round gets its star for finishing, also when it ended early. rnd is for tests.
 export function finishRound(p, round, now = new Date(), rnd = Math.random) {
   const today = dayKey(now);
-  const newDay = p.lastDay !== today;
-  const out = { ...p };
-  const stars = 1; // for finishing, never for score
-  out.stars = p.stars + stars;
+  const times = round.settleTimes || [];
+  const cues = times.length ? [...(p.cues || []), ...times.map((t) => t <= p.settleGoal)].slice(-3) : (p.cues || []);
+  const secretPcts = Number.isFinite(round.secretPct) ? [...(p.secretPcts || []), round.secretPct].slice(-3) : (p.secretPcts || []);
+
+  // When an extra condition is not met, rules that cannot unlock are passed in
+  const base = rulesFor(p.unlocked);
+  const R = extraUnlockOk(p.unlocked, cues, secretPcts) ? base : { ...base, goodRounds: Infinity };
+  const res = rules.applyRound(R, p, {
+    level: round.badge, successPct: round.calmPct, eased: round.eased, effort: false,
+  }, now, {
+    longestStreakS: round.longestHold, settleTimes: times, ducksRight: round.ducksRight, ducksTotal: round.ducksTotal,
+    secretPct: round.secretPct, pestCalmPct: round.pestCalmPct, noPestCalmPct: round.noPestCalmPct,
+    heldPct: round.heldPct, sec: round.sec, setup: round.setup, warm: round.warm || undefined,
+    // Raw calm value (log ratio): warm-up median / MAD and per-minute means, for real change across days
+    baseMu: round.baseMu, baseMad: round.baseMad, rawByMin: round.rawByMin,
+  });
+  const out = res.progress;
+
   const friend = p.zoo < ZOO_SIZE ? ZOO[p.zoo] : null;
-  if (friend) out.zoo = p.zoo + 1;
+  out.zoo = friend ? p.zoo + 1 : p.zoo;
   const golden = rnd() < GOLDEN_CHANCE;
   out.golden = p.golden + (golden ? 1 : 0);
-  if (newDay) out.days = p.days + 1;
   out.firstDay = p.firstDay || today;
-  out.lastDay = today;
-  out.roundsToday = (newDay ? 0 : p.roundsToday) + 1;
-  out.badgeDays = { ...p.badgeDays };
-  out.badgeLastDay = { ...p.badgeLastDay };
-  if (out.badgeLastDay[round.badge] !== today) {
-    out.badgeDays[round.badge] = (out.badgeDays[round.badge] || 0) + 1;
-    out.badgeLastDay[round.badge] = today;
-  }
-
-  out.goal = nextGoal(Number.isFinite(round.goal) ? round.goal : p.goal, round.calmPct);
-  out.dayEndGoal = out.goal;
-  const times = round.settleTimes || [];
-  if (times.length) {
-    out.cues = [...(p.cues || []), ...times.map((t) => t <= p.settleGoal)].slice(-3);
-    out.settleGoal = settleGoal(p.settleGoal, times);
-  }
-  if (Number.isFinite(round.secretPct)) out.secretPcts = [...(p.secretPcts || []), round.secretPct].slice(-3);
-
-  // 3 hard rounds in a row: offer a warm bath on the badge below (the child keeps the badge)
+  out.cues = cues;
+  if (times.length) out.settleGoal = settleGoal(p.settleGoal, times);
+  out.secretPcts = secretPcts;
+  // 3 hard rounds in a row: offer a warm bath on the badge below (the child keeps the badge).
+  // A warm bath round itself is not counted as hard.
   let warmBath = false;
-  if (round.warm) out.warmBath = false;
-  else {
-    out.hardStreak = round.calmPct < HARD_PCT ? p.hardStreak + 1 : 0;
-    warmBath = out.hardStreak >= HARD_ROUNDS_FOR_WARM && round.badge > 1;
-    if (warmBath) { out.hardStreak = 0; out.warmBath = true; }
-  }
-
-  // Unlock: only from a round on the top badge
-  let unlockedBadge = null;
-  if (round.badge === p.unlocked && canUnlock(out)) {
-    out.unlocked = p.unlocked + 1;
-    out.badgeStart = { ...p.badgeStart, [out.unlocked]: out.goal };
-    unlockedBadge = out.unlocked;
-  }
-  out.history = [...p.history, {
-    date: now.toISOString(), badge: round.badge, sec: round.sec, calmPct: round.calmPct, longestHold: round.longestHold,
-    goal: p.goal, endGoal: round.goal, settleTimes: times, ducksRight: round.ducksRight, ducksTotal: round.ducksTotal,
-    secretPct: round.secretPct, pestCalmPct: round.pestCalmPct, noPestCalmPct: round.noPestCalmPct,
-    setup: round.setup, baseMu: round.baseMu, baseMad: round.baseMad,
-  }].slice(-200);
-  return { progress: out, stars, friend, golden, unlockedBadge, warmBath };
+  if (round.warm) { out.hardStreak = p.hardStreak; out.warmBath = false; }
+  else { warmBath = res.practiceOffer; if (warmBath) out.warmBath = true; }
+  out.ref = updateReference(p.ref, out.history, now);
+  return { progress: out, stars: res.stars, friend, golden, unlockedBadge: res.unlockedLevel, warmBath };
 }
 
+// ---- storage: the shared key and shape; progress saved before the move had its own fields -------------
+const num = (v, d) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : d);
+
+// History saved before the move used badge / calmPct / longestHold
+const migrateEntry = (h) => (h && typeof h === 'object' ? {
+  ...h,
+  level: h.level ?? h.badge,
+  successPct: h.successPct ?? h.calmPct,
+  longestStreakS: h.longestStreakS ?? h.longestHold,
+} : null);
+
+// Old shape: badgeDays / badgeLastDay / badgeStart per badge, roundsToday, firstDay. Map what maps, drop the rest.
+// The shared fields (levelDays, levelStartGoal, levelLastDay) come from the entries of the badge now open.
+export function migrate(p) {
+  const old = p && typeof p === 'object' ? p : {};
+  const isOld = old.badgeDays && typeof old.badgeDays === 'object' && !('levelDays' in old);
+  const history = Array.isArray(old.history) ? old.history.map(migrateEntry).filter(Boolean) : [];
+  const out = { ...old, history };
+  if (!isOld) return out;
+  const u = Math.round(num(old.unlocked, 1));
+  const open = Number.isFinite(u) ? Math.min(BADGES.length, Math.max(1, u)) : 1;
+  out.levelDays = num(old.badgeDays?.[open], 0);
+  out.levelLastDay = old.badgeLastDay?.[open] ?? null;
+  out.levelStartGoal = num(old.badgeStart?.[open], START_GOAL);
+  delete out.badgeDays; delete out.badgeLastDay; delete out.badgeStart; delete out.roundsToday;
+  return out;
+}
+
+// Loaded progress made safe: a bad value must not crash a round
 export function loadProgress(childId) {
-  try {
-    const all = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-    const p = all?.byChild?.[childId];
-    if (!p) return defaultProgress();
-    const out = { ...defaultProgress(), ...p };
-    const u = Math.round(Number(out.unlocked));
-    out.unlocked = Number.isFinite(u) ? Math.min(BADGES.length, Math.max(1, u)) : 1; // a bad value must not crash a round
-    if (!Array.isArray(out.history)) out.history = [];
-    if (!Array.isArray(out.cues)) out.cues = [];
-    if (!Array.isArray(out.secretPcts)) out.secretPcts = [];
-    for (const k of ['badgeDays', 'badgeLastDay', 'badgeStart']) {
-      if (!out[k] || typeof out[k] !== 'object') out[k] = k === 'badgeStart' ? { 1: START_GOAL } : {};
-    }
-    return out;
-  } catch {
-    return defaultProgress();
-  }
+  const p = { ...defaultProgress(), ...rules.loadProgress(RULES, GAME_KEY, childId, migrate) };
+  if (!Array.isArray(p.cues)) p.cues = [];
+  if (!Array.isArray(p.secretPcts)) p.secretPcts = [];
+  p.settleGoal = num(p.settleGoal, SETTLE_START_S);
+  p.zoo = Math.max(0, num(p.zoo, 0));
+  p.golden = Math.max(0, num(p.golden, 0));
+  if (typeof p.firstDay !== 'string') p.firstDay = null;
+  p.warmBath = !!p.warmBath;
+  return p;
 }
-
-export function saveProgress(childId, p) {
-  try {
-    const all = JSON.parse(localStorage.getItem(STORE_KEY) || 'null') || { byChild: {} };
-    all.byChild = { ...(all.byChild || {}), [childId]: p };
-    localStorage.setItem(STORE_KEY, JSON.stringify(all));
-    return true;
-  } catch {
-    return false;
-  }
-}
+export const saveProgress = (childId, p) => rules.saveProgress(GAME_KEY, childId, p);
