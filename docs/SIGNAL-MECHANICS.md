@@ -133,6 +133,19 @@ Source: `REVIEW-command-center-metrics.html` (outside the repo).
 - **Frontal bad channel**: a flagged-bad AF7 or AF8 drops out of frontal values (live and baseline); both bad → the axis holds.
 - **Tests**: `node tools/test-signal.mjs`, `node tools/test-axisMath.mjs`. Measurement: `node tools/measure-blink-leak.mjs <recording.csv> athena`.
 
+### 3.6 Fast signal and fair gate for the calm games (2026-10-23)
+
+Train of Thoughts and Bubble Hippo do not use the joystick. They share a fast signal and a set of rules. The original project had none of this.
+
+- **Fast signal** (`src/lib/fastSignal.js`): made from raw EEG, not from `ProcessingContext`. A sliding 1 s window gives a frame every 125 ms (8 per second), about 0.5 s delay. A frame older than 400 ms is not used; the game holds its value.
+- **Checks, not penalties**: the frame carries flags for blink, eye move (slow AF7 − AF8), muscle (30–45 Hz above 2× its slow level), tense jaw, sleepy (theta and delta 60 % above baseline for 5 s) and eyes closed. No flag rewards or punishes. Each game's `gate.js` turns them into hold, hint or freeze.
+- **Each game makes its own number**: Train of Thoughts uses a "busy" value against the child's baseline. Bubble Hippo uses a calm value averaged over 8 frames (about 1 s) and keeps its own sleepy rule without delta.
+- **Progress rules** (`src/lib/progressRules.js`): the goal moves one step between rounds to keep success at 75–85 %. A safety net acts once per round (after 45 s, with at least 10 s of usable signal). The last 20 s of the day is one step easier. Level unlocks need good rounds on at least 2 play days. Daily limit for the whole arcade: 3 rounds per game, 15 min per day.
+- **Round record** (`src/lib/roundRecord.js`): one record per round for every brain game (game, level, play setup, raw and z per minute, goal, success %, longest streak, held % and frozen %, stars). The parent report and the Training Journal read it.
+- **Play setup** (`src/lib/playSetup.js`, `src/contexts/PlaySetupContext.jsx`): phone in hands, on a stand, or computer, per child and device. A guess is not stored as a fact: a session saves the setup only when the child chose it.
+- **All numbers are start values.** Headband test-day recordings will set the real thresholds.
+- **Tests**: `node tools/test-fastSignal.mjs`, `node tools/test-progressRules.mjs`.
+
 ---
 
 ## 4. Reports and history (fork features)

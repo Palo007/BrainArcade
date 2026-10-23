@@ -14,6 +14,10 @@ Thought-controlled minigames in your browser. This fork adds full support for th
 |---|---|---|
 | **Muse S Athena over Web Bluetooth** | Connects the Athena (EEG, motion and fNIRS HbO/HbR) straight from Chrome. Reconnects by itself if the link drops. A phone relay is also available. | [Start screen](./docs/screenshots/01-start-desktop.png) |
 | **fNIRS games** | **Glow Orb** and **Focus Ball**: think hard and the orb flies or the ball stays up. Mendi-style, with a session report. | <img src="./docs/screenshots/07-glow-orb.png" width="200" alt="Glow Orb"> |
+| **Bubble Hippo** (new) | A calm-practice bath game. Stay calm and a bubble grows and floats away with a Bubble Zoo friend. Six badges (Duckling to Hippo King), each adds one skill: breathing ring, duck counting, buzzing pests, a secret bubble. | (no screenshot yet) |
+| **Train of Thoughts, upgraded** | Faster calm signal (8 updates/s). A tense jaw, closed eyes or sleepiness pause the reward and Brainy gives a hint, no punishment. Daily goal, line unlocks, line events and new sounds. | (no screenshot yet) |
+| **Fair brain-game rules** | Shared by Train of Thoughts and Bubble Hippo: the goal adapts to keep success at 75–85 %, a safety net once per round, a daily limit (3 rounds per game, 15 min per day), and one round record for the journal and parent report. All numbers are start values until the headband test day. | — |
+| **Play setup** | The start screen asks "How do you play today?": phone in hands, phone on a stand, or computer. A top-bar chip changes it with one tap. Sessions, the journal (SETUP column), the parent report, the CSV export and recordings (`/Setup` marker) store it. In hands mode a round is 2 min at most. | — |
 | **Training Journal** | Score over time, day streak and check-ins, per child. | <img src="./docs/screenshots/06-journal.png" width="200" alt="Training Journal"> |
 | **Two-phase calibration** | Peak Alpha Frequency from eyes closed, then eyes open. Personal frequency bands for each child. | <img src="./docs/screenshots/04-calibration.png" width="200" alt="Calibration"> |
 | **Session recording** | Opt-in, on-device, crash-safe CSV. Mind Monitor compatible, with Athena optics. Opens in [mind-monitor.com/Chart.php](https://mind-monitor.com/Chart.php). See [where the file goes](#session-recordings-where-the-file-goes). | <img src="./docs/screenshots/05-recording.png" width="200" alt="Recording"> |
@@ -21,7 +25,7 @@ Thought-controlled minigames in your browser. This fork adds full support for th
 | **Child profiles and history** | One profile per child. Session history, trends, CSV export and import. | [Journal](./docs/screenshots/06-journal.png) |
 | **Parent report** | Band timeline, topomap and a plain-language summary. Print or save as PDF. | (in game over screen) |
 | **Phone first** | Installable PWA. Fullscreen, rotation, portrait and landscape layouts. No desktop-only block. | <img src="./docs/screenshots/02-start-phone.png" width="100" alt="Phone"> |
-| **Drift-proof signal mechanics** | Slow signal drift no longer pins a game at 0. Bad-signal pauses really pause. Stuck or unusable sessions are flagged, not scored. Covers the original games too. See [Signal mechanics](./docs/SIGNAL-MECHANICS.md). | — |
+| **Drift-proof signal mechanics** | Slow signal drift no longer pins a game at 0. Bad-signal pauses really pause. Stuck or unusable sessions are flagged, not scored. Covers the original games too. Band powers are cleaner: segments are detrended, blink segments are left out, and a bad forehead sensor drops out. Command Center tiles use log mapping, so they sit at 0 or 100 less often. See [Signal mechanics](./docs/SIGNAL-MECHANICS.md). | — |
 
 > **How the brain signal becomes a game control, and what we changed compared with the original project:** see [docs/SIGNAL-MECHANICS.md](./docs/SIGNAL-MECHANICS.md).
 
