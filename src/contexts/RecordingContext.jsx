@@ -8,6 +8,8 @@ import { useEEG } from './MuseContext.jsx';
 import { useQuality } from './QualityContext.jsx';
 import { useBlink } from './BlinkContext.jsx';
 import { MMRecorder, recordingFileName } from '../lib/mmRecorder.js';
+import { getPlaySetup, PLAY_SETUP_CHANGED_EVENT } from '../lib/playSetup.js';
+import { PROFILE_CHANGED_EVENT } from '../lib/profiles.js';
 import { createSink, findLeftover } from '../lib/recSink.js';
 
 const RecordingContext = createContext(null);
@@ -66,9 +68,20 @@ export function RecordingProvider({ children }) {
       const rec = new MMRecorder({ onChunk: (t) => sink.write(t) });
       rec.start(now);
       rec.event(`/muse/event/connected ${isMock ? 'Mock' : muse._device?.name || 'Muse'}`, now);
+      let lastSetup = getPlaySetup();
+      rec.event(`/Setup ${lastSetup}`, now); // how the child plays, so recordings can be compared
       if (Number.isFinite(muse._battery?.values?.[0])) rec.setBattery(muse._battery.values[0]);
 
       const unsubs = [];
+      // Changed during the recording: by the chip, or by switching to a child with another saved setup
+      const onSetup = () => {
+        const s = getPlaySetup();
+        if (s !== lastSetup) rec.event(`/Setup ${(lastSetup = s)}`);
+      };
+      for (const ev of [PLAY_SETUP_CHANGED_EVENT, PROFILE_CHANGED_EVENT]) {
+        window.addEventListener(ev, onSetup);
+        unsubs.push(() => window.removeEventListener(ev, onSetup));
+      }
       let lastBad = -1; // bitmask of bad channels; HSI/headband state only rebuilt when it changes
       unsubs.push(subscribeEEG((s) => {
         const bad = badRef.current;

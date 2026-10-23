@@ -5,6 +5,7 @@ import { PlayerSwitcher } from '../../components/PlayerSwitcher.jsx';
 import { AlphaPeakReport } from '../../components/AlphaPeakReport.jsx';
 import { loadPafHistory } from '../../lib/paf.js';
 import { useProfiles } from '../../contexts/ProfileContext.jsx';
+import { sessionSetup, SETUP_INFO } from '../../lib/playSetup.js';
 import '../../styles/retro.css';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
@@ -352,6 +353,7 @@ export function TrainingJournal() {
                       <th className="font-normal py-1">DATE</th>
                       <th className="font-normal">GAME</th>
                       <th className="font-normal">LEN</th>
+                      <th className="font-normal" title="How the child played">SETUP</th>
                       <th className="font-normal hidden sm:table-cell">CUE</th>
                       <th className="font-normal">SCORE</th>
                       <th className="font-normal hidden sm:table-cell">STARS</th>
@@ -368,6 +370,9 @@ export function TrainingJournal() {
                         </td>
                         <td className="pr-2">{gameName(s.game)}</td>
                         <td className="pr-2">{s.durationSec ? `${Math.round(num(s.durationSec) / 60)}m` : '-'}</td>
+                        <td className="pr-2" title={SETUP_INFO[sessionSetup(s)]?.label || 'unknown (not recorded)'}>
+                          {SETUP_INFO[sessionSetup(s)]?.short || '?'}
+                        </td>
                         <td className="pr-2 hidden sm:table-cell">{s.cue || '-'}</td>
                         <td className="pr-2 text-[var(--nes-yellow)]">{Math.round(num(s.score))}</td>
                         <td className="pr-2 text-[var(--nes-yellow)] hidden sm:table-cell">{'★'.repeat(Math.max(0, Math.min(3, num(s.stars))))}</td>

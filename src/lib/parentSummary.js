@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 // Plain-language summary lines for the parent report. Pure functions, no React, no medical claims.
+import { sessionSetup, SETUP_INFO } from './playSetup.js';
 
 const GOAL = 0.62; // same goal line as Focus Ball
 const fin = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -27,6 +28,11 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
   const lines = [];
   const playedSec = fin(session.playedSec) ? session.playedSec : points.length ? points[points.length - 1].t - points[0].t : null;
   if (fin(playedSec) && playedSec > 0) lines.push({ key: 'length', text: `Session length: ${formatDuration(playedSec)}.` });
+  // How the child played: posture changes muscle noise, so sessions from different setups compare less well.
+  if (session.date || session.setup) {
+    const setup = sessionSetup(session);
+    lines.push({ key: 'setup', text: setup === 'unknown' ? 'Play setup: not recorded (older session).' : `Play setup: ${SETUP_INFO[setup].report}.` });
+  }
 
   // Only the game's own number: the timeline focus value is a different signal from the forehead light sensor.
   const pct = fin(session.timeAbovePct) ? session.timeAbovePct : null;

@@ -15,6 +15,7 @@ const rec = new MMRecorder({ onChunk: (t) => (out += t) });
 const t0 = new Date(2026, 9, 10, 12, 0, 0, 0).getTime();
 rec.start(t0);
 rec.event('/muse/event/connected MuseS-TEST', t0);
+rec.event('/Setup hands', t0); // play setup marker at recording start (RecordingContext)
 const SECONDS = 4;
 const N = SECONDS * 256;
 for (let i = 0; i < N; i++) {
@@ -37,7 +38,8 @@ const rows = lines.slice(1);
 const events = rows.filter((r) => r.split(',').length === 61 && r.split(',').slice(1, -1).every((c) => c === ''));
 const data = rows.filter((r) => !events.includes(r));
 check('data rows have 60 fields (no trailing comma, like Mind Monitor), event rows 61', data.every((r) => r.split(',').length === 60) && events.every((r) => r.split(',').length === 61));
-check('event rows: 3 (connected, marker, blink)', events.length === 3, `got ${events.length}`);
+check('event rows: 4 (connected, setup, marker, blink)', events.length === 4, `got ${events.length}`);
+check('setup marker is the 2nd row, before any data', rows[1].endsWith(',/Setup hands') && events[1] === rows[1]);
 // Chart.php: a row with empty Delta_TP9 is an event row and must have a non-empty Elements cell
 check('Chart.php: every data row has Delta_TP9', data.every((r) => r.split(',')[1] !== ''));
 const tsMs = rows.map((r) => new Date(r.slice(0, 23).replace(' ', 'T')).getTime());

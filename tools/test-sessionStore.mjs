@@ -181,5 +181,38 @@ t('legacy owner stays fixed after deleting the first profile; clear is per child
   assert.equal(store.appendSession({ date: 'x' }) !== null, true);
 });
 
+const ps = await import('../src/lib/playSetup.js');
+t('play setup: stamped on new records, per child; old records read as unknown', () => {
+  const kid = prof.loadProfiles().activeId;
+  assert.equal(ps.getStoredSetup(kid), null); // never asked on this device
+  assert.equal(ps.getPlaySetup(kid), 'pc'); // no touch screen in node -> default guess pc
+  const guessId = store.recordSession('sweet-spot', { durationSec: 60 });
+  assert.equal(store.loadSessions().find((s) => s.id === guessId).setup, undefined); // a guess is not stamped
+  ps.setPlaySetup('stand', kid);
+  ps.setPlaySetup('bogus', kid); // ignored
+  assert.equal(ps.getStoredSetup(kid), 'stand');
+  const id = store.recordSession('sweet-spot', { durationSec: 60 });
+  const rec = store.loadSessions().find((s) => s.id === id);
+  assert.equal(rec.setup, 'stand');
+  assert.equal(ps.sessionSetup(rec), 'stand');
+  assert.equal(ps.sessionSetup({ date: 'x' }), 'unknown');
+  assert.equal(ps.sessionSetup({ setup: 'sofa' }), 'unknown');
+  const other = prof.createProfile('Setup Kid').activeId;
+  assert.equal(ps.getStoredSetup(other), null); // a new child is asked again
+  ps.setPlaySetup('hands', other);
+  assert.equal(ps.getStoredSetup(kid), 'stand');
+  store.removeChildData(other);
+  assert.equal(ps.getStoredSetup(other), null);
+  prof.switchProfile(kid);
+});
+
+t('play setup: CSV column round trip', () => {
+  assert.ok(store.CSV_COLUMNS.includes('setup'));
+  const csv = store.exportCsv();
+  mem.delete(store.SESSIONS_KEY);
+  store.importCsv(csv);
+  assert.ok(store.loadSessions().some((s) => s.setup === 'stand'));
+});
+
 console.log(fails ? `${fails} FAILED` : 'ALL PASSED');
 process.exit(fails ? 1 : 0);

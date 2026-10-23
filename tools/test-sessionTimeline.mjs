@@ -131,5 +131,12 @@ t('score comparison needs the same duration; unknown session is not guessed', ()
   assert.match(txt, /The score was higher than the last session/);
 });
 
+t('parent summary: play setup line; old records say not recorded', () => {
+  const txt = (session) => buildParentSummary({ session }).map((l) => l.text).join(' ');
+  assert.match(txt({ date: '2026-10-23T10:00:00.000Z', setup: 'stand' }), /Play setup: phone on a stand\./);
+  assert.match(txt({ date: '2026-09-01T10:00:00.000Z' }), /Play setup: not recorded/);
+  assert.doesNotMatch(txt({}), /Play setup/); // no session record at all
+});
+
 console.log(fails ? `${fails} FAILED` : 'ALL PASSED');
 process.exit(fails ? 1 : 0);

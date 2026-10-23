@@ -1,5 +1,6 @@
 // Training session history in localStorage (shared by all games and the Training Journal).
 import { loadProfiles, mergeProfiles, switchProfile } from './profiles.js';
+import { getStoredSetup, removeChildSetup } from './playSetup.js';
 
 export const SESSIONS_KEY = 'brainarcade.sessions';
 export const MAX_SESSIONS = 500;
@@ -62,9 +63,10 @@ export function clearSessions(childId) {
   }
 }
 
-// Deletes a child's sessions and stored calibration (used when a profile is deleted with its data).
+// Deletes a child's sessions, stored calibration and play setup (used when a profile is deleted with its data).
 export function removeChildData(childId) {
   clearSessions(childId);
+  removeChildSetup(childId);
   try {
     const o = JSON.parse(localStorage.getItem(PAF_KEY) || 'null');
     if (o && o.byChild && o.byChild[childId]) {
@@ -121,6 +123,8 @@ const finite = (v) => (v !== null && v !== undefined && v !== '' && Number.isFin
 
 // One-line recorder for any game: stamps date, child and the active child's calibration. Returns the record id (null if not saved).
 // fields: {durationSec, playedSec, score, points, meanFocus, timeAbovePct, qualityPct, fnirsUsed, ...}
+// setup: how the child played ('hands' | 'stand' | 'pc', lib/playSetup.js), as chosen when the session is saved (game over).
+// Not stamped while the child was never asked on this device (a guess is not a fact); such records read as 'unknown' (sessionSetup).
 // BaselineContext publishes the calibration the game actually uses ({paf|null, alphaReactivity, bandsSource, date}) and the demo flag.
 let activeCal = null;
 let demoMode = false;
@@ -130,7 +134,8 @@ export function isDemoMode() { return demoMode; }
 
 export function recordSession(game, fields = {}) {
   if (demoMode) return null; // mock/demo data is never written to the history
-  const record = { date: new Date().toISOString(), game, childId: loadProfiles().activeId, ...fields };
+  const childId = loadProfiles().activeId;
+  const record = { date: new Date().toISOString(), game, childId, setup: getStoredSetup(childId) || undefined, ...fields };
   // Stamp what the game really used: the active calibration if personal bands were in effect, otherwise nothing (standard bands).
   const used = activeCal && activeCal.bandsSource === 'personal' ? activeCal : null;
   if (record.paf === undefined) record.paf = finite(used?.paf);
@@ -150,7 +155,7 @@ export function sessionsForChild(sessions, childId) {
 export const CSV_COLUMNS = [
   'id', 'date', 'childId', 'game', 'durationSec', 'playedSec', 'okSec', 'outcome', 'cue', 'points', 'score', 'stars',
   'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf',
-  'alphaReactivity', 'calibDate', 'qualityPct', 'fnirsUsed', 'checkIn', 'feeling', 'insight',
+  'alphaReactivity', 'calibDate', 'qualityPct', 'fnirsUsed', 'checkIn', 'feeling', 'insight', 'setup',
 ];
 
 const esc = (v) => {

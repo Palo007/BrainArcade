@@ -11,6 +11,7 @@ import { FrontalPauseOverlay } from './FrontalPauseOverlay.jsx';
 import { isPageRoute, isFnirsRoute } from '../games/games.config';
 import { ElectrodesButton, ElectrodesModal } from './ElectrodeOverlay.jsx';
 import { TopBarSlotContext } from './topBarSlot.js';
+import { PlaySetupChip } from './PlaySetup.jsx';
 
 // Portrait phones keep the floating controls (the header row has no room for them)
 const PHONE_PORT = '(orientation: portrait) and (max-width: 480px)';
@@ -171,6 +172,8 @@ export function Layout({ children }) {
 
             {/* Electrode check: any device page (not on kind: "page" routes), never ends the game */}
             {!isPage && <ElectrodesButton onClick={() => setShowElectrodes(true)} />}
+            {/* Play setup: one tap changes it, also during a game (never pauses) */}
+            {!isPage && <PlaySetupChip />}
 
             {/* Muse Connected Icon */}
             {isConnected && (

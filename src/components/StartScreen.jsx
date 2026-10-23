@@ -4,6 +4,8 @@ import { useEEG } from '../contexts/MuseContext';
 import { MuseConnector } from './MuseConnector';
 import { ElectrodeSetupCheck } from './ElectrodeSetupCheck.jsx';
 import { useQuality } from '../contexts/QualityContext.jsx';
+import { usePlaySetup } from '../contexts/PlaySetupContext.jsx';
+import { PlaySetupPicker } from './PlaySetup.jsx';
 import '../styles/retro.css';
 import background from '../assets/background.JPG';
 
@@ -21,6 +23,9 @@ export function StartScreen() {
   const [hasEnteredStartPhase, setHasEnteredStartPhase] = useState(false);
   const [time, setTime] = useState('00:00:00');
   const titleRef = useRef(null);
+  const { setup, asked, info: setupInfo, setSetup } = usePlaySetup();
+  // Asked the first time on this device (per child); later the saved choice is preselected and CHANGE reopens it
+  const [setupOpen, setSetupOpen] = useState(!asked);
 
   // Update time display
   useEffect(() => {
@@ -74,6 +79,11 @@ export function StartScreen() {
     }
   }, [isConnected, ready, showLoadingQC, hasEnteredStartPhase]);
 
+  // Another child with no saved setup on this device: ask again
+  useEffect(() => {
+    if (!asked && !setupOpen) setSetupOpen(true);
+  }, [asked, setupOpen]);
+
   // Split text into chars for animation
   useEffect(() => {
     if (titleRef.current) {
@@ -90,6 +100,7 @@ export function StartScreen() {
 
   const handleStart = () => {
     if (isConnected) {
+      setSetup(setup); // saves the preselected guess too, so the question is not asked again
       navigate('/games');
     }
   };
@@ -235,6 +246,9 @@ export function StartScreen() {
                 </div>
               ) : hasEnteredStartPhase || (ready && !showLoadingQC && passedSetup && !showingRecheck) ? (
                 <div className="text-center">
+                  {setupOpen ? (
+                    <PlaySetupPicker />
+                  ) : (
                   <div className="mb-8 short-land:mb-1">
                     <div
                       className="text-6xl sm:text-8xl short-land:text-4xl rgb-text text-white mb-8 short-land:mb-2 blink"
@@ -242,7 +256,17 @@ export function StartScreen() {
                     >
                       ▶
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setSetupOpen(true)}
+                      className="text-[10px] short-land:text-[8px] text-white opacity-80 hover:opacity-100 underline underline-offset-4 cursor-pointer min-h-[44px] short-land:min-h-[32px] bg-black/70 px-2"
+                      style={{ fontFamily: 'var(--font-retro)' }}
+                      aria-label={`Play setup: ${setupInfo.label}. Change`}
+                    >
+                      <span aria-hidden="true">{setupInfo.icon}</span> {setupInfo.label} · CHANGE
+                    </button>
                   </div>
+                  )}
 
                   <button
                     onClick={handleStart}
