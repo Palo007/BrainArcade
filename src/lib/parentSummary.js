@@ -3,6 +3,14 @@
 import { sessionSetup, SETUP_INFO } from './playSetup.js';
 
 const GOAL = 0.62; // same goal line as Focus Ball
+// Head motion limits for the report (percent of measured seconds). First guesses from adult recordings
+// (MOTION-SENSOR-USES.html); set them again after the child test day.
+const CALM_MOVING_PCT = 10;
+const RESTLESS_MOVING_PCT = 25;
+const MANY_BIG_PCT = 10;
+const OFTEN_TILTED_PCT = 30;
+const LOW_FOCUS_PCT = 30;
+const MIN_MOTION_SEC = 30; // shorter sessions say too little about movement
 const fin = (v) => typeof v === 'number' && Number.isFinite(v);
 const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
 
@@ -19,6 +27,37 @@ export function focusPctFromTimeline(points) {
   const f = (points || []).map((p) => p.focus).filter(fin);
   if (!f.length) return null;
   return (f.filter((v) => v >= GOAL).length / f.length) * 100;
+}
+
+// Head movement line + at most two tips, from the session's motion fields (sessionTimeline.motionSummary).
+// Movement is a reading condition, never a diagnosis: the tips are about the setup, not the child.
+export function motionLines(session = {}, focusPct = null) {
+  const { motionSec, movingPct, bigMovePct, tiltedPct } = session;
+  if (!fin(motionSec) || motionSec < MIN_MOTION_SEC || !fin(movingPct)) return [];
+  const lines = [];
+  const big = fin(bigMovePct) && bigMovePct > 0 ? ` (${Math.round(bigMovePct)}% big moves)` : '';
+  const tilt = fin(tiltedPct) && tiltedPct > 0 ? ` Head bent or turned away from the start pose: ${Math.round(tiltedPct)}% of the time.` : '';
+  lines.push({ key: 'motion', text: `Head movement: moving ${Math.round(movingPct)}% of the time${big}.${tilt}` });
+
+  const tips = [];
+  const restless = movingPct >= RESTLESS_MOVING_PCT;
+  const calm = movingPct < CALM_MOVING_PCT && !(fin(tiltedPct) && tiltedPct >= OFTEN_TILTED_PCT);
+  const lowFocus = fin(focusPct) && session.valid !== false && focusPct < LOW_FOCUS_PCT;
+  if (lowFocus && restless) {
+    tips.push('Low focus together with much movement: the body was restless, so this round says little about focus.');
+  } else if (lowFocus && movingPct < CALM_MOVING_PCT) {
+    tips.push('Low focus while the head was still: the thoughts may have wandered. That is normal; shorter rounds can help.');
+  }
+  if (restless) {
+    tips.push(session.setup === 'hands'
+      ? 'Movement makes the brain readings less exact. Try the phone on a stand at eye level and a steady seat.'
+      : 'Movement makes the brain readings less exact. Try a steady seat with the back supported.');
+  }
+  if (fin(bigMovePct) && bigMovePct >= MANY_BIG_PCT) tips.push('Many big head moves: a short stretch break before the next round may help.');
+  if (fin(tiltedPct) && tiltedPct >= OFTEN_TILTED_PCT) tips.push('The head was often bent away from the start pose (for example looking down). Put the screen at eye level.');
+  if (!tips.length && calm) tips.push('The head was calm: good conditions for clean readings.');
+  tips.slice(0, 2).forEach((text, i) => lines.push({ key: i ? 'motionTip2' : 'motionTip', text }));
+  return lines;
 }
 
 // session: this session's history record (or {}), earlier: earlier records of the same child and game
@@ -50,6 +89,8 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
     const f = fin(session.frozenPct) ? `${Math.round(session.frozenPct)}% frozen or paused` : null;
     lines.push({ key: 'signal', text: `Signal quality: ${[h, f].filter(Boolean).join(', ')}. High numbers mean "fix the pose", not "bad focus".` });
   }
+
+  lines.push(...motionLines(session, pct));
 
   const invalid = session.valid === false;
   const prev = earlier.filter((s) => s && s.valid !== false).slice(-5); // unusable sessions are not history
