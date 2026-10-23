@@ -156,6 +156,8 @@ export const CSV_COLUMNS = [
   'id', 'date', 'childId', 'game', 'durationSec', 'playedSec', 'okSec', 'outcome', 'cue', 'points', 'score', 'stars',
   'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf',
   'alphaReactivity', 'calibDate', 'qualityPct', 'fnirsUsed', 'checkIn', 'feeling', 'insight', 'setup',
+  // shared round record (lib/roundRecord.js)
+  'level', 'goal', 'successPct', 'longestStreakS', 'heldPct', 'frozenPct', 'rawByMin', 'zByMin',
 ];
 
 const esc = (v) => {
@@ -208,7 +210,7 @@ function parseRows(text) {
   return rows;
 }
 
-const NUMERIC = new Set(['durationSec', 'playedSec', 'okSec', 'points', 'score', 'stars', 'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf', 'alphaReactivity', 'qualityPct', 'feeling']);
+const NUMERIC = new Set(['durationSec', 'playedSec', 'okSec', 'points', 'score', 'stars', 'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf', 'alphaReactivity', 'qualityPct', 'feeling', 'level', 'goal', 'successPct', 'longestStreakS', 'heldPct', 'frozenPct']);
 const BOOL = new Set(['fnirsUsed', 'checkIn']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 

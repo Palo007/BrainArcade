@@ -21,10 +21,13 @@ import train3 from './assets/train3.png';
 import villainTrain from './assets/villain.png';
 import cityBackground from './assets/city-background.jpg';
 import { preloadImages } from '../../lib/preloadImages.js';
-import { useCalmSignal, makeBaseline, createChecks, STALE_MS } from './calmSignal.js';
+import { useFastSignal, createChecks, freshFrame, blinkHoldMs } from '../../lib/fastSignal.js';
+import { roundGoal, safetyNet, isScored, loadDaily, dailyCheck, addUsage, recordDailyUsage } from '../../lib/progressRules.js';
+import { makeRoundRecord, toSessionFields } from '../../lib/roundRecord.js';
+import { busyOf, makeBaseline } from './calmSignal.js';
 import { readGate, readPlaySetup } from './gate.js';
 import {
-  LINES, STORY, TWISTS, GOAL_STEP, MAX_ROUNDS_PER_DAY, WAGON_CALM_S, LANTERN_CALM_S,
+  RULES, LINES, STORY, TWISTS, WAGON_CALM_S, LANTERN_CALM_S,
   lineFeatures, loadProgress, saveProgress, startDay, finishRound, praiseFor, weeklyCard, goalLevel,
 } from './progress.js';
 import { primeTrainAudio, playSound } from './sounds.js';
@@ -39,7 +42,6 @@ const WARMUP_MIN_S = 20;
 const WARMUP_MAX_S = 40;
 const WARMUP_MIN_FRAMES = 60;
 const BUSY_GRACE_S = 0.5; // one noisy frame does not break a calm streak
-const SAFETY_AT_S = 45;
 const HANDS_MAX_ROUND_S = 120; // phone in the hands: arms tire and the head sinks in longer rounds
 const THUNDER_STAYED_CALM_S = 3; // calm streak still running this long after the thunder = stayed calm
 const BRAINY_LEFT = 0.70; // fraction of the stage width
@@ -75,7 +77,7 @@ function newRound(line, lastOfDay, goal, len) {
 export function TrainOfThoughts() {
   const navigate = useNavigate();
   const { ensureBaseline, resetBaseline, isBaselineReady, calibration } = useBaseline();
-  const { subscribeEEG, isConnected } = useEEG();
+  const { subscribeEEG, isConnected, profile } = useEEG();
   const { bands } = useProcessing();
   const { adjusting, hasRecentExtreme, quality10s } = useQuality();
   const { onBlink } = useBlink();
@@ -87,10 +89,12 @@ export function TrainOfThoughts() {
   const demo = isDemoMode();
   const [progress, setProgress] = useState(() => startDay(loadProgress(activeId)));
   const [line, setLine] = useState(() => progress.unlocked);
+  const [daily, setDaily] = useState(() => loadDaily(activeId)); // arcade-wide daily limit (rounds and minutes)
   useEffect(() => {
     const p = startDay(loadProgress(activeId));
     setProgress(p);
     setLine(p.unlocked); // never keep another child's (maybe locked) line
+    setDaily(loadDaily(activeId));
   }, [activeId]);
   const [route, setRoute] = useState(6);
   const [phase, setPhase] = useState('menu'); // menu | warmup | play | result (the day's goodbye shows in the menu)
@@ -101,8 +105,10 @@ export function TrainOfThoughts() {
 
   // A new day can start while the game stays open: apply it when the menu shows and when the page comes back
   useEffect(() => {
-    if (phase === 'menu') setProgress((p) => startDay(p));
-  }, [phase]);
+    if (phase !== 'menu') return;
+    setProgress((p) => startDay(p));
+    if (!demo) setDaily(loadDaily(activeId)); // calibration and other games count too
+  }, [phase, demo, activeId]);
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') setProgress((p) => startDay(p)); };
     document.addEventListener('visibilitychange', onVisible);
@@ -116,8 +122,8 @@ export function TrainOfThoughts() {
   const warmRef = useRef({ frames: [], t: 0, lastAt: 0 });
   const checksRef = useRef(createChecks());
   const lastBlinkRef = useRef(0);
-  const frameRef = useCalmSignal(subscribeEEG, isConnected, bands, {
-    enabled: phase === 'warmup' || phase === 'play', blinkRef: lastBlinkRef,
+  const frameRef = useFastSignal(subscribeEEG, isConnected, bands, {
+    enabled: phase === 'warmup' || phase === 'play', blinkRef: lastBlinkRef, holdMs: blinkHoldMs(profile),
   });
   const pausedRef = useRef(paused);
   const qualityRef = useRef({ adjusting, hasRecentExtreme });
@@ -182,7 +188,7 @@ export function TrainOfThoughts() {
       const frontalSpike = q.hasRecentExtreme?.(1, 1000) || q.hasRecentExtreme?.(2, 1000);
       // A frame older than STALE_MS means the stream stalled: never score a frozen signal
       const raw = frameRef.current;
-      const frame = raw && now - raw.at < STALE_MS ? raw : null;
+      const frame = freshFrame(raw, now);
       if (ph === 'warmup') stepWarmup(dt, frame, q.adjusting || frontalSpike);
       else stepRound(dt, now, frame, q.adjusting, frontalSpike);
       if (now - hudAt > HUD_MS) { hudAt = now; pushHud(); }
@@ -223,22 +229,25 @@ export function TrainOfThoughts() {
     // Blink frames keep the last value (a blink is normal: it must not move the bar or stop the game)
     if (live && frame && !frame.blink && frame.at !== r.lastFrameAt) {
       r.lastFrameAt = frame.at;
-      r.z = (frame.busy - base.mu) / base.sd;
+      const busy = busyOf(frame);
+      r.z = (busy - base.mu) / base.sd;
       const m = Math.floor(r.t / 60);
       const acc = r.busyMin[m] || (r.busyMin[m] = [0, 0]);
-      acc[0] += frame.busy; acc[1] += 1;
+      acc[0] += busy; acc[1] += 1;
     }
     // Goal: fixed in the round; safety net once after 45 s; last 20 s of the day's last round a little easier
-    const goal = r.goal + r.safety + (r.lastOfDay && r.t > r.len - 20 ? GOAL_STEP : 0);
+    const goal = roundGoal(RULES, r);
     // Steady muscle tension raises beta: cap the value at the goal, so muscle can neither win nor speed the train
     const z = checks.tense ? Math.min(r.z, goal) : r.z;
     r.zShown = z;
     const calm = z < goal;
 
     if (live) {
-      r.okSec += dt;
+      const scored = isScored(RULES, r);
+      if (scored) r.okSec += dt;
       if (calm) {
-        r.calmSec += dt; r.run += dt; r.grace = 0; r.calmFor += dt; r.lanternFor += dt;
+        if (scored) r.calmSec += dt;
+        r.run += dt; r.grace = 0; r.calmFor += dt; r.lanternFor += dt;
       } else {
         r.grace += dt;
         if (r.grace > BUSY_GRACE_S) { r.run = 0; r.calmFor = 0; r.lanternFor = 0; }
@@ -248,12 +257,8 @@ export function TrainOfThoughts() {
       r.heldSec += dt; // hold: no reward, no punishment, the calm clock pauses
     }
 
-    if (!r.safetyDone && r.t >= SAFETY_AT_S && r.okSec > 10) {
-      r.safetyDone = true;
-      const pct = r.calmSec / r.okSec;
-      if (pct < 0.4) { r.safety = GOAL_STEP; r.eased = true; }
-      else if (pct > 0.9) r.safety = -GOAL_STEP;
-    }
+    const net = r.safetyDone ? null : safetyNet(RULES, { t: r.t, okSec: r.okSec, successSec: r.calmSec });
+    if (net) { r.safetyDone = true; r.safety = net.offset; r.eased = net.eased; }
 
     // Train: busy -> faster, calm -> slower and rolls back a little
     const d = z - goal;
@@ -383,25 +388,27 @@ export function TrainOfThoughts() {
 
     const pausedSec = takePausedSec();
     const poor = pausedSec / r.len > 0.7;
+    // Arcade-wide daily limit: this round plus the warm-up count
+    const usage = { game: GAME, rounds: 1, sec: r.len + warmRef.current.t };
+    setDaily(demo ? addUsage(daily, usage) : recordDailyUsage(activeId, usage));
+    const rec = makeRoundRecord({
+      game: GAME, level: r.line, setup, rawByMin: round.busyByMin, ref: res.progress.ref,
+      goal: goalLevel(r.goal), successPct: calmPct, longestStreakS: r.longest,
+      heldPct: round.heldPct, frozenPct: Math.min(1, pausedSec / (r.len + pausedSec)), stars: res.stars,
+    });
     const id = recordSession(GAME, {
+      ...toSessionFields(rec),
       // Old rounds saved score = seconds survived; keep score in seconds (calm seconds) so the journal's
-      // per-game score trend stays in one unit. The calm % goes in timeAbovePct.
+      // per-game score trend stays in one unit. The calm % goes in timeAbovePct (= successPct).
       score: Math.round(r.calmSec),
       scoreKind: 'calmSec',
-      timeAbovePct: Math.round(calmPct * 100),
-      flowSec: Math.round(r.longest),
       avgRecoverySec: bounceBackS != null ? Math.round(bounceBackS * 10) / 10 : undefined,
       okSec: Math.round(r.okSec),
       durationSec: r.len,
       playedSec: r.len,
-      stars: res.stars,
       qualityPct: quality10s ? Math.round(quality10s.stablePct * 100) : undefined,
-      line: r.line,
-      goalLevel: goalLevel(r.goal),
       wagons: r.wagonsDropped,
-      heldPct: Math.round(round.heldPct * 100),
       baseMu: round.baseMu != null ? Math.round(round.baseMu * 1000) / 1000 : undefined,
-      busyByMin: round.busyByMin.length ? round.busyByMin.join(' ') : undefined,
       ...(poor ? { valid: false, invalidReason: 'bad-quality' } : {}),
     });
     if (res.unlockedLine) setLine(res.unlockedLine);
@@ -411,15 +418,18 @@ export function TrainOfThoughts() {
   const beginRound = useCallback((lineId) => {
     const p = startDay(progress); // a new day may have started while the game stayed open
     if (p !== progress) setProgress(p);
-    if (p.roundsToday >= MAX_ROUNDS_PER_DAY) return;
+    const d = demo ? daily : loadDaily(activeId);
+    if (d !== daily) setDaily(d);
+    const today = dailyCheck(d, GAME);
+    if (!today.ok) return;
     const id = Math.min(Math.max(1, lineId), p.unlocked);
-    const lastOfDay = p.roundsToday === MAX_ROUNDS_PER_DAY - 1;
+    const lastOfDay = today.lastRound;
     const len = setup === 'hands' ? Math.min(LINES[id - 1].sec, HANDS_MAX_ROUND_S) : LINES[id - 1].sec;
     roundRef.current = newRound(id, lastOfDay, p.goal, len);
     warmRef.current = { frames: [], t: 0, lastAt: 0 };
     takePausedSec();
     go(baseRef.current ? 'play' : 'warmup');
-  }, [progress, setup, go]);
+  }, [progress, setup, go, demo, daily, activeId]);
 
   const onStart = () => {
     primeTrainAudio();
@@ -461,7 +471,7 @@ export function TrainOfThoughts() {
       if (hatRef.current) hatRef.current.style.display = r?.twist === 'party-hat' ? 'block' : 'none';
 
       const z = r?.zShown ?? 0;
-      const goal = r ? r.goal + r.safety + (r.lastOfDay && r.t > r.len - 20 ? GOAL_STEP : 0) : 0.6;
+      const goal = r ? roundGoal(RULES, r) : 0.6;
       const calm = ph === 'play' && z < goal;
       const src = ph !== 'play' ? train1 : calm ? train1 : z < goal + 1 ? train2 : train3;
       if (brainyRef.current && src !== lastSrc) { brainyRef.current.src = src; lastSrc = src; }
@@ -526,8 +536,9 @@ export function TrainOfThoughts() {
   }
 
   // ---- screens
-  const roundsLeft = Math.max(0, MAX_ROUNDS_PER_DAY - progress.roundsToday);
-  const dayDone = roundsLeft === 0;
+  const today = dailyCheck(daily, GAME);
+  const roundsLeft = today.ok ? today.roundsLeft : 0;
+  const dayDone = !today.ok;
   const chapter = Math.min(progress.unlocked, STORY.length);
   const card = modal === 'parent' ? weeklyCard(progress) : null;
 
@@ -556,7 +567,7 @@ export function TrainOfThoughts() {
     <div className="text-[10px] text-gray-200 leading-relaxed">
       <img src={train1} alt="Brainy waves" className="mx-auto mb-2" style={{ width: 96, imageRendering: 'pixelated' }} draggable={false} />
       <p className="text-[var(--nes-yellow)] mb-2">SEE YOU NEXT TIME!</p>
-      <p className="mb-2">You played 3 rounds today. Brainy waves from the station.</p>
+      <p className="mb-2">You played {today.roundsDone} round{today.roundsDone === 1 ? '' : 's'} today. Brainy waves from the station.</p>
       <p className="mb-4">Days played: {progress.days}</p>
       <button type="button" onClick={() => navigate('/games')} className="border-4 border-white/70 px-4 py-3 text-xs text-white">CHOOSE GAME</button>
     </div>
@@ -757,7 +768,7 @@ export function TrainOfThoughts() {
             {result.poor && <p className="text-[8px] text-[var(--nes-yellow)] mt-2">The headband signal was poor for most of this round, so it is not counted in your progress.</p>}
             {demo && <p className="text-[8px] opacity-70 mt-2">Demo mode — not saved</p>}
             <div className="mt-4">
-              {progress.roundsToday < MAX_ROUNDS_PER_DAY ? (
+              {!dayDone ? (
                 <GameEndActions onPlayAgain={() => go('menu')} sessionId={result.sessionId} game={GAME} seconds={result.round.sec} />
               ) : (
                 <>

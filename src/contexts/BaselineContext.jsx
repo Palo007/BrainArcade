@@ -3,7 +3,8 @@ import { useEEG } from './MuseContext.jsx';
 import { useProcessing } from './ProcessingContext.jsx';
 import { useQuality } from './QualityContext.jsx';
 import { calibrate, computePaf, personalBands, loadCalibration, saveCalibration, appendPafHistory } from '../lib/paf.js';
-import { PROFILE_CHANGED_EVENT } from '../lib/profiles.js';
+import { PROFILE_CHANGED_EVENT, loadProfiles } from '../lib/profiles.js';
+import { recordDailyUsage } from '../lib/progressRules.js';
 import { setActiveCalibration, setDemoMode } from '../lib/sessionStore.js';
 import { playChime, primeAudio } from '../lib/chime.js';
 import { getAutoSkip, setAutoSkip as storeAutoSkip, SKIP_SECONDS } from '../lib/calibrationPrefs.js';
@@ -148,6 +149,16 @@ export function BaselineProvider({ children, defaultSeconds = 30 }) {
 
   // Demo (mock) mode: nothing is written to history or calibration storage
   useEffect(() => { setDemoMode(isMock); return () => setDemoMode(false); }, [isMock]);
+
+  // Calibration time counts in the arcade-wide daily limit (15 min per child per day, lib/progressRules.js)
+  const calStartRef = useRef(0);
+  useEffect(() => {
+    if (inProgress) { calStartRef.current = Date.now(); return; }
+    if (!calStartRef.current) return;
+    const sec = (Date.now() - calStartRef.current) / 1000;
+    calStartRef.current = 0;
+    if (!isMock) recordDailyUsage(loadProfiles().activeId, { sec });
+  }, [inProgress, isMock]);
 
   // Publish the calibration the game actually uses so session records are stamped with it (not with whatever is stored)
   useEffect(() => {

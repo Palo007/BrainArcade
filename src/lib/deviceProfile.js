@@ -23,6 +23,7 @@ export const DEVICE_PROFILES = {
       minRangeUv: 150,
       debounceMs: 500,
       lowpassHz: 0,
+      holdMs: 1400, // games hold the value this long after a blink (lib/fastSignal.js)
     },
     bandSmoothing: 1, // EMA weight of the newest band-power frame (1 = no smoothing)
   },
@@ -47,6 +48,7 @@ export const DEVICE_PROFILES = {
       frontalMaxRatio: 0.3, // forehead swing > 30% of ear swing = head/body movement (real blinks: <= 0.29)
       decideMs: 150, // watch the event this long before deciding
       refractoryMs: 800, // a blink has a ~0.5 s rebound; never count it twice
+      holdMs: 1400, // games hold the value this long after a blink (lib/fastSignal.js)
     },
     bandSmoothing: 0.4, // calms frame-to-frame jitter of band ratios (~0.6 s time constant at 4 Hz)
   },
