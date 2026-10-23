@@ -35,6 +35,7 @@ import { Sailor } from "./sailor/Sailor.jsx";
 import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
 import { Diver } from "./diver/Diver.jsx";
 import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
+import { BubbleHippo } from "./bubble-hippo/BubbleHippo.jsx";
 import { GlowOrb } from "./glow-orb/GlowOrb.jsx";
 import { FocusBall } from "./focus-ball/FocusBall.jsx";
 import { TrainingJournal } from "./training-journal/TrainingJournal.jsx";
@@ -51,6 +52,7 @@ import diverThumb from "./diver/assets/background-sea.jpg";
 import diverSprite from "./diver/assets/diver-happy.png";
 import trainThumb from "./train-of-thoughts/assets/city-background.jpg";
 import trainSprite from "./train-of-thoughts/assets/train1.png";
+import hippoThumb from "./bubble-hippo/assets/thumb.svg";
 import visualizerThumb from "./example-game/assets/thumb.svg";
 
 // Menu sections, in display order
@@ -141,6 +143,14 @@ export const games = [
     category: "calm",
     thumb: trainThumb,
     sprite: trainSprite,
+  },
+  {
+    id: "bubble-hippo",
+    name: "BUBBLE HIPPO",
+    description: "Stay calm and the hippo's bubble grows. A full bubble floats away with a silly new friend!",
+    component: BubbleHippo,
+    category: "calm",
+    thumb: hippoThumb,
   },
   {
     id: "example-game",
