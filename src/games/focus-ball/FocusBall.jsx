@@ -746,7 +746,7 @@ export function FocusBall() {
             <div className="h-full bg-[var(--nes-yellow)] transition-all duration-300" style={{ width: `${Math.round(hud.progress * 100)}%` }} />
           </div>
           {/* HUD row: centered, below the title row / top-right badges */}
-          <div className="absolute top-4 phone-port:top-20 left-1/2 -translate-x-1/2 short-land:left-52 short-land:translate-x-0 short-land:gap-3 short-land:px-3 flex items-center gap-5 border-2 border-white/40 bg-black/55 px-4 py-2 text-xs text-white pointer-events-none whitespace-nowrap">
+          <div className="absolute top-4 phone-port:top-24 left-1/2 -translate-x-1/2 short-land:left-52 short-land:translate-x-0 short-land:gap-3 short-land:px-3 flex items-center gap-5 border-2 border-white/40 bg-black/55 px-4 py-2 text-xs text-white pointer-events-none whitespace-nowrap">
             <span>↗ <span className="text-[var(--nes-green)]">{hud.activity >= 0 ? '+' : ''}{Math.round(hud.activity)}%</span></span>
             <span>★ <span className="text-[var(--nes-yellow)]">{Math.floor(hud.goalSec)}s</span></span>
             <span>
@@ -839,7 +839,7 @@ export function FocusBall() {
         </GameStartPanel>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 phone-port:pb-20 pointer-events-none">
         {phase === 'calibrate' && (
           <div className={`${panel} absolute bottom-24 left-1/2 -translate-x-1/2`}>
             <p className="text-sm text-[var(--nes-yellow)] mb-3">{breathLabel}</p>

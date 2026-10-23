@@ -39,7 +39,7 @@ export function GameHint({
 
   return (
     <div
-      className={`${posClass} ${schemeClasses} px-4 py-2 text-[10px]`}
+      className={`${posClass} ${schemeClasses} px-4 py-2 text-[10px] ${className}`}
       style={{ fontFamily: 'var(--font-retro)', ...posStyle }}
     >
       {primary && (

@@ -665,10 +665,12 @@ export function TrainOfThoughts() {
         )}
 
         {phase === 'warmup' && (
-          <div className="absolute inset-x-0 top-1/3 flex justify-center z-10 px-4 pointer-events-none">
-            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 text-[10px] text-white text-center max-w-sm" style={FONT}>
+          // Landscape phones: right of the CALM box (not on it), with the hint text inside (the train covers the bottom)
+          <div className="absolute inset-x-0 top-1/3 short-land:top-16 flex justify-center short-land:justify-end z-10 px-4 pointer-events-none">
+            <div className="border-4 border-[var(--nes-yellow)] bg-[var(--nes-dark)] px-4 py-3 short-land:py-2 text-[10px] text-white text-center max-w-sm short-land:max-w-[calc(100%-min(260px,62vw)-1.5rem)]" style={FONT}>
               <p className="text-[var(--nes-yellow)] mb-1">THE TRAIN IS COMING</p>
               <p>Sit still. Eyes open. Watch the train and breathe slowly.</p>
+              <p className="hidden short-land:block mt-1 text-[9px] opacity-80">A calm brain slows the train. 5 s calm = one wagon goes.</p>
               {hud?.warmStuck && (
                 <p className="mt-2 text-[var(--nes-red)]">No clean signal yet. Tap ELECTRODES and check the headband. The game starts when the signal is clean.</p>
               )}
@@ -743,6 +745,7 @@ export function TrainOfThoughts() {
             align="left"
             primary={'A calm brain slows the train'}
             secondary={'5 s calm = one wagon goes'}
+            className="z-20 short-land:hidden"
           />
         )}
       </div>

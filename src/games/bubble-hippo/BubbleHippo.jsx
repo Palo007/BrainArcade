@@ -26,6 +26,7 @@ import {
   finishRound, badgeFeatures, loadProgress, saveProgress,
 } from './progress.js';
 import { primeBubbleAudio, startMusic, stopMusic, setMusicMode, playSfx, say, setMix } from './sounds.js';
+import { phrase, line } from '../../lib/phrases.js';
 import { W, H, createScene, drawScene, triggerLaunch, triggerToot } from './scene.js';
 
 const GAME = 'bubble-hippo';
@@ -339,10 +340,11 @@ export function BubbleHippo() {
       const last = r.hintAt[g.reason];
       if (last == null || now - last > HINT_COOLDOWN_MS) {
         r.hintAt[g.reason] = now;
-        r.hintText = g.hint;
+        r.hintText = phrase(g.hint);
+        r.hintId = g.hint;
         r.hintUntil = now + HINT_SHOW_MS;
         playSfx('hintBell');
-        say(g.hint);
+        say(r.hintText);
       }
     }
     // Sleepy = bath break: round time is stopped
@@ -428,12 +430,12 @@ export function BubbleHippo() {
           playSfx('toot');
           clearTimeout(roosterRef.current);
           roosterRef.current = setTimeout(() => playSfx('rooster'), 500);
-          say('Splash time! Count the ducks!');
-          r.msg = 'Splash time!';
+          say(phrase('hippo.splash'));
+          r.msg = line('hippo.splashMsg');
         }
       } else if (r.sub === 'duck') {
         while (r.duckAt.length && r.subT >= r.duckAt[0]) { r.duckAt.shift(); r.ducksPopped += 1; playSfx('plink'); }
-        if (r.subT > DUCK_TIME_S) { r.sub = 'answer'; r.subT = 0; r.answered = null; r.answerAt = null; say('How many ducks?'); }
+        if (r.subT > DUCK_TIME_S) { r.sub = 'answer'; r.subT = 0; r.answered = null; r.answerAt = null; say(phrase('hippo.howMany')); }
       } else if (r.sub === 'answer') {
         const over = r.answered != null ? r.subT - r.answerAt > ANSWER_AFTER_S : r.subT > ANSWER_MAX_S;
         if (over) {
@@ -441,8 +443,8 @@ export function BubbleHippo() {
           r.sub = 'settle'; r.subT = 0; r.ducksPopped = 0;
           r.settle = { dipped: false, from: 0, stay: 0 };
           r.demoDipFrom = r.t;
-          r.msg = 'Bubble time!';
-          say('Bubble time.');
+          r.msg = line('hippo.bubbleMsg');
+          say(phrase('hippo.bubbleTime'));
         }
       } else if (r.sub === 'settle') {
         const st = r.settle;
@@ -538,10 +540,10 @@ export function BubbleHippo() {
     if (n === r.duckN) {
       r.ducksRight += 1;
       playSfx('chimes');
-      say(`Yes! ${n} ducks. Now bubble time.`);
+      say(phrase('hippo.right', { n }));
     } else {
       playSfx('plink');
-      say(`It was ${r.duckN}. Good try! Bubble time.`);
+      say(phrase('hippo.wrong', { n: r.duckN }));
     }
     pushHud();
   }
@@ -683,7 +685,7 @@ export function BubbleHippo() {
         view.hint = now < r.hintUntil ? r.hintText : '';
         view.gate = r.gate.state;
         view.msg = r.msg;
-        view.breakText = r.gate.hint || '';
+        view.breakText = !r.gate.hint ? '' : r.hintId === r.gate.hint ? r.hintText : line(r.gate.hint); // same words as spoken
         view.hudLines = [BADGES[r.badge - 1].name, `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`];
         view.paused = pausedRef.current;
       } else if (ph === 'result') {

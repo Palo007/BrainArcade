@@ -10,12 +10,13 @@
 
 export const GIGGLE_GAP_MS = 4000; // after a toot the hippo giggles: the meter is not read for this long
 
+// hint = a line id of lib/phrases.js; the game turns it into words in the app language
 const HINTS = {
-  contact: 'Hold still. Checking the headband.',
-  sleepy: 'Reach up high like a giraffe!',
-  muscle: 'Floppy jaw, like a hippo yawn.',
-  eyes: 'Peek-a-boo! Open your eyes.',
-  eyeMove: 'Eyes on the bubble.',
+  contact: 'hint.contact',
+  sleepy: 'hippo.hint.sleepy',
+  muscle: 'hippo.hint.muscle',
+  eyes: 'hippo.hint.eyes',
+  eyeMove: 'hippo.hint.eyeMove',
 };
 
 // giggle = true while inside the giggle gap after a toot (no hint: it is a happy pause, not a problem)

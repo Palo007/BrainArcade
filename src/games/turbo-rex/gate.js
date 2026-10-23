@@ -13,12 +13,13 @@
 export const TAP_HOLD_MS = 500; // a tap moves hands, head and eyes: the value is held this long
 export const FREEZE_MIN_MS = 1500; // a freeze frame stays at least this long, so it does not flicker
 
+// hint = a line id of lib/phrases.js; the game turns it into words in the app language
 const HINTS = {
-  contact: 'Hold still. Checking the headband.',
-  muscle: 'Freeze frame! Be a statue. Floppy face.',
-  neck: 'Soft shoulders. Wiggle your jaw.',
-  eyes: 'Open your eyes! Rex needs you.',
-  tilt: 'Lift me up to your eyes!',
+  contact: 'hint.contact',
+  muscle: 'rex.hint.muscle',
+  neck: 'rex.hint.neck',
+  eyes: 'rex.hint.eyes',
+  tilt: 'rex.hint.tilt',
 };
 
 // stale  = no fresh frame; spike = a big frontal spike in the last second (or the headband is settling)

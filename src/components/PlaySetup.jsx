@@ -63,7 +63,7 @@ export function PlaySetupChip() {
       onClick={() => setSetup(nextSetup(setup))}
       aria-label={`Play setup: ${i.label}. Tap for ${next.label}`}
       title={`Play setup: ${i.label} (tap: ${next.label})`}
-      className="inline-flex items-center justify-center gap-1 bg-[var(--nes-dark)] border-4 short-land:border-2 border-white text-white px-2 py-2 short-land:py-0.5 min-h-[44px] min-w-[44px] text-[11px] hover:bg-white hover:text-black transition-colors cursor-pointer"
+      className="inline-flex items-center justify-center gap-1 bg-[var(--nes-dark)] border-4 short-land:border-2 border-white text-white px-2 py-2 short-land:py-0 min-h-[44px] min-w-[44px] short-land:min-h-[36px] short-land:min-w-[36px] text-[11px] hover:bg-white hover:text-black transition-colors cursor-pointer"
       style={FONT}
     >
       <span aria-hidden="true" className="text-base leading-none">{i.icon}</span>

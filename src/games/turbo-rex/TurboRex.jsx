@@ -25,6 +25,7 @@ import {
   finishRound, loadProgress, saveProgress, parentCardOf,
 } from './progress.js';
 import { primeRexAudio, startMusic, stopMusic, setMusicMode, playSfx, say, setMix } from './sounds.js';
+import { phrase, line, beltName } from '../../lib/phrases.js';
 import { usePhoneTilt } from './tilt.js';
 import {
   W, H, LANE_Y, MOUTH_X, SPAWN_X, createScene, drawScene, sceneEat, sceneCombo, sceneFx, sceneBanner, sceneParty,
@@ -340,8 +341,8 @@ export function TurboRex() {
     const r = roundRef.current;
     // the lane keeps flowing into the round; items already close to Rex go, so nobody misses them unfairly
     if (r) { r.lane.items = c.lane.items.filter((it) => it.x > MOUTH_X + 150).map((it) => ({ ...it, born: 0 })); r.lane.spawnIn = c.lane.spawnIn; }
-    sceneBanner(sceneRef.current, r?.lane.on ? 'GO! TAP THE PIZZAS!' : 'GO, REX, GO!', 1.8);
-    say(r?.lane.on ? 'Go! Tap the pizzas!' : 'Go Rex go!');
+    sceneBanner(sceneRef.current, line(r?.lane.on ? 'rex.goTapBanner' : 'rex.goBanner'), 1.8);
+    say(phrase(r?.lane.on ? 'rex.goTap' : 'rex.go'));
     go('play');
   }
 
@@ -352,7 +353,7 @@ export function TurboRex() {
     collectRef.current = kind === 'baseline'
       ? { frames: [], t: 0, lastAt: 0, minS: d ? DEMO_BASELINE_S : BASELINE_S, maxS: BASELINE_MAX_S, minFrames: BASELINE_MIN_FRAMES, lane }
       : { frames: [], t: 0, lastAt: 0, minS: d ? DEMO_WARMUP_S : WARMUP_S, maxS: WARMUP_MAX_S, minFrames: WARMUP_MIN_FRAMES, lane };
-    say(lane.on ? 'Just watch the pizzas. No tapping yet.' : 'Watch Rex roll. Sit still.');
+    say(phrase(lane.on ? 'rex.watchPizzas' : 'rex.watch'));
   }
 
   function stepRound(dt, now, frame, spikeNow) {
@@ -387,10 +388,10 @@ export function TurboRex() {
       const lastAt = r.hintAt[g.reason];
       if (lastAt == null || now - lastAt > HINT_COOLDOWN_MS) {
         r.hintAt[g.reason] = now;
-        r.hintText = g.hint;
+        r.hintText = phrase(g.hint);
         r.hintUntil = now + HINT_SHOW_MS;
         playSfx('hint');
-        say(g.hint);
+        say(r.hintText);
       }
     }
     // Freeze frame: round time stops, items stop, nothing is scored or lost
@@ -578,7 +579,7 @@ export function TurboRex() {
       ...(poor ? { valid: false, invalidReason: 'bad-quality' } : {}),
     });
     if (res.unlockedBelt) setBelt(res.unlockedBelt);
-    say(res.unlockedBelt ? `New belt! ${BELTS[res.unlockedBelt - 1].name} belt!` : 'Great ride, Rex!');
+    say(res.unlockedBelt ? phrase('rex.newBelt', { belt: beltName(BELTS[res.unlockedBelt - 1].name) }) : phrase('rex.great'));
     setResult({ ...res, round, score: r.score, combos: r.combos, sessionId: id, poor, early: r.early });
   }
 
@@ -600,7 +601,7 @@ export function TurboRex() {
     const next = haveDaily ? 'warmup' : 'baseline';
     if (playedRef.current || p.shortNext) {
       wiggleRef.current = { t: 0, len: demoRef.current ? DEMO_WIGGLE_S : WIGGLE_S, shoulders: p.shortNext, next };
-      say(p.shortNext ? 'Shoulder rolls! Roll them back, slow and big.' : 'Wiggle break! Shake it out!');
+      say(phrase(p.shortNext ? 'rex.shoulders' : 'rex.wiggle'));
       go('wiggle');
     } else {
       startCollect(next);

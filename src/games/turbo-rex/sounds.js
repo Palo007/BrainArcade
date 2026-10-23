@@ -5,6 +5,7 @@
 // primeRexAudio() must run inside a tap (mobile browsers need a gesture). Everything is silent if audio is unavailable.
 // lib/chime.js keeps its AudioContext private, so this file owns one; it calls chime's primeAudio() in the same tap.
 import { primeAudio } from '../../lib/chime.js';
+import { speak } from '../../lib/phrases.js';
 
 const PROG = [48, 45, 41, 43]; // C, Am, F, G
 const MINOR = new Set([45]);
@@ -195,13 +196,6 @@ export function setMix(m = {}) {
 
 // Voice (stand-in: the browser voice; the app would use recorded lines)
 export function say(text) {
-  try {
-    if (!mix.voice || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
-    const clean = String(text).replace(/[^\w\s!?.,'-]/g, '').trim();
-    if (!clean) return;
-    const u = new SpeechSynthesisUtterance(clean);
-    u.rate = 1; u.pitch = 1.3; u.volume = 0.8;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  } catch { /* voice unavailable */ }
+  if (!mix.voice) return;
+  speak(text, { rate: 1, pitch: 1.3, volume: 0.8 }); // current app language (lib/phrases.js)
 }

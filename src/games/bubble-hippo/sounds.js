@@ -5,6 +5,7 @@
 // Note: lib/chime.js keeps its AudioContext private, so this file owns one context; it still calls chime's primeAudio()
 // in the same tap so the shared one is unlocked too.
 import { primeAudio } from '../../lib/chime.js';
+import { speak } from '../../lib/phrases.js';
 
 const BEAT = 60 / 64;
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
@@ -249,13 +250,6 @@ export function setMix(m = {}) {
 
 // ---------- voice (stand-in: the browser voice; the app would use recorded lines) ----------
 export function say(text) {
-  try {
-    if (!mix.voice || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
-    const clean = String(text).replace(/[^\w\s!?.,'-]/g, '').trim();
-    if (!clean) return;
-    const u = new SpeechSynthesisUtterance(clean);
-    u.rate = 0.9; u.pitch = 1.25; u.volume = 0.8;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  } catch { /* voice unavailable */ }
+  if (!mix.voice) return;
+  speak(text, { rate: 0.9, pitch: 1.25, volume: 0.8 }); // current app language (lib/phrases.js)
 }

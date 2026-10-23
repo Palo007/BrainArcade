@@ -75,6 +75,9 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
 
   if (calibration && fin(calibration.paf)) {
     lines.push({ key: 'paf', text: `Personal alpha peak: ${calibration.paf.toFixed(1)} Hz. It is a personal reference for the colour bands, not a score.` });
+  } else {
+    // Without this line parents think the peak was dropped: it is stored per player and per device
+    lines.push({ key: 'paf', text: 'Personal alpha peak: not measured yet for this player on this device. A full calibration (eyes closed, then open) measures it.' });
   }
   if (points.some((p) => fin(p.hbo))) {
     const usable = !invalid && session.fnirsUsed !== false && !(fin(session.okSec) && session.okSec <= 0);

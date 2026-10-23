@@ -155,7 +155,7 @@ export function Layout({ children }) {
             className={
               inSlot
                 ? 'flex items-center gap-2 sm:gap-4 short-land:gap-2'
-                : 'absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-2 short-land:right-2 z-50 flex flex-wrap justify-end items-center gap-2 sm:gap-4'
+                : 'absolute top-2 right-2 sm:top-10 sm:right-10 short-land:top-1.5 short-land:right-1.5 z-50 flex flex-wrap justify-end items-center gap-2 sm:gap-4 short-land:gap-1.5'
             }
           >
             {/* Pause button (only on game pages) */}
@@ -163,7 +163,7 @@ export function Layout({ children }) {
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 aria-label="Pause / Menu"
-                className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 py-2 short-land:py-0.5 min-h-[44px] min-w-[44px] hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
+                className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-yellow)] text-[var(--nes-yellow)] px-3 short-land:px-2 py-2 short-land:py-0 min-h-[44px] min-w-[44px] short-land:min-h-[36px] short-land:min-w-[36px] hover:bg-[var(--nes-yellow)] hover:text-black transition-colors cursor-pointer"
                 style={{ fontFamily: 'var(--font-retro)' }}
               >
                 ❚❚
@@ -178,7 +178,7 @@ export function Layout({ children }) {
             {/* Muse Connected Icon */}
             {isConnected && (
               <button
-                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 phone-port:px-2 min-h-[44px] phone-port:min-w-[44px] short-land:py-0.5 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
+                className="flex items-center gap-2 bg-[var(--nes-dark)] border-4 short-land:border-2 px-3 py-2 phone-port:px-2 short-land:px-2 min-h-[44px] short-land:min-h-[36px] phone-port:min-w-[44px] short-land:py-0 hover:border-[var(--nes-yellow)] transition-colors cursor-pointer"
                 onClick={() => setShowMusePopup(true)}
                 title={`Muse status — ${quality10s?.label || 'Good'} • ${Math.round((quality10s?.stablePct || 1) * 100)}% stable${isMock ? ' • MOCK' : ''}`}
                 style={{ borderColor: `var(${quality10s?.var || '--nes-green'})` }}
@@ -210,8 +210,8 @@ export function Layout({ children }) {
                   {/* Connection Indicator Dot */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse border border-white" style={{ backgroundColor: `var(${quality10s?.var || '--nes-green'})` }}></div>
                 </div>
-                <span className="text-[8px] phone-port:hidden" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
-                <span className="hidden phone-port:inline text-xs" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{isMock ? 'MOCK' : 'LIVE'}</span>
+                <span className="text-[8px] phone-port:hidden short-land:hidden" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>CONNECTED{isMock ? ' • MOCK' : ''}</span>
+                <span className="hidden phone-port:inline short-land:inline text-xs short-land:text-[10px]" style={{ color: `var(${quality10s?.var || '--nes-green'})` }}>{isMock ? 'MOCK' : 'LIVE'}</span>
               </button>
             )}
           </div>

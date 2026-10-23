@@ -1,5 +1,7 @@
 import { useContext, useState } from 'react';
 import { PlayerSwitcher } from './PlayerSwitcher.jsx';
+import { HeadbandBattery } from './HeadbandBattery.jsx';
+import { SettingsButton } from './SettingsButton.jsx';
 import { TopBarSlotContext } from './topBarSlot.js';
 import { Link, useLocation } from 'react-router-dom';
 import { games, categories } from '../games/games.config';
@@ -134,7 +136,9 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
             VIEWER
           </Link>
           <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
-          <PlayerSwitcher className="ml-auto sm:ml-0 short-land:ml-auto min-w-0" />
+          <HeadbandBattery className="ml-auto sm:ml-0 short-land:ml-auto" />
+          <SettingsButton />
+          <PlayerSwitcher className="min-w-0" />
           {/* Layout puts Electrodes + Muse status here (see topBarSlot.js) */}
           {!noTopBar && setTopBarSlot && <div ref={setTopBarSlot} className="contents" />}
         </div>

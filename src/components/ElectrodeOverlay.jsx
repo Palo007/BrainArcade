@@ -149,10 +149,12 @@ export function ElectrodesButton({ onClick }) {
       type="button"
       onClick={onClick}
       aria-label="Check electrodes"
-      className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] px-3 py-2 min-h-[44px] min-w-[44px] text-[13px] hover:bg-[var(--nes-blue)] hover:text-black transition-colors cursor-pointer"
+      className="bg-[var(--nes-dark)] border-4 short-land:border-2 border-[var(--nes-blue)] text-[var(--nes-blue)] px-3 short-land:px-2 py-2 short-land:py-0 min-h-[44px] min-w-[44px] short-land:min-h-[36px] short-land:min-w-[36px] text-[13px] short-land:text-[11px] hover:bg-[var(--nes-blue)] hover:text-black transition-colors cursor-pointer"
       style={FONT}
     >
-      ELECTRODES
+      {/* Landscape phones: short label so the controls do not cover the game HUD */}
+      <span className="short-land:hidden">ELECTRODES</span>
+      <span className="hidden short-land:inline">EEG</span>
     </button>
   );
 }

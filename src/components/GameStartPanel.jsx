@@ -16,8 +16,9 @@ export function OptionLabel({ children }) {
 }
 
 export function GameStartPanel({ title, children, onStart, best = 0, startLabel = 'START', signalNote, onRecalibrate }) {
+  // phone-port:pb-20 keeps the panel above the games' bottom buttons (SOUND, STOP)
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
+    <div className="absolute inset-0 z-40 flex items-center justify-center px-4 pt-24 pb-4 phone-port:pb-20 pointer-events-none">
       <div
         className="border-4 border-[var(--nes-yellow)] bg-black/75 px-6 py-5 text-center text-white max-w-lg w-full max-h-full overflow-y-auto pointer-events-auto"
         style={FONT}

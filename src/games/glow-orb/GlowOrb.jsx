@@ -432,7 +432,7 @@ export function GlowOrb() {
       )}
 
       {phase === 'play' && hud.paused && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-[10px] text-[var(--nes-yellow)]">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-[calc(100%-2rem)] text-center border-2 border-[var(--nes-yellow)] bg-black/70 px-4 py-2 text-[10px] text-[var(--nes-yellow)]">
           HOLD STILL — FIX THE HEADBAND
         </div>
       )}
@@ -480,7 +480,7 @@ export function GlowOrb() {
         </div>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center px-4 pt-24 pb-4 phone-port:pb-20 pointer-events-none">
         {phase === 'done' && (
           <div className={`${panel} pointer-events-auto max-h-full overflow-y-auto`}>
             {invalid ? (
