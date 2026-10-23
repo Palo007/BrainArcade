@@ -80,7 +80,10 @@ t('parent summary: comparison with last 5, PAF, no medical wording', () => {
 t('parent summary: no history, no fNIRS, no calibration', () => {
   const lines = buildParentSummary({ session: {}, earlier: [], points: [] });
   const keys = lines.map((l) => l.key);
-  assert.ok(keys.includes('compare') && !keys.includes('paf') && !keys.includes('fnirs'));
+  assert.ok(keys.includes('compare') && !keys.includes('fnirs'));
+  // Without a calibration the paf line says the peak is not measured yet (not a number)
+  const paf = lines.find((l) => l.key === 'paf');
+  assert.ok(paf && /not measured yet/.test(paf.text) && !/\d+\.\d Hz/.test(paf.text));
 });
 
 t('end() freezes the timeline, is idempotent; clear() and reopen() resume', () => {
