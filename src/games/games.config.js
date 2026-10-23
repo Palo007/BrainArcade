@@ -36,6 +36,7 @@ import { BlinkingContest } from "./blinking-contest/BlinkingContest.jsx";
 import { Diver } from "./diver/Diver.jsx";
 import { TrainOfThoughts } from "./train-of-thoughts/TrainOfThoughts.jsx";
 import { BubbleHippo } from "./bubble-hippo/BubbleHippo.jsx";
+import { TurboRex } from "./turbo-rex/TurboRex.jsx";
 import { GlowOrb } from "./glow-orb/GlowOrb.jsx";
 import { FocusBall } from "./focus-ball/FocusBall.jsx";
 import { TrainingJournal } from "./training-journal/TrainingJournal.jsx";
@@ -53,6 +54,7 @@ import diverSprite from "./diver/assets/diver-happy.png";
 import trainThumb from "./train-of-thoughts/assets/city-background.jpg";
 import trainSprite from "./train-of-thoughts/assets/train1.png";
 import hippoThumb from "./bubble-hippo/assets/thumb.svg";
+import rexThumb from "./turbo-rex/assets/thumb.svg";
 import visualizerThumb from "./example-game/assets/thumb.svg";
 
 // Menu sections, in display order
@@ -151,6 +153,14 @@ export const games = [
     component: BubbleHippo,
     category: "calm",
     thumb: hippoThumb,
+  },
+  {
+    id: "turbo-rex",
+    name: "TURBO REX",
+    description: "Your focus is Rex's fuel! Keep the bar up and Rex zooms on his skateboard. Tap the pizzas and he burps.",
+    component: TurboRex,
+    category: "calm",
+    thumb: rexThumb,
   },
   {
     id: "example-game",

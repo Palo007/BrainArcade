@@ -43,6 +43,13 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
     lines.push({ key: 'focus', text: `${thing} above the line: ${Math.round(pct)}% of the playable time${detail}.` });
   }
 
+  // Signal quality of the brain games (round record): held and frozen time. High = fix the pose, not bad focus.
+  if (fin(session.heldPct) || fin(session.frozenPct)) {
+    const h = fin(session.heldPct) ? `${Math.round(session.heldPct)}% held` : null;
+    const f = fin(session.frozenPct) ? `${Math.round(session.frozenPct)}% frozen or paused` : null;
+    lines.push({ key: 'signal', text: `Signal quality: ${[h, f].filter(Boolean).join(', ')}. High numbers mean "fix the pose", not "bad focus".` });
+  }
+
   const invalid = session.valid === false;
   const prev = earlier.filter((s) => s && s.valid !== false).slice(-5); // unusable sessions are not history
   if (invalid) {
