@@ -31,17 +31,17 @@ export function ExampleGame() {
   }, [rawEEG]);
 
   return (
-    <div className="relative space-y-6 pt-24">
-      {/* Title (aligned like SweetSpot) */}
-      <div className="absolute top-6 left-6 w-[min(480px,60vw)]">
-        <h2 className="text-2xl text-[var(--nes-yellow)]">BRAINWAVE VISUALIZER</h2>
+    <div className="relative space-y-6 pt-6">
+      {/* Title in the page flow, so it never covers the plot on a narrow phone screen */}
+      <div className="max-w-[480px]">
+        <h2 className="text-xl sm:text-2xl text-[var(--nes-yellow)]">BRAINWAVE VISUALIZER</h2>
         <p className="text-xs text-gray-400 mt-2">Real-time EEG visualization from your Muse device</p>
       </div>
 
-      {/* Layout: Plot left, Values right */}
-      <div className="flex gap-4 items-stretch">
+      {/* Layout: plot left and values right; on a phone in portrait, plot on top and values in a row below */}
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch">
         {/* EEG Waveform Visualization (Left - main column) */}
-        <div className="flex-1 border-4 border-[var(--nes-blue)] p-4 bg-black">
+        <div className="flex-1 min-w-0 min-h-[320px] border-4 border-[var(--nes-blue)] p-4 bg-black">
           <div className="flex flex-col h-full">
             <div className="text-xs text-[var(--nes-blue)] mb-2">WAVEFORM</div>
             <div className="flex flex-col gap-4 flex-1">
@@ -93,16 +93,16 @@ export function ExampleGame() {
         </div>
 
         {/* Current EEG Values (Right - narrow column) */}
-        <div className="w-52 shrink-0 flex flex-col gap-4">
-          {rawEEG && rawEEG.map((value, idx) => (
+        <div className="grid grid-cols-2 sm:grid-cols-1 sm:w-52 shrink-0 gap-2 sm:gap-4">
+          {rawEEG && rawEEG.slice(0, channels.length).map((value, idx) => (
             <div
               key={idx}
-              className="border-4 border-[var(--nes-blue)] p-4 bg-[var(--nes-dark)]"
+              className="border-4 border-[var(--nes-blue)] p-2 sm:p-4 bg-[var(--nes-dark)] min-w-0"
             >
               <div className="text-[10px] text-[var(--nes-blue)] mb-2">
                 {channels[idx]}
               </div>
-              <div className="text-2xl font-mono">
+              <div className="text-lg sm:text-2xl font-mono truncate">
                 {value ? value.toFixed(2) : '---'}
               </div>
               <div className="text-[8px] text-gray-500 mt-1">μV</div>
