@@ -6,6 +6,7 @@ import { loadSessions, sessionsForChild } from '../lib/sessionStore.js';
 import { useProfiles } from '../contexts/ProfileContext.jsx';
 import { loadCalibration } from '../lib/paf.js';
 import { buildParentSummary } from '../lib/parentSummary.js';
+import { isFnirsGame } from '../games/games.config.js';
 
 // sessionId: this session's record id (null when unknown); game: optional game id to compare with.
 export function ParentSummary({ sessionId, points, game = null }) {
@@ -19,7 +20,7 @@ export function ParentSummary({ sessionId, points, game = null }) {
     const before = idx >= 0 ? all.slice(0, idx) : all;
     const gameId = session.game || game;
     const earlier = sessionsForChild(before, childId).filter((s) => !gameId || s.game === gameId);
-    return buildParentSummary({ session, earlier, points: points || [], calibration: loadCalibration() });
+    return buildParentSummary({ session, earlier, points: points || [], calibration: loadCalibration(), alphaPeak: !isFnirsGame(gameId) });
   }, [sessionId, points, game, activeId]);
   return (
     <ul className="list-disc pl-5 space-y-1 text-[11px] leading-relaxed text-left">

@@ -3,6 +3,7 @@
 // localStorage "brainarcade.settings" = { language: 'en' | 'sk' }. Per-child choices (play setup,
 // calibration) stay in their own stores. Add a new setting: one entry in DEFAULTS (+ a check in VALID).
 import { useSyncExternalStore } from 'react';
+import { readJson, writeJson, emitChange } from './jsonStore.js';
 
 export const SETTINGS_KEY = 'brainarcade.settings';
 // Fired on window when a setting changes (detail: { key, value })
@@ -29,8 +30,7 @@ const VALID = { language: (v) => LANGUAGES.some((l) => l.id === v) };
 let cache = null;
 function read() {
   if (cache) return cache;
-  let o = {};
-  try { o = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null') || {}; } catch { o = {}; }
+  const o = readJson(SETTINGS_KEY) || {};
   const out = { ...DEFAULTS };
   for (const k of Object.keys(DEFAULTS)) if (VALID[k]?.(o[k])) out[k] = o[k];
   cache = out;
@@ -46,8 +46,8 @@ export function setSetting(key, value) {
   const cur = read();
   if (cur[key] === value) return;
   cache = { ...cur, [key]: value };
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(cache)); } catch { /* storage unavailable */ }
-  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT, { detail: { key, value } }));
+  writeJson(SETTINGS_KEY, cache);
+  emitChange(SETTINGS_CHANGED_EVENT, { key, value });
 }
 
 function subscribe(cb) {

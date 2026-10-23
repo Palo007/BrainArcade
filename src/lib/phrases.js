@@ -95,45 +95,61 @@ function variants(id, lang) {
   return PHRASES[lang]?.[id] || PHRASES.en[id] || [id];
 }
 
-/** One random variant of a line in the current language. */
+/** One random variant of a spoken line, in the language the device can speak (see voiceLanguage). */
 export function phrase(id, vars = {}) {
-  const lang = getSetting('language');
+  const lang = voiceLanguage();
   const list = variants(id, lang);
   return fill(list[Math.floor(Math.random() * list.length)], vars, lang);
 }
 
-/** The first (fixed) variant of a line in the current language. */
+/** The first (fixed) variant of a line in the app language (text that is only shown, never spoken). */
 export function line(id, vars = {}) {
   const lang = getSetting('language');
   return fill(variants(id, lang)[0], vars, lang);
 }
 
 // ---------- browser voice ----------
-const speechLang = () => (LANGUAGES.find((l) => l.id === getSetting('language')) || LANGUAGES[0]).speech;
+const speechOf = (lang) => (LANGUAGES.find((l) => l.id === lang) || LANGUAGES[0]).speech;
+const allVoices = () => {
+  try { return window.speechSynthesis?.getVoices?.() || []; } catch { return []; }
+};
 
-/** The device voice for the current language, or null when the device has none. */
-export function findVoice(lang = speechLang()) {
-  try {
-    const all = window.speechSynthesis?.getVoices?.() || [];
-    const base = lang.slice(0, 2).toLowerCase();
-    const same = all.filter((v) => (v.lang || '').replace('_', '-').toLowerCase().startsWith(base));
-    return same.find((v) => v.lang.replace('_', '-').toLowerCase() === lang.toLowerCase() && v.localService)
-      || same.find((v) => v.localService) || same[0] || null;
-  } catch {
-    return null;
-  }
+/** The device voice for a speech language like 'sk-SK', or null when the device has none. */
+export function findVoice(lang = speechOf(getSetting('language'))) {
+  const base = lang.slice(0, 2).toLowerCase();
+  const norm = (v) => (v.lang || '').replace('_', '-').toLowerCase();
+  const same = allVoices().filter((v) => norm(v).startsWith(base));
+  return same.find((v) => norm(v) === lang.toLowerCase() && v.localService)
+    || same.find((v) => v.localService) || same[0] || null;
 }
 
-/** Say a line with the browser voice in the current language. Cuts off the line before it. */
+/** true / false: the device can / cannot speak the app language; null while the voice list is still loading. */
+export function hasVoice(lang = getSetting('language')) {
+  if (lang === 'en') return true;
+  if (!allVoices().length) return null;
+  return !!findVoice(speechOf(lang));
+}
+
+// The app language, or English when the device has no voice for it: an English voice reading
+// Slovak words sounds like nonsense to a child. While voices load, the app language is kept.
+function voiceLanguage() {
+  const lang = getSetting('language');
+  return hasVoice(lang) === false ? 'en' : lang;
+}
+
+/** Say a line with the browser voice. Cuts off the line before it. */
 export function speak(text, { rate = 1, pitch = 1, volume = 0.8 } = {}) {
   try {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
     const clean = String(text).replace(/[^\p{L}\p{N}\s!?.,'-]/gu, '').trim(); // keeps č, š, ž, ...
     if (!clean) return;
     const u = new SpeechSynthesisUtterance(clean);
-    u.lang = speechLang();
-    const voice = findVoice(u.lang);
-    if (voice) u.voice = voice;
+    const lang = voiceLanguage();
+    if (lang !== 'en') { // English keeps the browser's default voice, as before languages existed
+      u.lang = speechOf(lang);
+      const voice = findVoice(u.lang);
+      if (voice) u.voice = voice;
+    }
     u.rate = rate; u.pitch = pitch; u.volume = volume;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);

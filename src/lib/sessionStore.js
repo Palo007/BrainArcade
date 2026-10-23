@@ -1,6 +1,7 @@
 // Training session history in localStorage (shared by all games and the Training Journal).
 import { loadProfiles, mergeProfiles, switchProfile } from './profiles.js';
 import { getStoredSetup, removeChildSetup } from './playSetup.js';
+import { sessionTimeline } from './sessionTimeline.js';
 
 export const SESSIONS_KEY = 'brainarcade.sessions';
 export const MAX_SESSIONS = 500;
@@ -135,7 +136,8 @@ export function isDemoMode() { return demoMode; }
 export function recordSession(game, fields = {}) {
   if (demoMode) return null; // mock/demo data is never written to the history
   const childId = loadProfiles().activeId;
-  const record = { date: new Date().toISOString(), game, childId, setup: getStoredSetup(childId) || undefined, ...fields };
+  // Head motion of this session (motionSec, movingPct, bigMovePct, tiltedPct), when the headband has a motion sensor
+  const record = { date: new Date().toISOString(), game, childId, setup: getStoredSetup(childId) || undefined, ...sessionTimeline.motionSummary(), ...fields };
   // Stamp what the game really used: the active calibration if personal bands were in effect, otherwise nothing (standard bands).
   const used = activeCal && activeCal.bandsSource === 'personal' ? activeCal : null;
   if (record.paf === undefined) record.paf = finite(used?.paf);
@@ -158,6 +160,8 @@ export const CSV_COLUMNS = [
   'alphaReactivity', 'calibDate', 'qualityPct', 'fnirsUsed', 'checkIn', 'feeling', 'insight', 'setup',
   // shared round record (lib/roundRecord.js)
   'level', 'goal', 'successPct', 'longestStreakS', 'heldPct', 'frozenPct', 'rawByMin', 'zByMin',
+  // head motion (lib/sessionTimeline.js motionSummary)
+  'motionSec', 'movingPct', 'bigMovePct', 'tiltedPct',
 ];
 
 const esc = (v) => {
@@ -210,7 +214,7 @@ function parseRows(text) {
   return rows;
 }
 
-const NUMERIC = new Set(['durationSec', 'playedSec', 'okSec', 'points', 'score', 'stars', 'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf', 'alphaReactivity', 'qualityPct', 'feeling', 'level', 'goal', 'successPct', 'longestStreakS', 'heldPct', 'frozenPct']);
+const NUMERIC = new Set(['durationSec', 'playedSec', 'okSec', 'points', 'score', 'stars', 'energy', 'flow', 'flowSec', 'increase', 'avgRecoverySec', 'timeAbovePct', 'meanFocus', 'paf', 'alphaReactivity', 'qualityPct', 'feeling', 'level', 'goal', 'successPct', 'longestStreakS', 'heldPct', 'frozenPct', 'motionSec', 'movingPct', 'bigMovePct', 'tiltedPct']);
 const BOOL = new Set(['fnirsUsed', 'checkIn']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 

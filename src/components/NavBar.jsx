@@ -136,9 +136,12 @@ export function NavBar({ onActiveGameClick, noTopBar = false } = {}) {
             VIEWER
           </Link>
           <span className="ml-auto hidden sm:inline short-land:hidden text-[10px] text-gray-500">{visible.length} GAMES</span>
-          <HeadbandBattery className="ml-auto sm:ml-0 short-land:ml-auto" />
-          <SettingsButton />
-          <PlayerSwitcher className="min-w-0" />
+          {/* One group, so the chips stay at the right edge also when no battery is shown */}
+          <div className="ml-auto sm:ml-0 short-land:ml-auto flex items-center gap-3 sm:gap-6 short-land:gap-3 min-w-0">
+            <HeadbandBattery />
+            <SettingsButton />
+            <PlayerSwitcher className="min-w-0" />
+          </div>
           {/* Layout puts Electrodes + Muse status here (see topBarSlot.js) */}
           {!noTopBar && setTopBarSlot && <div ref={setTopBarSlot} className="contents" />}
         </div>

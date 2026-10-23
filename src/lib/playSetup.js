@@ -3,6 +3,7 @@
 // localStorage belongs to one device, so the choice is per child and per device (not in the CSV export).
 // Phase 1 of the Play Setup project: stored, shown and recorded only. Signal handling does not read it yet.
 import { getActiveProfileId } from './profiles.js';
+import { readJson, writeJson, emitChange } from './jsonStore.js';
 
 export const PLAY_SETUP_KEY = 'brainarcade.playSetup';
 // Fired on window when the stored choice changes (detail: { setup, childId })
@@ -30,12 +31,8 @@ export function defaultSetup() {
 }
 
 function read() {
-  try {
-    const o = JSON.parse(localStorage.getItem(PLAY_SETUP_KEY) || 'null');
-    return o && typeof o.byChild === 'object' && o.byChild ? o : { byChild: {} };
-  } catch {
-    return { byChild: {} };
-  }
+  const o = readJson(PLAY_SETUP_KEY);
+  return o && typeof o.byChild === 'object' && o.byChild ? o : { byChild: {} };
 }
 
 // The child's saved choice on this device, or null (never asked here yet).
@@ -54,17 +51,15 @@ export function setPlaySetup(setup, childId = getActiveProfileId()) {
   const o = read();
   const changed = o.byChild[childId] !== setup;
   o.byChild[childId] = setup;
-  try { localStorage.setItem(PLAY_SETUP_KEY, JSON.stringify(o)); } catch { /* storage unavailable */ }
-  if (changed && typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(PLAY_SETUP_CHANGED_EVENT, { detail: { setup, childId } }));
-  }
+  writeJson(PLAY_SETUP_KEY, o);
+  if (changed) emitChange(PLAY_SETUP_CHANGED_EVENT, { setup, childId });
 }
 
 export function removeChildSetup(childId) {
   const o = read();
   if (!(childId in o.byChild)) return;
   delete o.byChild[childId];
-  try { localStorage.setItem(PLAY_SETUP_KEY, JSON.stringify(o)); } catch { /* storage unavailable */ }
+  writeJson(PLAY_SETUP_KEY, o);
 }
 
 // Next setup for the one-tap top-bar chip

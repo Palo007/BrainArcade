@@ -13,8 +13,8 @@ const close = (x, y) => assert.ok(Math.abs(x - y) < 1e-9, `${x} != ${y}`);
 t('relative bands sum to 1 and average over channels', () => {
   const r = relativeBands([ch(1, 1, 2, 0, 0), ch(0, 0, 1, 1, 2), ch(1, 1, 1, 1, 0), ch(2, 0, 0, 2, 0)]);
   close(Object.values(r.bands).reduce((s, v) => s + v, 0), 1);
-  // channel 0 alpha 0.5, ch1 0.25, ch2 0.25, ch3 0
-  assert.deepEqual(r.alpha.map((v) => +v.toFixed(3)), [0.5, 0.25, 0.25, 0]);
+  // channel 0 alpha 0.5, ch1 0.25, ch2 0.25, ch3 alpha 0 = no data (null, not 0 %, d6253eb)
+  assert.deepEqual(r.alpha.map((v) => (v === null ? null : +v.toFixed(3))), [0.5, 0.25, 0.25, null]);
   close(r.bands.alpha, (0.5 + 0.25 + 0.25 + 0) / 4);
 });
 

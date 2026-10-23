@@ -22,9 +22,10 @@ export function focusPctFromTimeline(points) {
 }
 
 // session: this session's history record (or {}), earlier: earlier records of the same child and game
-// (any order), points: timeline points of this session, calibration: loadCalibration() result or null.
+// (any order), points: timeline points of this session, calibration: loadCalibration() result or null,
+// alphaPeak: false for games that do not use the alpha peak (fNIRS games): no peak line at all.
 // Returns an array of {key, text}.
-export function buildParentSummary({ session = {}, earlier = [], points = [], calibration = null } = {}) {
+export function buildParentSummary({ session = {}, earlier = [], points = [], calibration = null, alphaPeak = true } = {}) {
   const lines = [];
   const playedSec = fin(session.playedSec) ? session.playedSec : points.length ? points[points.length - 1].t - points[0].t : null;
   if (fin(playedSec) && playedSec > 0) lines.push({ key: 'length', text: `Session length: ${formatDuration(playedSec)}.` });
@@ -73,7 +74,9 @@ export function buildParentSummary({ session = {}, earlier = [], points = [], ca
     lines.push({ key: 'compare', text: 'No earlier sessions of this game to compare with yet.' });
   }
 
-  if (calibration && fin(calibration.paf)) {
+  if (!alphaPeak) {
+    // fNIRS games: the alpha peak plays no part, so neither the value nor "not measured" is shown
+  } else if (calibration && fin(calibration.paf)) {
     lines.push({ key: 'paf', text: `Personal alpha peak: ${calibration.paf.toFixed(1)} Hz. It is a personal reference for the colour bands, not a score.` });
   } else {
     // Without this line parents think the peak was dropped: it is stored per player and per device

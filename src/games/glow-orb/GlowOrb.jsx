@@ -440,6 +440,7 @@ export function GlowOrb() {
       {phase === 'intro' && (
         <GameStartPanel
           title="GLOW ORB"
+          bottomSpace
           onStart={supported ? start : undefined}
           best={best}
           signalNote="Only the fNIRS sensors matter here."

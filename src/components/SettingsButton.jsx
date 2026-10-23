@@ -3,16 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { RetroModal } from './RetroModal.jsx';
 import { LANGUAGES, useSetting } from '../lib/settings.js';
-import { findVoice, phrase, speak } from '../lib/phrases.js';
+import { hasVoice, phrase, speak } from '../lib/phrases.js';
 
 const FONT = { fontFamily: 'var(--font-retro)' };
 
 function SettingsModal({ onClose }) {
   const [language, setLanguage] = useSetting('language');
-  // Voices load late on some phones: look again when the list changes
-  const [voiceOk, setVoiceOk] = useState(() => !!findVoice());
+  // Voices load late on some phones: null = still loading (no warning yet), look again when the list changes
+  const [voiceOk, setVoiceOk] = useState(() => hasVoice(language));
   useEffect(() => {
-    const check = () => setVoiceOk(!!findVoice());
+    const check = () => setVoiceOk(hasVoice(language));
     check();
     const ss = typeof window !== 'undefined' ? window.speechSynthesis : null;
     ss?.addEventListener?.('voiceschanged', check);
@@ -47,9 +47,9 @@ function SettingsModal({ onClose }) {
         <p className="text-[9px] leading-relaxed text-gray-300">
           Changes what Bubble Hippo and Turbo Rex say and show as hints. Menus stay in English for now.
         </p>
-        {!voiceOk && (
+        {voiceOk === false && (
           <p className="text-[9px] leading-relaxed text-[var(--nes-red)]">
-            This device has no {LANGUAGES.find((l) => l.id === language)?.label} voice. Android: Settings → Text-to-speech → Google → Install voice data.
+            This device has no {LANGUAGES.find((l) => l.id === language)?.label} voice, so the games speak English. Android: Settings → Text-to-speech → Google → Install voice data.
           </p>
         )}
         <p className="text-[8px] text-gray-500">Saved on this device for all players.</p>

@@ -805,6 +805,7 @@ export function FocusBall() {
       {phase === 'intro' && (
         <GameStartPanel
           title="FOCUS BALL"
+          bottomSpace
           onStart={supported ? startNormal : undefined}
           best={best}
           signalNote="Only the fNIRS sensors matter here."

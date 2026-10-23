@@ -33,10 +33,15 @@ export function relativeBands(bandPowers) {
   return { bands, alpha };
 }
 
+// Head turned this far from the start pose (MotionContext tiltDeg) counts as "tilted", e.g. looking down
+export const TILTED_DEG = 20;
+const emptyMotion = () => ({ sec: 0, moving: 0, bigMove: 0, tilted: 0 });
+
 export class SessionTimeline {
   constructor(maxPoints = TIMELINE_MAX_POINTS) {
     this.maxPoints = maxPoints;
     this.points = [];
+    this.motion = emptyMotion();
     this.t0 = null;
     this.ended = false;
     this.resetOnNextPush = false;
@@ -44,9 +49,41 @@ export class SessionTimeline {
 
   clear() {
     this.points = [];
+    this.motion = emptyMotion();
     this.t0 = null;
     this.ended = false;
     this.resetOnNextPush = false;
+  }
+
+  // After reopen(): the next point or motion second starts a fresh session
+  _resetIfReopened() {
+    if (!this.resetOnNextPush) return;
+    this.points = [];
+    this.motion = emptyMotion();
+    this.t0 = null;
+    this.resetOnNextPush = false;
+  }
+
+  // One second of head motion: state = the worst MotionContext state of that second
+  // ('still' | 'moving' | 'bigMove'), tiltDeg = tilt from the start pose or null.
+  // Counted also when the brain signal is bad: movement is often the reason.
+  pushMotion({ state, tiltDeg } = {}) {
+    if (this.ended || !['still', 'moving', 'bigMove'].includes(state)) return false;
+    this._resetIfReopened();
+    const m = this.motion;
+    m.sec += 1;
+    if (state === 'moving' || state === 'bigMove') m.moving += 1;
+    if (state === 'bigMove') m.bigMove += 1;
+    if (fin(tiltDeg) && tiltDeg >= TILTED_DEG) m.tilted += 1;
+    return true;
+  }
+
+  // Session-record fields (percent of measured seconds), or null without motion data
+  motionSummary() {
+    const m = this.motion;
+    if (!m.sec) return null;
+    const pct = (n) => Math.round((n / m.sec) * 100);
+    return { motionSec: m.sec, movingPct: pct(m.moving), bigMovePct: pct(m.bigMove), tiltedPct: pct(m.tilted) };
   }
 
   // Freezes the timeline (the game is over): later pushes are ignored. Idempotent.
@@ -66,11 +103,7 @@ export class SessionTimeline {
     if (this.ended) return false;
     const rel = relativeBands(bandPowers);
     if (!rel) return false; // no signal: no point (gap in the chart)
-    if (this.resetOnNextPush) {
-      this.points = [];
-      this.t0 = null;
-      this.resetOnNextPush = false;
-    }
+    this._resetIfReopened();
     if (this.t0 === null) this.t0 = nowMs;
     this.points.push({
       t: (nowMs - this.t0) / 1000,

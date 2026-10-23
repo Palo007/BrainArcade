@@ -195,3 +195,5 @@ const gameForPath = (pathname = "") => {
 
 // True for games that run on fNIRS (`signal: "fnirs"`): EEG-quality pauses/modals are suppressed there.
 export const isFnirsRoute = (pathname = "") => gameForPath(pathname)?.signal === "fnirs";
+// Same check by game id (parent report)
+export const isFnirsGame = (id) => games.find((g) => g.id === id)?.signal === "fnirs";
