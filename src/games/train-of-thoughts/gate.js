@@ -23,15 +23,3 @@ export function readGate({ stale, adjusting, frontalSpike, checks }) {
   if (checks?.tense) return { state: 'hint', reason: 'muscle', hint: HINTS.muscle };
   return { state: 'ok', reason: null, hint: null };
 }
-
-// Play setup ('hands' | 'stand' | 'pc') saved by the Play Setup project, or null when not chosen.
-// Read-only and tolerant, so the game works with or without that project.
-export function readPlaySetup(childId) {
-  try {
-    const all = JSON.parse(localStorage.getItem('brainarcade.playSetup') || 'null');
-    const v = all?.byChild?.[childId];
-    return v === 'hands' || v === 'stand' || v === 'pc' ? v : null;
-  } catch {
-    return null;
-  }
-}

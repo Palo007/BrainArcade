@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBaseline } from '../../contexts/BaselineContext.jsx';
 import { useEEG } from '../../contexts/MuseContext.jsx';
@@ -6,6 +6,7 @@ import { useProcessing } from '../../contexts/ProcessingContext.jsx';
 import { useQuality } from '../../contexts/QualityContext.jsx';
 import { useBlink } from '../../contexts/BlinkContext.jsx';
 import { useProfiles } from '../../contexts/ProfileContext.jsx';
+import { usePlaySetup } from '../../contexts/PlaySetupContext.jsx';
 import { useSignalPause, takePausedSec } from '../../hooks/useSignalPause.js';
 import { recordSession, isDemoMode } from '../../lib/sessionStore.js';
 import { RetroModal } from '../../components/RetroModal.jsx';
@@ -19,7 +20,7 @@ import { useFastSignal, freshFrame, blinkHoldMs } from '../../lib/fastSignal.js'
 import { roundGoal, safetyNet, isScored, loadDaily, dailyCheck, addUsage, recordDailyUsage } from '../../lib/progressRules.js';
 import { makeRoundRecord, toSessionFields } from '../../lib/roundRecord.js';
 import { calmOf, pushCalm, zOf, meterOf, makeBaseline, createChecks, DEMO_BASE } from './calmSignal.js';
-import { readGate, readPlaySetup, GIGGLE_GAP_MS } from './gate.js';
+import { readGate, GIGGLE_GAP_MS } from './gate.js';
 import {
   BADGES, WORLDS, STORY, BATH_BOMBS, RULES, dayKey, startDay, goalLevel, pacerRate, playWeeks, whaleDaysOf,
   finishRound, badgeFeatures, loadProgress, saveProgress,
@@ -164,7 +165,9 @@ export function BubbleHippo() {
   const [hud, setHud] = useState(null);
   const [result, setResult] = useState(null);
   const [modal, setModal] = useState(null); // 'story' | 'parent'
-  const setup = useMemo(() => readPlaySetup(activeId), [activeId]);
+  // Live from context, so a chip tap on the menu applies to the next round; null when never chosen.
+  const playSetup = usePlaySetup();
+  const setup = playSetup.asked ? playSetup.setup : null;
 
   // A new day can start while the game stays open: apply it when the menu shows and when the page comes back
   useEffect(() => {

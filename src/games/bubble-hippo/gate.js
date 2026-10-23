@@ -28,15 +28,3 @@ export function readGate({ stale, adjusting, checks, giggle }) {
   if (giggle) return { state: 'hold', reason: 'giggle', hint: null };
   return { state: 'ok', reason: null, hint: null };
 }
-
-// Play setup ('hands' | 'stand' | 'pc') saved by the Play Setup project, or null when not chosen.
-// Read-only and tolerant, so the game works with or without that project.
-export function readPlaySetup(childId) {
-  try {
-    const all = JSON.parse(localStorage.getItem('brainarcade.playSetup') || 'null');
-    const v = all?.byChild?.[childId];
-    return v === 'hands' || v === 'stand' || v === 'pc' ? v : null;
-  } catch {
-    return null;
-  }
-}
